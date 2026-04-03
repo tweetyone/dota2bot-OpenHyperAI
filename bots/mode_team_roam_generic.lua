@@ -81,6 +81,7 @@ function GetDesire()
     return res
 end
 function GetDesireHelper()
+	local nBotHP = Fu.GetHP(bot)
     if bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then
         return BOT_MODE_DESIRE_NONE
     end
@@ -112,7 +113,7 @@ function GetDesireHelper()
     if ShouldHelpWhenCoreIsTargeted then
         SetStickyTarget(target)
         targetUnit = target
-        return RemapValClamped(Fu.GetHP(bot), 0, 0.5, BOT_MODE_DESIRE_NONE, 0.98)
+        return RemapValClamped(nBotHP, 0, 0.5, BOT_MODE_DESIRE_NONE, 0.98)
     end
 
     nearbyAllies = Fu.GetAlliesNearLoc(bot:GetLocation(), 2200)
@@ -122,7 +123,7 @@ function GetDesireHelper()
     if ShouldHelpAlly then
         SetStickyTarget(target)
         targetUnit = target
-        return RemapValClamped(Fu.GetHP(bot), 0, 0.6, BOT_MODE_DESIRE_NONE, 0.98)
+        return RemapValClamped(nBotHP, 0, 0.6, BOT_MODE_DESIRE_NONE, 0.98)
     end
 
 	hTargetCreep = X.GetLastHitCreep()
@@ -137,7 +138,7 @@ function GetDesireHelper()
     local nDesire = AttackSpecialUnit.GetDesire(bot)
     if nDesire > 0 then
         ShouldAttackSpecialUnit = true
-        return RemapValClamped(Fu.GetHP(bot), 0.1, 0.8, BOT_MODE_DESIRE_NONE, nDesire)
+        return RemapValClamped(nBotHP, 0.1, 0.8, BOT_MODE_DESIRE_NONE, nDesire)
     end
 
     if Fu.IsInLaningPhase() and bot:HasModifier('modifier_warlock_upheaval') then
@@ -147,7 +148,7 @@ function GetDesireHelper()
 
     if HasModifierThatNeedToAvoidEffects() then
         IsAvoidingAbilityZone = true
-        return RemapValClamped(Fu.GetHP(bot), 0.3, 1, BOT_ACTION_DESIRE_VERYHIGH, BOT_ACTION_DESIRE_NONE)
+        return RemapValClamped(nBotHP, 0.3, 1, BOT_ACTION_DESIRE_VERYHIGH, BOT_ACTION_DESIRE_NONE)
     end
 
     if not Fu.IsFarming(bot) and not Fu.IsPushing(bot) and not Fu.IsDefending(bot)
@@ -166,7 +167,7 @@ function GetDesireHelper()
             if botTarget ~= nil then
                 targetUnit = botTarget
                 bot:SetTarget(botTarget)
-                return RemapValClamped(Fu.GetHP(bot), 0, 0.4, BOT_MODE_DESIRE_NONE, targetDesire)
+                return RemapValClamped(nBotHP, 0, 0.4, BOT_MODE_DESIRE_NONE, targetDesire)
             end
         end
         if IsSupport then
@@ -174,13 +175,13 @@ function GetDesireHelper()
             if botTarget ~= nil then
                 targetUnit = botTarget
                 bot:SetTarget(botTarget)
-                return RemapValClamped(Fu.GetHP(bot), 0, 0.4, BOT_MODE_DESIRE_NONE, targetDesire)
+                return RemapValClamped(nBotHP, 0, 0.4, BOT_MODE_DESIRE_NONE, targetDesire)
             end
         end
 
         if bot:IsAlive() and bot:DistanceFromFountain() > 4600 then
             if towerTime ~= 0 and X.IsValid(towerCreep) and DotaTime() < towerTime + towerCreepTime then
-                return RemapValClamped(Fu.GetHP(bot), 0, 0.4, BOT_MODE_DESIRE_NONE, 0.9)
+                return RemapValClamped(nBotHP, 0, 0.4, BOT_MODE_DESIRE_NONE, 0.9)
             else
                 towerTime, towerCreepMode = 0, false
             end
@@ -192,7 +193,7 @@ function GetDesireHelper()
                     towerCreepMode = true
                 end
                 bot:SetTarget(towerCreep)
-                return RemapValClamped(Fu.GetHP(bot), 0, 0.4, BOT_MODE_DESIRE_NONE, 0.9)
+                return RemapValClamped(nBotHP, 0, 0.4, BOT_MODE_DESIRE_NONE, 0.9)
             end
         end
     end
@@ -349,6 +350,7 @@ end
 -- (guarded by emergency retreat)
 -- ==============================
 function X.SupportFindTarget()
+	local nBotHP = Fu.GetHP(bot)
     if X.CanNotUseAttack(bot) or DotaTime() < 0 then return nil, 0 end
 
     local IsModeSuitHit = X.IsModeSuitToHitCreep(bot)
@@ -369,7 +371,7 @@ function X.SupportFindTarget()
         end
         if nTarget:IsCourier()
         and GetUnitToUnitDistance(bot, nTarget) <= nAttackRange + 300
-        and Fu.GetHP(bot) > 0.3 and not Fu.IsRetreating(bot) then
+        and nBotHP > 0.3 and not Fu.IsRetreating(bot) then
             return nTarget, BOT_MODE_DESIRE_ABSOLUTE * 1.5
         end
         if nTarget:IsHero() and (bot:GetCurrentMovementSpeed() < 300 or botLV >= 25) then
@@ -389,7 +391,7 @@ function X.SupportFindTarget()
 	if not Fu.IsInLaningPhase() and not Fu.IsPushing(bot) then
 		local enemyCourier = X.GetEnemyCourier(bot, nAttackRange + botLV * 2 + 20)  -- or +30 in carry version
 		if enemyCourier ~= nil and not enemyCourier:IsAttackImmune() and not enemyCourier:IsInvulnerable()
-		and Fu.GetHP(bot) > 0.3 and not Fu.IsRetreating(bot) then
+		and nBotHP > 0.3 and not Fu.IsRetreating(bot) then
 			return enemyCourier, BOT_MODE_DESIRE_ABSOLUTE * 1.2
 		end
 	end
@@ -400,7 +402,7 @@ function X.SupportFindTarget()
     end
 
     local attackDamage = botBAD - 1
-    if IsModeSuitHit and not X.HasHumanAlly(bot) and (Fu.GetHP(bot) > 0.5 or not bot:WasRecentlyDamagedByAnyHero(2.0)) then
+    if IsModeSuitHit and not X.HasHumanAlly(bot) and (nBotHP > 0.5 or not bot:WasRecentlyDamagedByAnyHero(2.0)) then
         local nBonusRange = botLV > 20 and 200 or (botLV > 12 and 300 or 400)
         nTarget = X.GetNearbyLastHitCreep(false, true, attackDamage, nAttackRange + nBonusRange, bot)
         if nTarget ~= nil then return nTarget, BOT_MODE_DESIRE_ABSOLUTE end
@@ -427,7 +429,7 @@ function X.SupportFindTarget()
     local nNearbyEnemyHeroes = Fu.GetNearbyHeroes(bot, 750, true, BOT_MODE_NONE)
     if IsModeSuitHit and bot:GetLevel() <= 8
     and bot:GetNetWorth() < 13998
-    and (Fu.GetHP(bot) > 0.38 or not bot:WasRecentlyDamagedByAnyHero(3.0))
+    and (nBotHP > 0.38 or not bot:WasRecentlyDamagedByAnyHero(3.0))
     and (nNearbyEnemyHeroes[1] == nil or nNearbyEnemyHeroes[1]:GetLevel() < 10)
     and bot:DistanceFromFountain() > 3800
     and Fu.GetDistanceFromEnemyFountain(bot) > 5000 then
@@ -450,6 +452,7 @@ function X.SupportFindTarget()
 end
 
 function X.CarryFindTarget()
+	local nBotHP = Fu.GetHP(bot)
     if X.CanNotUseAttack(bot) or DotaTime() < 0 then return nil, 0 end
 
     local IsModeSuitHit = X.IsModeSuitToHitCreep(bot)
@@ -472,7 +475,7 @@ function X.CarryFindTarget()
         end
         if nTarget:IsCourier()
         and GetUnitToUnitDistance(bot, nTarget) <= nAttackRange + 300
-        and Fu.GetHP(bot) > 0.3 and not Fu.IsRetreating(bot) then
+        and nBotHP > 0.3 and not Fu.IsRetreating(bot) then
             return nTarget, BOT_MODE_DESIRE_ABSOLUTE * 1.5
         end
         if nTarget:IsHero() and (bot:GetCurrentMovementSpeed() < 300 or botLV >= 25) then
@@ -500,7 +503,7 @@ function X.CarryFindTarget()
 	if not Fu.IsInLaningPhase() and not Fu.IsPushing(bot) then
 		local enemyCourier = X.GetEnemyCourier(bot, nAttackRange + botLV * 2 + 20)  -- or +30 in carry version
 		if enemyCourier ~= nil and not enemyCourier:IsAttackImmune() and not enemyCourier:IsInvulnerable()
-		and Fu.GetHP(bot) > 0.3 and not Fu.IsRetreating(bot) then
+		and nBotHP > 0.3 and not Fu.IsRetreating(bot) then
 			return enemyCourier, BOT_MODE_DESIRE_ABSOLUTE * 1.2
 		end
 	end
@@ -737,7 +740,7 @@ function X.CarryFindTarget()
 		and not Fu.IsRoshan(nEnemysCreeps[1])
 		and (nEnemysCreeps[1]:GetTeam() == TEAM_NEUTRAL or attackDamage > 110)
 		and ( not nEnemysCreeps[1]:IsAncientCreep() or attackDamage > 150 )
-		and ( not Fu.IsKeyWordUnit("warlock", nEnemysCreeps[1]) or Fu.GetHP(bot) > 0.58 )		
+		and ( not Fu.IsKeyWordUnit("warlock", nEnemysCreeps[1]) or nBotHP > 0.58 )		
 		and ( nTeamFightLocation == nil or GetUnitToLocationDistance(bot,nTeamFightLocation) >= 3000 )
 		and ( nDefendDesire <= 0.8 )
 		and botMode ~= BOT_MODE_FARM
