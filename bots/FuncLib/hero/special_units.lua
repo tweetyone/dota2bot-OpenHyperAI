@@ -8,6 +8,10 @@ local Fu = require(GetScriptDirectory()..'/FuncLib/func_utils')
 local targetUnit = nil
 
 function X.GetDesire(bot__)
+	local nBotHP = Fu.GetHP(bot)
+	local bRetreating = Fu.IsRetreating(bot)
+	local bRealInvis = Fu.IsRealInvisible(bot)
+	local bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
     bot = bot__
 
     if Fu.CanNotUseAction(bot) or bot:IsDisarmed() then
@@ -15,7 +19,7 @@ function X.GetDesire(bot__)
     end
 
     local botHealth = bot:GetHealth()
-    local botHP = Fu.GetHP(bot)
+    local botHP = nBotHP
     local botLocation = bot:GetLocation()
 	local botAttackRange = bot:GetAttackRange()
 
@@ -57,7 +61,7 @@ function X.GetDesire(bot__)
                 -- Expanded Armature
                 -- seems? facet have a frame hit when inside
                 if string.find(botName, 'rattletrap') and withinAttackRange then
-                    if Fu.IsGoingOnSomeone(bot) then
+                    if bGoingOnSomeone then
                         if Fu.IsValidHero(botTarget)
                         and Fu.CanCastOnNonMagicImmune(botTarget)
                         and Fu.IsInRange(bot, botTarget, 800)
@@ -71,7 +75,7 @@ function X.GetDesire(bot__)
                         end
                     end
 
-                    if Fu.IsRetreating(bot) and Fu.IsRealInvisible(bot) then
+                    if bRetreating and bRealInvis then
                         for _, enemyHero in pairs(tEnemyHeroes) do
                             if Fu.IsValidHero(enemyHero) and Fu.IsInRange(bot, enemyHero, 800) and not Fu.IsInRange(bot, botTarget, 400) and Fu.IsChasingTarget(enemyHero, bot) then
                                 local tResult = PointToLineDistance(botLocation, botTarget:GetLocation(), unitLocation)
@@ -93,8 +97,8 @@ function X.GetDesire(bot__)
                         if cogsCount1 == 8 and cogsCount2 >= 4 and withinAttackRange
                         then
                             if #nInRangeEnemy == 0
-                            or Fu.IsGoingOnSomeone(bot)
-                            or (Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and #nInRangeEnemy >= 1)
+                            or bGoingOnSomeone
+                            or (bRetreating and not bRealInvis and #nInRangeEnemy >= 1)
                             or #tAllyHeroes < #tEnemyHeroes
                             then
                                 return 0.95
@@ -130,9 +134,9 @@ function X.GetDesire(bot__)
                 or string.find(unitName, 'ignis_fatuus')
                 then
                     if Fu.IsInRange(bot, unit, botAttackRange) then return 1 end
-                    if Fu.IsInRange(bot, unit, botAttackRange + 200) then return RemapValClamped(Fu.GetHP(bot), 0.1, 0.9, 0, 0.96) end
-                    if #tEnemyHeroes_all == 0 then return RemapValClamped(Fu.GetHP(bot), 0.2, 0.9, 0, 0.9) end
-                    if #tAllyHeroes >= #tEnemyHeroes then return RemapValClamped(Fu.GetHP(bot), 0.2, 0.9, 0, 0.7) end
+                    if Fu.IsInRange(bot, unit, botAttackRange + 200) then return RemapValClamped(nBotHP, 0.1, 0.9, 0, 0.96) end
+                    if #tEnemyHeroes_all == 0 then return RemapValClamped(nBotHP, 0.2, 0.9, 0, 0.9) end
+                    if #tAllyHeroes >= #tEnemyHeroes then return RemapValClamped(nBotHP, 0.2, 0.9, 0, 0.7) end
                 end
 
                 if string.find(unitName, 'siege') then
@@ -145,18 +149,18 @@ function X.GetDesire(bot__)
                 or string.find(unitName, 'invoker_forged_spirit')
                 or string.find(unitName, 'venomancer_plague_ward')
                 or string.find(unitName, 'clinkz_skeleton_archer') then
-                    if Fu.GetHP(bot) > 0.7 and Fu.IsInRange(bot, unit, botAttackRange) then
-                        if #tEnemyHeroes == 0 then return RemapValClamped(Fu.GetHP(bot), 0.3, 0.9, 0, 0.75) end
+                    if nBotHP > 0.7 and Fu.IsInRange(bot, unit, botAttackRange) then
+                        if #tEnemyHeroes == 0 then return RemapValClamped(nBotHP, 0.3, 0.9, 0, 0.75) end
                         if #tAllyHeroes >= #tEnemyHeroes then return 0.4 end
                     end
-                    if Fu.GetHP(bot) < 0.7 and Fu.IsStuck( bot ) then return RemapValClamped(Fu.GetHP(bot), 0.2, 0.8, 0.7, 0.3) end
+                    if nBotHP < 0.7 and Fu.IsStuck( bot ) then return RemapValClamped(nBotHP, 0.2, 0.8, 0.7, 0.3) end
 
                     local tSerpents = X.GetUnitTypeAttackingBot(botLocation, 1600, unitName)
                     local unitsAttackDamage = X.GetTotalAttackDamage(tSerpents, 8.0)
                     botAttackDamage = X.GetUnitAttackDamageWithinTime(bot, 5.0)
 
                     if not Fu.IsInTeamFight(bot, 900)
-                    and not (Fu.IsRetreating(bot) and Fu.IsRealInvisible(bot))
+                    and not (bRetreating and bRealInvis)
                     then
                         if unitsAttackDamage < botHealth
                         or Fu.IsInRange(bot, unit, botAttackRange) and not Fu.IsInRange(bot, unit, unit:GetAttackRange()) then
@@ -168,7 +172,7 @@ function X.GetDesire(bot__)
                 if string.find(unitName, 'pugna_nether_ward')
                 then
                     if Fu.IsInRange(bot, unit, botAttackRange + 150) then
-                        if (Fu.IsGoingOnSomeone(bot)
+                        if (bGoingOnSomeone
                         and Fu.IsValidHero(botTarget)
                         and Fu.IsInRange(bot, botTarget, botAttackRange - 130)
                         and Fu.GetHP(botTarget) < 0.5)
@@ -192,7 +196,7 @@ function X.GetDesire(bot__)
                     if #tEnemyHeroes == 0 then
                         return 0.9
                     end
-                    if (Fu.IsGoingOnSomeone(bot)
+                    if (bGoingOnSomeone
                         and Fu.IsValidHero(botTarget)
                         and Fu.IsInRange(bot, botTarget, botAttackRange - 130)
                         and Fu.GetHP(botTarget) < 0.5)
@@ -215,7 +219,7 @@ function X.GetDesire(bot__)
                 then
                     if not Fu.IsInTeamFight(bot, 900)
                     and withinAttackRange
-                    and not (Fu.IsRetreating(bot) and Fu.IsRealInvisible(bot))
+                    and not (bRetreating and bRealInvis)
                     then
                         if not Fu.IsRunning(unit)
                         or not Fu.IsInRange(bot, unit, 250)
@@ -230,7 +234,7 @@ function X.GetDesire(bot__)
                     if #tAllyHeroes >= #tEnemyHeroes or #tEnemyHeroes_all == 0
                     then
                         if withinAttackRange then return 0.7 end
-                        return RemapValClamped(Fu.GetHP(bot), 0.3, 0.9, 0, 0.65)
+                        return RemapValClamped(nBotHP, 0.3, 0.9, 0, 0.65)
                     end
                 end
 
@@ -265,7 +269,7 @@ function X.GetDesire(bot__)
                     botAttackDamage = X.GetUnitAttackDamageWithinTime(bot, 5.0)
 
                     if not Fu.IsInTeamFight(bot, 1200)
-                    and not (Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot))
+                    and not (bRetreating and not bRealInvis)
                     and withinAttackRange
                     and botAttackDamage > unitHP and unitAttackDamage < botHealth
                     then
@@ -309,28 +313,28 @@ function X.GetDesire(bot__)
                 then
                     if (#tAllyHeroes >= #tEnemyHeroes or Fu.WeAreStronger(bot, 1600))
                     and not bot:HasModifier('modifier_phoenix_fire_spirit_burn')
-                    and not Fu.IsRetreating(bot)
+                    and not bRetreating
                     then
                         local tCloseAllyHeroes = Fu.GetAlliesNearLoc(unit:GetLocation(), 900)
                         if Fu.IsInRange(bot, unit, botAttackRange + 200) and #tCloseAllyHeroes >= 2 then return 1.2 end
                         if Fu.IsInRange(bot, unit, botAttackRange + 300) and #tCloseAllyHeroes >= 2 then return 1.1 end
-                        if Fu.IsInRange(bot, unit, botAttackRange + 400) then return RemapValClamped(Fu.GetHP(bot), 0.2, 0.9, 0.4, 0.97) end
-                        return RemapValClamped(Fu.GetHP(bot), 0.2, 0.9, 0, 0.9)
+                        if Fu.IsInRange(bot, unit, botAttackRange + 400) then return RemapValClamped(nBotHP, 0.2, 0.9, 0.4, 0.97) end
+                        return RemapValClamped(nBotHP, 0.2, 0.9, 0, 0.9)
                     end
                 end
 
                 if string.find(unitName, 'tombstone')
                 then
-                    if #tAllyHeroes_all >= #tEnemyHeroes_all and not Fu.IsRetreating(bot)
+                    if #tAllyHeroes_all >= #tEnemyHeroes_all and not bRetreating
                     then
-                        if Fu.IsInRange(bot, unit, botAttackRange + 200) then return RemapValClamped(Fu.GetHP(bot), 0.25, 0.9, 0.4, 0.96) end
+                        if Fu.IsInRange(bot, unit, botAttackRange + 200) then return RemapValClamped(nBotHP, 0.25, 0.9, 0.4, 0.96) end
                         return 0.56
                     end
                 end
 
                 if string.find(unitName, 'undying_zombie')
                 then
-                    if #tAllyHeroes_all >= #tEnemyHeroes_all and not Fu.IsRetreating(bot)
+                    if #tAllyHeroes_all >= #tEnemyHeroes_all and not bRetreating
                     then
                         if withinAttackRange then return 0.6 end
                         return 0.25

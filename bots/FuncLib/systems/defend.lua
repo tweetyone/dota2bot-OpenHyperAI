@@ -881,6 +881,7 @@ function ConsiderPingedDefend(bot, lane, desire, building, tier, nEffAllies, nEn
     end
 end
 function ____exports.GetDefendDesireHelper(bot, lane)
+	local nBotHP = Fu.GetHP(bot)
     if bot.laneToDefend == nil then
         bot.laneToDefend = lane
     end
@@ -1098,7 +1099,7 @@ function ____exports.GetDefendDesireHelper(bot, lane)
     maxDesire = math.min(maxDesire, 1)
     local baseFloor = shouldDef and BotActionDesire.Low or BotActionDesire.VeryLow
     nDefendDesire = RemapValClamped(
-        Fu.GetHP(bot),
+        nBotHP,
         0.75,
         0.2,
         RemapValClamped(
@@ -1123,7 +1124,7 @@ function ____exports.GetDefendDesireHelper(bot, lane)
         end
     end
     local botTarget = Fu.GetProperTarget(bot)
-    if Fu.IsValidHero(botTarget) and Fu.GetHP(botTarget) < 0.6 and Fu.GetHP(bot) > Fu.GetHP(botTarget) and GetUnitToUnitDistance(bot, botTarget) < 1500 then
+    if Fu.IsValidHero(botTarget) and Fu.GetHP(botTarget) < 0.6 and nBotHP > Fu.GetHP(botTarget) and GetUnitToUnitDistance(bot, botTarget) < 1500 then
         nDefendDesire = nDefendDesire * 0.4
     end
     do

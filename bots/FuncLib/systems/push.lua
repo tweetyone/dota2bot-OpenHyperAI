@@ -125,6 +125,7 @@ function updateUnitStateCache()
     return unitStateCache
 end
 function ____exports.GetPushDesireHelper(bot, lane)
+	local nBotHP = Fu.GetHP(bot)
     if bot.laneToPush == nil then
         bot.laneToPush = lane
     end
@@ -168,7 +169,7 @@ function ____exports.GetPushDesireHelper(bot, lane)
             nMaxDesire = math.min(nMaxDesire, 0.08)
         end
     end
-    if Fu.GetHP(bot) < 0.5 then
+    if nBotHP < 0.5 then
         nMaxDesire = math.min(nMaxDesire, 0.25)
     end
     if gameState.aliveEnemyCount >= 5 and gameState.aliveAllyCount <= gameState.aliveEnemyCount then
@@ -271,11 +272,11 @@ function ____exports.GetPushDesireHelper(bot, lane)
             return BOT_MODE_DESIRE_EXTRA_LOW
         end
     end
-    if hEnemyAncient and GetUnitToUnitDistance(bot, hEnemyAncient) < nSearchRange * 0.5 and Fu.CanBeAttacked(hEnemyAncient) and not bot:WasRecentlyDamagedByAnyHero(1) and Fu.GetHP(bot) > 0.5 and not ____exports.HasBackdoorProtect(hEnemyAncient) then
+    if hEnemyAncient and GetUnitToUnitDistance(bot, hEnemyAncient) < nSearchRange * 0.5 and Fu.CanBeAttacked(hEnemyAncient) and not bot:WasRecentlyDamagedByAnyHero(1) and nBotHP > 0.5 and not ____exports.HasBackdoorProtect(hEnemyAncient) then
         bot:SetTarget(hEnemyAncient)
         bot:Action_AttackUnit(hEnemyAncient, true)
         return RemapValClamped(
-            Fu.GetHP(bot),
+            nBotHP,
             0,
             0.5,
             BotModeDesire.None,
@@ -321,7 +322,7 @@ function ____exports.GetPushDesireHelper(bot, lane)
                 nPushDesire = nPushDesire + groupBonus
             end
             return RemapValClamped(
-                nPushDesire * Fu.GetHP(bot),
+                nPushDesire * nBotHP,
                 0,
                 1,
                 0,

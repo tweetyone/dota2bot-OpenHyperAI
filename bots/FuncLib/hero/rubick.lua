@@ -1,6 +1,5 @@
 local X = {}
 local bot = GetBot()
-local bDebugMode = ( 1 == 10 )
 local Abaddon = require(GetScriptDirectory()..'/FuncLib/hero/rubick_hero/abaddon')
 local AbyssalUnderlord = require(GetScriptDirectory()..'/FuncLib/hero/rubick_hero/abyssal_underlord')
 local Alchemist = require(GetScriptDirectory()..'/FuncLib/hero/rubick_hero/alchemist')
@@ -73,10 +72,9 @@ function X.ConsiderStolenSpell(ability)
 
     -- print("Rubick considering default usage of the spell...")
     abilityProps = X.LoadAbilityProperties(ability)
-    local castRDesire, castTarget, sMotive = X.ConsiderSpellBehavior(ability, abilityProps)
+    local castRDesire, castTarget = X.ConsiderSpellBehavior(ability, abilityProps)
     if ( castRDesire > 0 )
     then
-        Fu.SetReportMotive( bDebugMode, sMotive )
         Fu.SetQueuePtToINT( bot, true )
         if type(castTarget) == "table" then
             bot:ActionQueue_UseAbilityOnEntity(ability, castTarget)

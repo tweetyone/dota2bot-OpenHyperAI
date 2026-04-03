@@ -65,6 +65,8 @@ function X.Think(ownerBot, hMinionUnit)
 end
 
 function X.ConsiderUnitTarget(hMinionUnit, ability)
+	local bAttacking = Fu.IsAttacking(hMinionUnit)
+	local nUnitHP = Fu.GetHP(hMinionUnit)
 	local nCastRange = ability:GetCastRange()
 
     -- break linken
