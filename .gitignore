@@ -66,3 +66,14 @@ dist
 
 # user's personal customized settings
 game/Customize
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor swap files
+*.swp
+*.swo
+*~
