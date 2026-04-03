@@ -1,18 +1,18 @@
-import * as jmz from "bots/FunLib/jmz_func";
+import * as Fu from "bots/FuncLib/func_utils";
 import { BotSetup, BotRole, ItemBuilds, SkillBuilds, TalentBuilds, TalentTreeBuild } from "bots/ts_libs/bots";
 import { BotActionDesire, BotMode, Location, Talent, Unit, UnitType } from "bots/ts_libs/dota";
-import { hero_is_healing } from "bots/FunLib/aba_buff";
-import { GetTeamFountainTpPoint, HasAnyEffect, IsValidHero } from "bots/FunLib/utils";
+import { hero_is_healing } from "bots/FuncLib/data/buff";
+import { GetTeamFountainTpPoint, HasAnyEffect, IsValidHero } from "bots/FuncLib/systems/utils";
 
 const bot = GetBot();
 // @ts-ignore
-const minion = dofile("bots/FunLib/aba_minion");
+const minion = dofile("bots/FuncLib/hero/minion");
 
-const role: BotRole = jmz.Item.GetRoleItemsBuyList(bot);
+const role: BotRole = Fu.Item.GetRoleItemsBuyList(bot);
 
 // Construct for normal ability skills.
 const defaultAbilityBuild = [1, 3, 1, 3, 1, 6, 1, 3, 3, 2, 6, 2, 2, 2, 6]; // Pos 5 Build
-const allAbilitiesList: string[] = jmz.Skill.GetAbilityList(bot);
+const allAbilitiesList: string[] = Fu.Skill.GetAbilityList(bot);
 const roleSkillBuildList: SkillBuilds = {
     pos_1: defaultAbilityBuild,
     pos_2: defaultAbilityBuild,
@@ -23,7 +23,7 @@ const roleSkillBuildList: SkillBuilds = {
 const skillBuildList = roleSkillBuildList[role];
 
 // Construct for talent skills.
-const allTalentsList: Talent[] = jmz.Skill.GetTalentList(bot);
+const allTalentsList: Talent[] = Fu.Skill.GetTalentList(bot);
 const defaultTalentTree: TalentTreeBuild = {
     t25: [10, 0],
     t20: [10, 0],
@@ -37,10 +37,10 @@ const roleTalentBuildList: TalentBuilds = {
     pos_4: defaultTalentTree,
     pos_5: defaultTalentTree,
 };
-const talentBuildList = jmz.Skill.GetTalentBuild(roleTalentBuildList[role]);
+const talentBuildList = Fu.Skill.GetTalentBuild(roleTalentBuildList[role]);
 
 // Aggregate all talents and abilities to a single consective skill build list.
-const fullSkillBuildList = jmz.Skill.GetSkillList(allAbilitiesList, skillBuildList, allTalentsList, talentBuildList);
+const fullSkillBuildList = Fu.Skill.GetSkillList(allAbilitiesList, skillBuildList, allTalentsList, talentBuildList);
 
 // Construct for items build.
 const defaultBuild = [
@@ -115,7 +115,7 @@ bot.stateTetheredHero = bot.stateTetheredHero;
 function ShouldUseOvercharge(ally: Unit) {
     const isAttacking = GameTime() - ally.GetLastAttackTime() < 0.33;
     const attackTarget = ally.GetAttackTarget();
-    return jmz.IsGoingOnSomeone(ally) || (attackTarget && attackTarget.GetTeam() === GetOpposingTeam() && isAttacking) || ally.GetNearbyCreeps(200, true).length > 2;
+    return Fu.IsGoingOnSomeone(ally) || (attackTarget && attackTarget.GetTeam() === GetOpposingTeam() && isAttacking) || ally.GetNearbyCreeps(200, true).length > 2;
 }
 
 function considerTether(): LuaMultiReturn<[number, Unit | null]> {
@@ -133,13 +133,13 @@ function considerTether(): LuaMultiReturn<[number, Unit | null]> {
         if (!canTargetAlly) {
             continue;
         }
-        if (jmz.IsRetreating(bot) || jmz.GetHP(bot) < 0.25) {
-            if (jmz.IsRetreating(ally)) {
+        if (Fu.IsRetreating(bot) || Fu.GetHP(bot) < 0.25) {
+            if (Fu.IsRetreating(ally)) {
                 return $multi(BotActionDesire.High, ally);
             }
             continue;
         }
-        if (jmz.GetHP(ally) < 0.75 || jmz.GetMP(bot) > 0.8 || HasHealingEffect(bot) || ShouldUseOvercharge(ally)) {
+        if (Fu.GetHP(ally) < 0.75 || Fu.GetMP(bot) > 0.8 || HasHealingEffect(bot) || ShouldUseOvercharge(ally)) {
             return $multi(BotActionDesire.High, ally);
         }
     }
@@ -168,23 +168,23 @@ function considerSpirits(): number {
 }
 
 function considerRelocate(): LuaMultiReturn<[number, Location | null]> {
-    if (bot.HasModifier("modifier_wisp_tether") && bot.stateTetheredHero !== null && (jmz.GetHP(bot.stateTetheredHero) <= 0.2 || jmz.GetHP(bot) <= 0.2)) {
+    if (bot.HasModifier("modifier_wisp_tether") && bot.stateTetheredHero !== null && (Fu.GetHP(bot.stateTetheredHero) <= 0.2 || Fu.GetHP(bot) <= 0.2)) {
         const allyNearbyEnemies = bot.stateTetheredHero.GetNearbyHeroes(1200, true, BotMode.None);
         if (
-            (allyNearbyEnemies.length >= 1 && jmz.GetHP(bot.stateTetheredHero) < jmz.GetHP(allyNearbyEnemies[0])) ||
-            (nearbyEnemies.length >= 1 && jmz.GetHP(bot) < jmz.GetHP(nearbyEnemies[0]))
+            (allyNearbyEnemies.length >= 1 && Fu.GetHP(bot.stateTetheredHero) < Fu.GetHP(allyNearbyEnemies[0])) ||
+            (nearbyEnemies.length >= 1 && Fu.GetHP(bot) < Fu.GetHP(nearbyEnemies[0]))
         ) {
             return $multi(BotActionDesire.High, GetTeamFountainTpPoint());
         }
     }
     if (!bot.HasModifier("modifier_wisp_tether")) {
-        if (nearbyEnemies.length >= 1 && jmz.GetHP(bot) < jmz.GetHP(nearbyEnemies[0])) {
+        if (nearbyEnemies.length >= 1 && Fu.GetHP(bot) < Fu.GetHP(nearbyEnemies[0])) {
             return $multi(BotActionDesire.High, GetTeamFountainTpPoint());
         }
     }
 
     for (const ally of GetUnitList(UnitType.AlliedHeroes)) {
-        if (IsValidHero(ally) && jmz.IsInTeamFight(ally, 1200) && GetUnitToUnitDistance(bot, ally) > 3000 && ally.WasRecentlyDamagedByAnyHero(2)) {
+        if (IsValidHero(ally) && Fu.IsInTeamFight(ally, 1200) && GetUnitToUnitDistance(bot, ally) > 3000 && ally.WasRecentlyDamagedByAnyHero(2)) {
             return $multi(BotActionDesire.High, ally.GetLocation());
         }
     }
@@ -193,7 +193,7 @@ function considerRelocate(): LuaMultiReturn<[number, Location | null]> {
 }
 
 function SkillsComplement() {
-    if (jmz.CanNotUseAbility(bot) || bot.IsInvisible()) {
+    if (Fu.CanNotUseAbility(bot) || bot.IsInvisible()) {
         return;
     }
 

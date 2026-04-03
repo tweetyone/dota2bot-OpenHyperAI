@@ -1,7 +1,7 @@
 -- Provides for common Utilities
 
 -- Version information
-local Version = require 'bots.FunLib.version'
+local Version = require 'bots.FuncLib.systems.version'
 -- Sound constants
 if Sounds == nil then
 	Sounds = dofile('bots.FretBots.Soundboard')
@@ -10,10 +10,10 @@ end
 local heroNames = require('bots.FretBots.HeroNames')
 -- sweet DeepPrint function I cadged from GitHub
 local inspect = require('bots.FretBots.Inspect')
-local Localization = require 'bots/FunLib/localization'
+local Localization = require 'bots/FuncLib/systems/localization'
 local Customize
-if GetScriptDirectory() == 'bots' then Customize = require('bots.FunLib.custom_loader')
-else Customize = require( GetScriptDirectory()..'/FunLib/custom_loader' ) end
+if GetScriptDirectory() == 'bots' then Customize = require('bots.FuncLib.systems.custom_loader')
+else Customize = require( GetScriptDirectory()..'/FuncLib/systems/custom_loader' ) end
 
 if Utilities == nil then
 	Utilities =
@@ -204,7 +204,7 @@ function Utilities:AnnounceNeutral(bot, item, msgType)
 	-- Localize item name based on language setting
 	local itemDisplayName = item.realName
 	if Customize.Localization == 'zh' then
-		local Chat = require('bots.FunLib.aba_chat')
+		local Chat = require('bots.FuncLib.systems.chat')
 		local cnName = Chat.GetItemCnName(item.name)
 		if cnName and not string.find(cnName, '未定义') then
 			itemDisplayName = cnName

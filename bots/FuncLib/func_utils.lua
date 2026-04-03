@@ -1,0 +1,29 @@
+local Fu = {}
+
+Fu.Site = require( GetScriptDirectory()..'/FuncLib/data/site' )
+Fu.Item = require( GetScriptDirectory()..'/FuncLib/systems/item' )
+Fu.Buff = require( GetScriptDirectory()..'/FuncLib/data/buff' )
+Fu.Role = require( GetScriptDirectory()..'/FuncLib/systems/role' )
+Fu.Skill = require( GetScriptDirectory()..'/FuncLib/systems/skill' )
+Fu.Chat = require( GetScriptDirectory()..'/FuncLib/systems/chat' )
+Fu.Utils = require( GetScriptDirectory()..'/FuncLib/systems/utils' )
+Fu.Customize = require(GetScriptDirectory()..'/FuncLib/systems/custom_loader')
+
+-- Load utility modules
+require( GetScriptDirectory()..'/FuncLib/general_utils/unit_check' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/hero_state' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/math_helper' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/combat' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/targeting' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/positioning' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/team_info' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/bot_mode' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/item_ability' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/map_info' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/lane_strategy' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/projectile' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/hero_info' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/special_units' )(Fu)
+require( GetScriptDirectory()..'/FuncLib/general_utils/init_debug' )(Fu)
+
+return Fu

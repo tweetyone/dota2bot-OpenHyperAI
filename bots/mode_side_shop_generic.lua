@@ -1,8 +1,8 @@
 local X = {}
 
 local bot = GetBot()
-local J = require( GetScriptDirectory()..'/FunLib/jmz_func' )
-local Localization = require( GetScriptDirectory()..'/FunLib/localization' )
+local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
+local Localization = require( GetScriptDirectory()..'/FuncLib/systems/localization' )
 local Customize = require( GetScriptDirectory()..'/Customize/general' )
 
 local Tormentor = nil
@@ -22,23 +22,23 @@ local bHumanInTeam = false
 
 function GetDesire()
 	-- local cacheKey = 'GetSideShopDesire'..tostring(bot:GetPlayerID())
-	-- local cachedVar = J.Utils.GetCachedVars(cacheKey, 0.6 * (1 + Customize.ThinkLess))
+	-- local cachedVar = Fu.Utils.GetCachedVars(cacheKey, 0.6 * (1 + Customize.ThinkLess))
 	-- if DotaTime() > 30 and cachedVar ~= nil then return cachedVar end
 	local res = GetDesireHelper()
-	-- J.Utils.SetCachedVars(cacheKey, res)
+	-- Fu.Utils.SetCachedVars(cacheKey, res)
 	return res
 end
 function GetDesireHelper()
 	-- 如果在打高地 就别撤退去干别的
-	if J.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
+	if Fu.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
 		return BOT_MODE_DESIRE_NONE
 	end
-	local enemiesAtAncient = J.Utils.CountEnemyHeroesNear(GetAncient(GetTeam()):GetLocation(), 3200)
+	local enemiesAtAncient = Fu.Utils.CountEnemyHeroesNear(GetAncient(GetTeam()):GetLocation(), 3200)
     if enemiesAtAncient >= 1 then
         return BOT_MODE_DESIRE_NONE
     end
     -- 核心已经很肥 不需要浪费时间去打tormentor
-    if J.GetCoresAverageNetworth() >= 23000 then
+    if Fu.GetCoresAverageNetworth() >= 23000 then
         return BOT_MODE_DESIRE_NONE
     end
 
@@ -46,23 +46,23 @@ function GetDesireHelper()
 		return BOT_MODE_DESIRE_VERYHIGH
     end
 
-    J.Utils['GameStates'] = J.Utils['GameStates'] or {}
-    J.Utils['GameStates']['defendPings'] = J.Utils['GameStates']['defendPings'] or { pingedTime = GameTime() }
-    if GameTime() - J.Utils['GameStates']['defendPings'].pingedTime <= 5.0 then
+    Fu.Utils['GameStates'] = Fu.Utils['GameStates'] or {}
+    Fu.Utils['GameStates']['defendPings'] = Fu.Utils['GameStates']['defendPings'] or { pingedTime = GameTime() }
+    if GameTime() - Fu.Utils['GameStates']['defendPings'].pingedTime <= 5.0 then
 		return BOT_MODE_DESIRE_NONE
 	end
 
     -- update vars for tormentor
-    TormentorLocation = J.GetTormentorLocation(GetTeam())
-    vWaitingLocation = J.GetTormentorWaitingLocation(GetTeam())
+    TormentorLocation = Fu.GetTormentorLocation(GetTeam())
+    vWaitingLocation = Fu.GetTormentorWaitingLocation(GetTeam())
 
-    local tAllyInTormentorLocation = J.GetAlliesNearLoc(TormentorLocation, 900)
-    local tAllyInTormentorWaitLocation = J.GetAlliesNearLoc(vWaitingLocation, 900)
-    local tInRangeEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), 1600)
+    local tAllyInTormentorLocation = Fu.GetAlliesNearLoc(TormentorLocation, 900)
+    local tAllyInTormentorWaitLocation = Fu.GetAlliesNearLoc(vWaitingLocation, 900)
+    local tInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1600)
     local nAliveAlly = 0
 
-    local nTormentorSpawnInterval = J.IsModeTurbo() and 5 or 10
-    local nTormentorSpawnTime = J.IsModeTurbo() and 10 or 20
+    local nTormentorSpawnInterval = Fu.IsModeTurbo() and 5 or 10
+    local nTormentorSpawnTime = Fu.IsModeTurbo() and 10 or 20
 
     local nHumanCountInLoc = 0
     local nAttackingTormentorCount = 0
@@ -70,8 +70,8 @@ function GetDesireHelper()
     local nAveCoreLevel = 0
     local nAveSuppLevel = 0
 
-    local nInRangeEnemy = J.GetLastSeenEnemiesNearLoc(bot:GetLocation(), 1200)
-    if #nInRangeEnemy > 0 and not J.IsInLaningPhase() then
+    local nInRangeEnemy = Fu.GetLastSeenEnemiesNearLoc(bot:GetLocation(), 1200)
+    if #nInRangeEnemy > 0 and not Fu.IsInLaningPhase() then
         return 0
     end
     local tAliveAllies = {}
@@ -85,13 +85,13 @@ function GetDesireHelper()
                 table.insert(tAliveAllies, member)
 
                 if not member:IsBot() then
-                    if bot.tormentor_state == false and J.IsValidHero(member) then
+                    if bot.tormentor_state == false and Fu.IsValidHero(member) then
                         if GetUnitToLocationDistance(member, TormentorLocation) <= 1300
                         and IsLocationVisible(TormentorLocation)
                         then
                             local nNeutralCreeps = member:GetNearbyNeutralCreeps(1300)
                             for j = #nNeutralCreeps, 1, -1 do
-                                if J.IsValid(nNeutralCreeps[j]) and string.find(nNeutralCreeps[j]:GetUnitName(), 'miniboss') then
+                                if Fu.IsValid(nNeutralCreeps[j]) and string.find(nNeutralCreeps[j]:GetUnitName(), 'miniboss') then
                                     bot.tormentor_state = true
                                 end
                             end
@@ -106,8 +106,8 @@ function GetDesireHelper()
                 end
 
                 -- attacking tormentor count
-                local memberTarget = J.GetProperTarget(member)
-                if J.IsTormentor(memberTarget) and J.IsAttacking(member) then
+                local memberTarget = Fu.GetProperTarget(member)
+                if Fu.IsTormentor(memberTarget) and Fu.IsAttacking(member) then
                     nAttackingTormentorCount = nAttackingTormentorCount + 1
                 end
 
@@ -116,7 +116,7 @@ function GetDesireHelper()
                     bot.tormentor_team_healthy = true
                 end
 
-                if J.IsCore(member) then
+                if Fu.IsCore(member) then
                     if GetUnitToLocationDistance(member, TormentorLocation) <= 900
                     or GetUnitToLocationDistance(member, vWaitingLocation) <= 900
                     then
@@ -132,7 +132,7 @@ function GetDesireHelper()
             end
 
             -- get average levels
-            if J.IsCore(member) then
+            if Fu.IsCore(member) then
                 if memberLevel < 13 then
                     nAveCoreLevel = 0
                 else
@@ -166,7 +166,7 @@ function GetDesireHelper()
     end
 
     if #tAllyInTormentorLocation <= 1 and nHumanCountInLoc == 0
-    and DotaTime() > (J.IsModeTurbo() and (25 * 60) or (40 * 60)) then
+    and DotaTime() > (Fu.IsModeTurbo() and (25 * 60) or (40 * 60)) then
         return BOT_MODE_DESIRE_NONE
     end
 
@@ -174,13 +174,13 @@ function GetDesireHelper()
     if #tAllyInTormentorLocation <= 1 and nHumanCountInLoc == 0
     and GetUnitToLocationDistance(bot, TormentorLocation) > 1600
     and (GetUnitToUnitDistance(bot, hEnemyAncient) < 4000
-        and J.GetEnemiesAroundAncient(bot, 4000) > 0
-        or (J.IsDoingRoshan(bot) and bot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH)
+        and Fu.GetEnemiesAroundAncient(bot, 4000) > 0
+        or (Fu.IsDoingRoshan(bot) and bot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH)
     ) then
         return BOT_MODE_DESIRE_NONE
     end
 
-    if #J.GetEnemiesNearLoc(GetAncient(GetTeam()):GetLocation(), 2000) >= 2
+    if #Fu.GetEnemiesNearLoc(GetAncient(GetTeam()):GetLocation(), 2000) >= 2
     or (GetTower(GetTeam(), TOWER_TOP_3) == nil or GetTower(GetTeam(), TOWER_MID_3) == nil or GetTower(GetTeam(), TOWER_BOT_3) == nil) -- stop when any these towers fall
     then
         return BOT_MODE_DESIRE_NONE
@@ -207,7 +207,7 @@ function GetDesireHelper()
                 local allyDist = 100000
                 for i = 1, #GetTeamPlayers( GetTeam() ) do
                     local member = GetTeamMember(i)
-                    if J.IsValidHero(member) and member:IsBot() and not J.IsCore(member) then
+                    if Fu.IsValidHero(member) and member:IsBot() and not Fu.IsCore(member) then
                         local memberDist = GetUnitToLocationDistance(member, TormentorLocation)
                         if memberDist < allyDist then
                             ally = member
@@ -217,8 +217,8 @@ function GetDesireHelper()
                 end
 
                 if ally ~= nil and bot == ally and bot.tormentor_state == false then
-                    local tInRangeAlly = J.GetAlliesNearLoc(bot:GetLocation(), 1200)
-                    if not J.IsRealInvisible(bot) and (#tInRangeEnemy > #tInRangeAlly) then
+                    local tInRangeAlly = Fu.GetAlliesNearLoc(bot:GetLocation(), 1200)
+                    if not Fu.IsRealInvisible(bot) and (#tInRangeEnemy > #tInRangeAlly) then
                         return BOT_MODE_DESIRE_LOW
                     else
                         return BOT_MODE_DESIRE_VERYHIGH
@@ -239,10 +239,10 @@ function GetDesireHelper()
     and (not bHumanInTeam or (bHumanInTeam and X.DidHumanPingedOrAtLocation()))
     and (  (bot.tormentor_kill_time == 0 and nAliveAlly >= 5)
         or (bot.tormentor_kill_time == 0 and nAliveAlly >= 4 and nCoreCountInLoc >= 3 and nSuppCountInLoc >= 1)
-        or (bot.tormentor_kill_time > 0 and nAliveAlly >= 3 and J.GetAliveAllyCoreCount() >= 2)
+        or (bot.tormentor_kill_time > 0 and nAliveAlly >= 3 and Fu.GetAliveAllyCoreCount() >= 2)
         or (nAttackingTormentorCount >= 2 and nCoreCountInLoc >= 2)
     ) then
-        if bot.tormentor_state == true and bot.tormentor_team_healthy == false and bot == J.GetFirstBotInTeam() then
+        if bot.tormentor_state == true and bot.tormentor_team_healthy == false and bot == Fu.GetFirstBotInTeam() then
             if X.IsTeamHealthy() then
                 bot.tormentor_team_healthy = true
             end
@@ -254,10 +254,10 @@ function GetDesireHelper()
 
         canDoTormentor = true
 
-        if J.GetHP(bot) < 0.3
+        if Fu.GetHP(bot) < 0.3
         and not bot:HasModifier('modifier_item_crimson_guard_extra')
-        and J.IsTormentor(Tormentor)
-        and J.GetHP(Tormentor) > 0.3 then
+        and Fu.IsTormentor(Tormentor)
+        and Fu.GetHP(Tormentor) > 0.3 then
             return BOT_MODE_DESIRE_NONE
         end
 
@@ -272,7 +272,7 @@ function GetDesireHelper()
             nDesire = 0.75
         end
 
-        local nInRangeEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), 1200)
+        local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
 
         return nDesire - (#nInRangeEnemy * (0.9 / 5))
     end
@@ -289,8 +289,8 @@ local fNextMovementTime = 0
 local fStillAlive = 0
 local bTormentorAlive = false
 function Think()
-    if J.CanNotUseAction(bot) then return end
-    if J.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "side_shop") then return end
+    if Fu.CanNotUseAction(bot) then return end
+    if Fu.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "side_shop") then return end
     if DotaTime() - bot.tormentor_kill_time <= nRestForSeconds then
         bot:Action_MoveToLocation(TormentorLocation + RandomVector(50))
         return
@@ -298,8 +298,8 @@ function Think()
 
     if bot.tormentor_state == true and GetUnitToLocationDistance(bot, TormentorLocation) > 800 and GetUnitToLocationDistance(bot, TormentorLocation) < 1800 then
         local nLaneCreeps = bot:GetNearbyLaneCreeps(Min(1600, bot:GetAttackRange() + 300), true)
-        if J.IsValid(nLaneCreeps[1])
-        and J.CanBeAttacked(nLaneCreeps[1])
+        if Fu.IsValid(nLaneCreeps[1])
+        and Fu.CanBeAttacked(nLaneCreeps[1])
         then
             bot:Action_AttackUnit(nLaneCreeps[1], true)
             return
@@ -311,7 +311,7 @@ function Think()
             if GetUnitToLocationDistance(bot, TormentorLocation) <= 350 then
                 local nNeutralCreeps = bot:GetNearbyNeutralCreeps(900)
                 for i = #nNeutralCreeps, 1, -1 do
-                    if J.IsValid(nNeutralCreeps[i]) and string.find(nNeutralCreeps[i]:GetUnitName(), 'miniboss') then
+                    if Fu.IsValid(nNeutralCreeps[i]) and string.find(nNeutralCreeps[i]:GetUnitName(), 'miniboss') then
                         fStillAlive = DotaTime()
                         bTormentorAlive = true
                     end
@@ -339,19 +339,19 @@ function Think()
         else
             local tCreeps = bot:GetNearbyNeutralCreeps(900)
             for _, c in pairs(tCreeps) do
-                if J.IsValid(c) and string.find(c:GetUnitName(), 'miniboss') then
+                if Fu.IsValid(c) and string.find(c:GetUnitName(), 'miniboss') then
                     Tormentor = c
                     if GetUnitToUnitDistance(bot, c) > bot:GetAttackRange() + 50 then
                         bot:Action_MoveDirectly(TormentorLocation)
                         return
                     else
-                        if X.IsEnoughAllies(TormentorLocation, 900) or J.GetHP(c) < 0.25 then
+                        if X.IsEnoughAllies(TormentorLocation, 900) or Fu.GetHP(c) < 0.25 then
                             bot:Action_AttackUnit(c, true)
                             return
                         end
                     end
 
-                    if J.GetFirstBotInTeam() == bot and canDoTormentor and (DotaTime() > tormentorMessageTime + 15) then
+                    if Fu.GetFirstBotInTeam() == bot and canDoTormentor and (DotaTime() > tormentorMessageTime + 15) then
                         tormentorMessageTime = DotaTime()
                         bot:ActionImmediate_Chat(Localization.Get('can_try_tormentor'), false)
                         bot:ActionImmediate_Ping(c:GetLocation().x, c:GetLocation().y, true)
@@ -371,7 +371,7 @@ function X.IsTormentorAlive()
                 if GetUnitToLocationDistance(member, TormentorLocation) <= 350 then
                     local nNeutralCreeps = member:GetNearbyNeutralCreeps(900)
                     for j = #nNeutralCreeps, 1, -1 do
-                        if J.IsValid(nNeutralCreeps[j]) and string.find(nNeutralCreeps[j]:GetUnitName(), 'miniboss') then
+                        if Fu.IsValid(nNeutralCreeps[j]) and string.find(nNeutralCreeps[j]:GetUnitName(), 'miniboss') then
                             return true
                         end
                     end
@@ -394,7 +394,7 @@ function X.IsEnoughAllies(vLocation, nRadius)
 		if member ~= nil and member:IsAlive() then
             if GetUnitToLocationDistance(member, vLocation) <= nRadius then
                 nAllyCount = nAllyCount + 1
-                if J.IsCore(member) then
+                if Fu.IsCore(member) then
                     nCoreCountInLoc2 = nCoreCountInLoc2 + 1
                 else
                     nSuppCountInLoc2 = nSuppCountInLoc2 + 1
@@ -410,13 +410,13 @@ function X.IsEnoughAllies(vLocation, nRadius)
 end
 
 function X.GetClosestBot()
-    local hUnitList = J.GetAlliesNearLoc(vWaitingLocation, 2800)
+    local hUnitList = Fu.GetAlliesNearLoc(vWaitingLocation, 2800)
     local hTarget = nil
     local hTargetDistance = math.huge
     for _, unit in pairs(hUnitList) do
-        if J.IsValidHero(unit) and GetUnitToLocationDistance(unit, TormentorLocation) < 2000 then
+        if Fu.IsValidHero(unit) and GetUnitToLocationDistance(unit, TormentorLocation) < 2000 then
             local unitDistance = GetUnitToLocationDistance(unit, TormentorLocation)
-            if hTargetDistance > unitDistance * (1 - J.GetHP(unit)) then
+            if hTargetDistance > unitDistance * (1 - Fu.GetHP(unit)) then
                 hTargetDistance = unitDistance
                 hTarget = unit
             end
@@ -433,12 +433,12 @@ function X.IsTeamHealthy()
 	local nHealthyAlly = 0
 	for i = 1, #GetTeamPlayers( GetTeam() ) do
 		local member = GetTeamMember(i)
-		if J.IsValid(member) and (J.GetHP(member) > 0.5 or not member:IsBot()) then
+		if Fu.IsValid(member) and (Fu.GetHP(member) > 0.5 or not member:IsBot()) then
 			nHealthyAlly = nHealthyAlly + 1
 		end
 	end
 
-	return nHealthyAlly >= J.GetNumOfAliveHeroes(false)
+	return nHealthyAlly >= Fu.GetNumOfAliveHeroes(false)
 end
 
 -- just some threshold
@@ -451,10 +451,10 @@ function X.IsGoodRighClickDamage()
 		local member = GetTeamMember(i)
 		if member ~= nil
         and member:CanBeSeen()
-        and J.IsCore(member)
-        and not J.DoesUnitHaveTemporaryBuff(member)
+        and Fu.IsCore(member)
+        and not Fu.DoesUnitHaveTemporaryBuff(member)
         then
-            local memberPosition = J.GetPosition(member)
+            local memberPosition = Fu.GetPosition(member)
             local attackDamage = member:GetAttackDamage() * member:GetAttackSpeed()
             if memberPosition == 1 then
                 attackDamage = attackDamage * 0.50
@@ -475,7 +475,7 @@ function X.IsGoodRighClickDamage()
     local totalAttackDamage = 0
     for _, damage in pairs(tTeamDamage) do totalAttackDamage = totalAttackDamage + damage end
 
-    if not J.IsDoingTormentor(bot) and J.GetFirstBotInTeam() == bot and bot.tormentor_state == true and DotaTime() - fThresholdChatTime < 30 and totalAttackDamage >= 400.0 then
+    if not Fu.IsDoingTormentor(bot) and Fu.GetFirstBotInTeam() == bot and bot.tormentor_state == true and DotaTime() - fThresholdChatTime < 30 and totalAttackDamage >= 400.0 then
         bot:ActionImmediate_Chat("Tormentor threshold met..", false)
         fThresholdChatTime = DotaTime()
     end
@@ -493,10 +493,10 @@ end
 
 local bHumanPinged = false
 function X.DidHumanPingedOrAtLocation()
-    local human, ping = J.GetHumanPing()
+    local human, ping = Fu.GetHumanPing()
     if bot.tormentor_state == true and human and ping and not bHumanPinged then
-        if J.GetDistance(ping.location, vWaitingLocation) <= 800
-        or J.GetDistance(ping.location, TormentorLocation) <= 800
+        if Fu.GetDistance(ping.location, vWaitingLocation) <= 800
+        or Fu.GetDistance(ping.location, TormentorLocation) <= 800
         then
             if GameTime() < ping.time + 15 then
                 bHumanPinged = true

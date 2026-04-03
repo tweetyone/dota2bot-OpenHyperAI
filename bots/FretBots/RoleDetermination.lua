@@ -3,20 +3,20 @@
 require 'bots.FretBots.Debug'
 -- Timers
 require 'bots.FretBots.Timers'
-local Localization = require 'bots/FunLib/localization'
+local Localization = require 'bots/FuncLib/systems/localization'
 
 -- Hero position weights from the main bot system (covers all 127 heroes).
 -- Try multiple require paths since FretBots runs in a different Lua context.
 local HeroPositions = {}
 local function tryLoadWeights()
 	-- Try bot-script-style path first
-	local ok, mod = pcall(require, GetScriptDirectory()..'/FunLib/aba_hero_pos_weights')
+	local ok, mod = pcall(require, GetScriptDirectory()..'/FuncLib/data/hero_pos_weights')
 	if ok and mod and mod.HeroPositions then
 		HeroPositions = mod.HeroPositions
 		return true
 	end
 	-- Try dot-separated path (server-side context)
-	ok, mod = pcall(require, 'bots.FunLib.aba_hero_pos_weights')
+	ok, mod = pcall(require, 'bots.FuncLib.data.hero_pos_weights')
 	if ok and mod and mod.HeroPositions then
 		HeroPositions = mod.HeroPositions
 		return true

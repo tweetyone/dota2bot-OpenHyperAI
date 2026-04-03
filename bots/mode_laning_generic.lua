@@ -1,8 +1,8 @@
-local Utils = require( GetScriptDirectory()..'/FunLib/utils')
-local J = require( GetScriptDirectory()..'/FunLib/jmz_func')
+local Utils = require( GetScriptDirectory()..'/FuncLib/systems/utils')
+local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils')
 
-local Version      = require(GetScriptDirectory()..'/FunLib/version')
-local Localization = require(GetScriptDirectory()..'/FunLib/localization')
+local Version      = require(GetScriptDirectory()..'/FuncLib/systems/version')
+local Localization = require(GetScriptDirectory()..'/FuncLib/systems/localization')
 
 
 local bot = GetBot()
@@ -17,8 +17,8 @@ local nInRangeEnemy = nil
 local botAssignedLane = nil
 local botAttackRange = bot:GetAttackRange()
 local attackDamage = bot:GetAttackDamage()
-local nH, enemyBots = J.Utils.NumHumanBotPlayersInTeam(GetOpposingTeam())
-local teamHumans, teamBots = J.Utils.NumHumanBotPlayersInTeam(GetTeam())
+local nH, enemyBots = Fu.Utils.NumHumanBotPlayersInTeam(GetOpposingTeam())
+local teamHumans, teamBots = Fu.Utils.NumHumanBotPlayersInTeam(GetTeam())
 
 -- Announcer state
 local hasPickedOneAnnouncer      = false
@@ -27,7 +27,7 @@ local numberAnnouncePrinted      = 1
 local announcementGapSeconds     = 6
 local isChangePosMessageDone     = false
 
-if Utils.BuggyHeroesDueToValveTooLazy[botName] then local_mode_laning_generic = dofile( GetScriptDirectory().."/FunLib/override_generic/mode_laning_generic" ) end
+if Utils.BuggyHeroesDueToValveTooLazy[botName] then local_mode_laning_generic = dofile( GetScriptDirectory().."/FuncLib/systems/override_generic/mode_laning_generic" ) end
 
 function GetDesire()
 	PickOneAnnouncer()
@@ -69,37 +69,37 @@ function GetDesire()
 	-- 	skipLaningState.count = 0
 	-- end
 
-	if J.GetEnemiesAroundAncient(bot, 3200) > 0 then
+	if Fu.GetEnemiesAroundAncient(bot, 3200) > 0 then
 		return BOT_MODE_DESIRE_NONE
 	end
 
-	-- if J.GetDistanceFromAncient( bot, true ) < 6900 then
+	-- if Fu.GetDistanceFromAncient( bot, true ) < 6900 then
 	-- 	return BOT_MODE_DESIRE_NONE
 	-- end
 
 	if bot:WasRecentlyDamagedByAnyHero(5)
-	and #J.Utils.GetLastSeenEnemyIdsNearLocation(bot:GetLocation(), 800) > 0 then
+	and #Fu.Utils.GetLastSeenEnemyIdsNearLocation(bot:GetLocation(), 800) > 0 then
 		local nLaneFrontLocation = GetLaneFrontLocation(GetTeam(), bot:GetAssignedLane(), 0)
 		local nDistFromLane = GetUnitToLocationDistance(bot, nLaneFrontLocation)
-		if not J.WeAreStronger(bot, 1200) or (nDistFromLane > 700 and J.GetHP(bot) < 0.7) then
+		if not Fu.WeAreStronger(bot, 1200) or (nDistFromLane > 700 and Fu.GetHP(bot) < 0.7) then
 			return BOT_MODE_DESIRE_NONE
 		end
 	end
 
 	-- 如果在打高地 就别撤退去干别的
-	if J.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
+	if Fu.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
 		return BOT_MODE_DESIRE_NONE
 	end
-	-- if J.ShouldGoFarmDuringLaning(bot) then
+	-- if Fu.ShouldGoFarmDuringLaning(bot) then
 	-- 	return 0.2
 	-- end
 
-	if local_mode_laning_generic or (J.GetPosition(bot) == 1 and J.IsPosxHuman(5)) then
+	if local_mode_laning_generic or (Fu.GetPosition(bot) == 1 and Fu.IsPosxHuman(5)) then
 		-- last hit
-		if J.IsInLaningPhase() then
+		if Fu.IsInLaningPhase() then
 			local hitCreep, _ = GetBestLastHitCreep(nEnemyCreeps)
-			if J.IsValid(hitCreep) then
-				if J.GetPosition(bot) <= 2 or not J.IsThereNonSelfCoreNearby(700) -- this is for e.g lone druid bear as pos1-2 with core LD nearby to do last hit.
+			if Fu.IsValid(hitCreep) then
+				if Fu.GetPosition(bot) <= 2 or not Fu.IsThereNonSelfCoreNearby(700) -- this is for e.g lone druid bear as pos1-2 with core LD nearby to do last hit.
 				then
 					return 0.9
 				end
@@ -115,16 +115,16 @@ function GetDesire()
 	if currentTime <= 10 then return 0.268 end
 	if currentTime <= 9 * 60 and botLV <= 7 then return 0.446 end
 	if currentTime <= 12 * 60 and botLV <= 11 then return 0.369 end
-	if botLV <= 14 and J.GetCoresAverageNetworth() < 7000 then return 0.2 end
+	if botLV <= 14 and Fu.GetCoresAverageNetworth() < 7000 then return 0.2 end
 
-	J.Utils.GameStates.passiveLaningTime = true
+	Fu.Utils.GameStates.passiveLaningTime = true
 	return 0.01
 end
 
 function GetFurthestEnemyAttackRange(enemyList)
 	local attackRange = 0
 	for _, enemy in pairs(enemyList) do
-		if J.IsValidHero(enemy) and not J.IsSuspiciousIllusion(enemy) then
+		if Fu.IsValidHero(enemy) and not Fu.IsSuspiciousIllusion(enemy) then
 			local enemyAttackRange = enemy:GetAttackRange()
 			if enemyAttackRange > attackRange then
 				attackRange = enemyAttackRange
@@ -140,12 +140,12 @@ function GetBestLastHitCreep(hCreepList)
 
 	local moveToCreep = nil
 	for _, creep in pairs(hCreepList) do
-		if J.IsValid(creep) and J.CanBeAttacked(creep) then
-			local nDelay = J.GetAttackProDelayTime(bot, creep)
-			if J.WillKillTarget(creep, attackDamage, DAMAGE_TYPE_PHYSICAL, nDelay) then
+		if Fu.IsValid(creep) and Fu.CanBeAttacked(creep) then
+			local nDelay = Fu.GetAttackProDelayTime(bot, creep)
+			if Fu.WillKillTarget(creep, attackDamage, DAMAGE_TYPE_PHYSICAL, nDelay) then
 				return creep, false
 			end
-			if J.WillKillTarget(creep, attackDamage + dmgDelta, DAMAGE_TYPE_PHYSICAL, nDelay) then
+			if Fu.WillKillTarget(creep, attackDamage + dmgDelta, DAMAGE_TYPE_PHYSICAL, nDelay) then
 				moveToCreep = creep
 			end
 		end
@@ -160,9 +160,9 @@ end
 function GetBestDenyCreep(hCreepList)
 	for _, creep in pairs(hCreepList)
 	do
-		if J.IsValid(creep)
-		and J.GetHP(creep) < 0.49
-		and J.CanBeAttacked(creep)
+		if Fu.IsValid(creep)
+		and Fu.GetHP(creep) < 0.49
+		and Fu.CanBeAttacked(creep)
 		and creep:GetHealth() <= attackDamage
 		then
 			return creep
@@ -172,11 +172,11 @@ function GetBestDenyCreep(hCreepList)
 	return nil
 end
 
-if local_mode_laning_generic or (J.GetPosition(bot) == 1 and J.IsPosxHuman(5)) then
+if local_mode_laning_generic or (Fu.GetPosition(bot) == 1 and Fu.IsPosxHuman(5)) then
 	function Think()
 		local hitCreep, moveToCreep = GetBestLastHitCreep(nEnemyCreeps)
-		if J.IsValid(hitCreep) then
-			if J.GetPosition(bot) <= 2 or not J.IsThereNonSelfCoreNearby(700)
+		if Fu.IsValid(hitCreep) then
+			if Fu.GetPosition(bot) <= 2 or not Fu.IsThereNonSelfCoreNearby(700)
 			then
 				if GetUnitToUnitDistance(bot, hitCreep) > botAttackRange
 				or (moveToCreep and GetUnitToUnitDistance(bot, hitCreep) > botAttackRange * 0.8) then
@@ -191,7 +191,7 @@ if local_mode_laning_generic or (J.GetPosition(bot) == 1 and J.IsPosxHuman(5)) t
 		end
 
 		local denyCreep = GetBestDenyCreep(nAllyCreeps)
-		if J.IsValid(denyCreep) then
+		if Fu.IsValid(denyCreep) then
 			bot:SetTarget(denyCreep)
 			bot:Action_AttackUnit(denyCreep, true)
 			return
@@ -232,7 +232,7 @@ function AnnounceMessages()
 	if DotaTime() > 60 then return end
 
 	local welcomeMessages = Localization.Get('welcome_msgs')
-	local inTurbo         = J.IsModeTurbo()
+	local inTurbo         = Fu.IsModeTurbo()
 
 	-- Staggered lines during negative DotaTime pre-game
 	if ((inTurbo and DotaTime() > -50 + GetTeam() * 2) or (not inTurbo and DotaTime() > -75 + GetTeam() * 2))
@@ -255,10 +255,10 @@ function AnnounceMessages()
 	-- Announce role during pre-game
 	if GetGameMode() ~= GAMEMODE_1V1MID
 	   and GetGameState() == GAME_STATE_PRE_GAME
-	   and (bot.announcedRole == nil or bot.announcedRole ~= J.GetPosition(bot))
+	   and (bot.announcedRole == nil or bot.announcedRole ~= Fu.GetPosition(bot))
 	then
-		bot.announcedRole = J.GetPosition(bot)
-		bot:ActionImmediate_Chat(Localization.Get('say_play_pos') .. J.GetPosition(bot), false)
+		bot.announcedRole = Fu.GetPosition(bot)
+		bot:ActionImmediate_Chat(Localization.Get('say_play_pos') .. Fu.GetPosition(bot), false)
 	end
 
 	-- Close position selection after horn if humans and bots mixed

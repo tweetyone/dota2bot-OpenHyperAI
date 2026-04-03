@@ -1,5 +1,5 @@
 import { UnitType, Unit, AttributeType } from "bots/ts_libs/dota";
-import { IsValidHero } from "bots/FunLib/utils";
+import { IsValidHero } from "bots/FuncLib/systems/utils";
 
 const enemyHeroData: { [playerId: number]: EnemyHeroData } = {};
 

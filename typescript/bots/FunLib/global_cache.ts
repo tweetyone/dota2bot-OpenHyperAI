@@ -60,8 +60,8 @@ let globalGameStateCache: GlobalGameState | null = null;
 let globalUnitStateCache: GlobalUnitState | null = null;
 let globalLocationStateCache: GlobalLocationState | null = null;
 
-// Import jmz here to avoid circular dependencies
-import * as jmz from "bots/FunLib/jmz_func";
+// Import Fu here to avoid circular dependencies
+import * as Fu from "bots/FuncLib/func_utils";
 
 /**
  * Get or update global game state cache
@@ -80,7 +80,7 @@ export function getGlobalGameState(): GlobalGameState {
     // Adjust time for turbo mode
     const adjustedTime = gameMode === 23 ? currentTime * 2 : currentTime;
 
-    const [teamNetworth, enemyNetworth] = jmz.GetInventoryNetworth();
+    const [teamNetworth, enemyNetworth] = Fu.GetInventoryNetworth();
     globalGameStateCache = {
         lastUpdate: now,
         currentTime: adjustedTime,
@@ -89,18 +89,18 @@ export function getGlobalGameState(): GlobalGameState {
         enemyTeam,
         ourAncient: GetAncient(team),
         enemyAncient: GetAncient(enemyTeam),
-        aliveAllyCount: jmz.GetNumOfAliveHeroes(false),
-        aliveEnemyCount: jmz.GetNumOfAliveHeroes(true),
-        aliveAllyCoreCount: jmz.GetAliveCoreCount(false),
-        aliveEnemyCoreCount: jmz.GetAliveCoreCount(true),
+        aliveAllyCount: Fu.GetNumOfAliveHeroes(false),
+        aliveEnemyCount: Fu.GetNumOfAliveHeroes(true),
+        aliveAllyCoreCount: Fu.GetAliveCoreCount(false),
+        aliveEnemyCoreCount: Fu.GetAliveCoreCount(true),
         teamNetworth: teamNetworth,
         enemyNetworth: enemyNetworth,
-        averageLevel: jmz.GetAverageLevel(false),
-        hasAegis: jmz.DoesTeamHaveAegis(),
-        isEarlyGame: jmz.IsEarlyGame(),
-        isMidGame: jmz.IsMidGame(),
-        isLateGame: jmz.IsLateGame(),
-        isLaningPhase: jmz.IsInLaningPhase(),
+        averageLevel: Fu.GetAverageLevel(false),
+        hasAegis: Fu.DoesTeamHaveAegis(),
+        isEarlyGame: Fu.IsEarlyGame(),
+        isMidGame: Fu.IsMidGame(),
+        isLateGame: Fu.IsLateGame(),
+        isLaningPhase: Fu.IsInLaningPhase(),
     };
 
     return globalGameStateCache;
@@ -115,14 +115,14 @@ export function getGlobalUnitState(): GlobalUnitState {
         return globalUnitStateCache;
     }
 
-    // Import jmz here to avoid circular dependencies
-    const jmz = require("bots/FunLib/jmz_func");
+    // Import Fu here to avoid circular dependencies
+    const Fu = require("bots/FuncLib/func_utils");
 
     globalUnitStateCache = {
         lastUpdate: now,
         enemyBuildings: GetUnitList(UnitType.EnemyBuildings),
         alliedHeroes: GetUnitList(UnitType.AlliedHeroes),
-        enemyHeroes: GetUnitList(UnitType.Enemies).filter(u => jmz.IsValidHero(u)),
+        enemyHeroes: GetUnitList(UnitType.Enemies).filter(u => Fu.IsValidHero(u)),
         alliedCreeps: GetUnitList(UnitType.AlliedCreeps),
         enemyCreeps: GetUnitList(UnitType.Enemies).filter(u => u.IsCreep() || u.IsAncientCreep()),
     };
@@ -139,8 +139,8 @@ export function getGlobalLocationState(): GlobalLocationState {
         return globalLocationStateCache;
     }
 
-    // Import jmz here to avoid circular dependencies
-    const jmz = require("bots/FunLib/jmz_func");
+    // Import Fu here to avoid circular dependencies
+    const Fu = require("bots/FuncLib/func_utils");
 
     const team = GetTeam();
 
@@ -151,11 +151,11 @@ export function getGlobalLocationState(): GlobalLocationState {
             [Lane.Mid]: GetLaneFrontLocation(team, Lane.Mid, 0),
             [Lane.Bot]: GetLaneFrontLocation(team, Lane.Bot, 0),
         },
-        teamFountain: jmz.GetTeamFountain(),
-        enemyFountain: jmz.GetTeamFountain(), // Note: GetEnemyFountain doesn't exist
-        roshanLocation: jmz.GetCurrentRoshanLocation(),
-        tormentorLocation: jmz.GetTormentorLocation(team),
-        tormentorWaitingLocation: jmz.GetTormentorWaitingLocation(team),
+        teamFountain: Fu.GetTeamFountain(),
+        enemyFountain: Fu.GetTeamFountain(), // Note: GetEnemyFountain doesn't exist
+        roshanLocation: Fu.GetCurrentRoshanLocation(),
+        tormentorLocation: Fu.GetTormentorLocation(team),
+        tormentorWaitingLocation: Fu.GetTormentorWaitingLocation(team),
     };
 
     return globalLocationStateCache;
@@ -213,8 +213,8 @@ export function clearAllCaches(): void {
 export function getCachedAlliesNearLoc(location: Vector, radius: number): Unit[] {
     const key = `allies_${Math.floor(location.x)}_${Math.floor(location.y)}_${radius}_${Math.floor(DotaTime() * 2)}`;
     return getCachedData(key, 0.5, () => {
-        const jmz = require("bots/FunLib/jmz_func");
-        return jmz.GetAlliesNearLoc(location, radius);
+        const Fu = require("bots/FuncLib/func_utils");
+        return Fu.GetAlliesNearLoc(location, radius);
     });
 }
 
@@ -224,8 +224,8 @@ export function getCachedAlliesNearLoc(location: Vector, radius: number): Unit[]
 export function getCachedEnemiesNearLoc(location: Vector, radius: number): Unit[] {
     const key = `enemies_${Math.floor(location.x)}_${Math.floor(location.y)}_${radius}_${Math.floor(DotaTime() * 2)}`;
     return getCachedData(key, 0.5, () => {
-        const jmz = require("bots/FunLib/jmz_func");
-        return jmz.GetEnemiesNearLoc(location, radius);
+        const Fu = require("bots/FuncLib/func_utils");
+        return Fu.GetEnemiesNearLoc(location, radius);
     });
 }
 

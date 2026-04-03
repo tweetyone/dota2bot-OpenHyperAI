@@ -1,4 +1,4 @@
-local Defend = require( GetScriptDirectory()..'/FunLib/aba_defend')
+local Defend = require( GetScriptDirectory()..'/FuncLib/systems/defend')
 
 local bot = GetBot()
 local botName = bot:GetUnitName()

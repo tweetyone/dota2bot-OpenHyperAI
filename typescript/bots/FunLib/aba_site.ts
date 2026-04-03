@@ -1,5 +1,5 @@
 import { BotModeDesire, Unit, UnitType, Vector, BotMode, Team, Tower, Rune, Shop } from "bots/ts_libs/dota";
-import { HasItem, GetLocationToLocationDistance, GetOffsetLocationTowardsTargetLocation, IsModeTurbo, IsValidCreep } from "bots/FunLib/utils";
+import { HasItem, GetLocationToLocationDistance, GetOffsetLocationTowardsTargetLocation, IsModeTurbo, IsValidCreep } from "bots/FuncLib/systems/utils";
 
 const visionRad = 2000; //--假眼查重范围
 const trueSightRad = 1000; //--真眼查重范围

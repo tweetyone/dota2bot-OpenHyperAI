@@ -12,7 +12,7 @@
 --    5) Weak penalty curve during scoring is configurable in Customize.*
 --==============================================================================
 
-require( GetScriptDirectory()..'/FunLib/aba_global_overrides' )
+require( GetScriptDirectory()..'/FuncLib/systems/global_overrides' )
 
 local X = {}
 
@@ -30,15 +30,15 @@ local bLineupReserve = false
 -- matchup data: matchups[cand][enemy] = enemy_advantage_vs_cand (Dotabuff-style)
 local matchups = require( GetScriptDirectory()..'/FretBots/matchups_data' )
 
-local Role = require( GetScriptDirectory()..'/FunLib/aba_role' )
-local Utils = require( GetScriptDirectory()..'/FunLib/utils' )
-local Dota2Teams = require( GetScriptDirectory()..'/FunLib/aba_team_names' )
-local CaptainMode = require( GetScriptDirectory()..'/FunLib/captain_mode' )
-local Localization = require( GetScriptDirectory()..'/FunLib/localization' )
-local HeroPositionMap = require( GetScriptDirectory()..'/FunLib/aba_hero_pos_weights' )
+local Role = require( GetScriptDirectory()..'/FuncLib/systems/role' )
+local Utils = require( GetScriptDirectory()..'/FuncLib/systems/utils' )
+local Dota2Teams = require( GetScriptDirectory()..'/FuncLib/data/team_names' )
+local CaptainMode = require( GetScriptDirectory()..'/FuncLib/hero/captain_mode' )
+local Localization = require( GetScriptDirectory()..'/FuncLib/systems/localization' )
+local HeroPositionMap = require( GetScriptDirectory()..'/FuncLib/data/hero_pos_weights' )
 local heroUnitNames = require( GetScriptDirectory()..'/FretBots/HeroNames')
-local Customize = require(GetScriptDirectory()..'/FunLib/custom_loader')
-local okMatchupLib, HeroMatchups = pcall(require, GetScriptDirectory()..'/FunLib/aba_matchups')
+local Customize = require(GetScriptDirectory()..'/FuncLib/systems/custom_loader')
+local okMatchupLib, HeroMatchups = pcall(require, GetScriptDirectory()..'/FuncLib/data/matchups')
 if not okMatchupLib then HeroMatchups = nil end
 HeroPositionMap = HeroPositionMap.GetHeroPositions()
 

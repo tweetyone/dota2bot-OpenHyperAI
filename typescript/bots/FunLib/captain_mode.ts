@@ -1,5 +1,5 @@
 import { GameState, HeroPickState, Lane, Team } from "bots/ts_libs/dota";
-import { CanBeOfflaner, CanBeMidlaner, CanBeSupport, CanBeSafeLaneCarry } from "bots/FunLib/aba_role";
+import { CanBeOfflaner, CanBeMidlaner, CanBeSupport, CanBeSafeLaneCarry } from "bots/FuncLib/systems/role";
 import { HeroName } from "bots/ts_libs/dota/heroes";
 
 const UnImplementedHeroes: string[] = [];

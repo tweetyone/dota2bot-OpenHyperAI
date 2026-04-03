@@ -1,5 +1,5 @@
 -- Version information
-local Version = require 'bots.FunLib.version'
+local Version = require 'bots.FuncLib.systems.version'
 if GetScriptDirectory == nil then GetScriptDirectory = function() return "bots" end end
 -- Print version to console
 print('Starting Buff. Version: ' .. Version.number)

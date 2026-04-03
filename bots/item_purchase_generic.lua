@@ -3,10 +3,10 @@ local botName = bot:GetUnitName()
 if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
 
 if GAMEMODE_ARDM == nil then GAMEMODE_ARDM = 20 end
-local Item = require( GetScriptDirectory()..'/FunLib/aba_item' )
-local Role = require( GetScriptDirectory()..'/FunLib/aba_role' )
-local J = require( GetScriptDirectory()..'/FunLib/jmz_func')
-local Utils = require( GetScriptDirectory()..'/FunLib/utils')
+local Item = require( GetScriptDirectory()..'/FuncLib/systems/item' )
+local Role = require( GetScriptDirectory()..'/FuncLib/systems/role' )
+local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils')
+local Utils = require( GetScriptDirectory()..'/FuncLib/systems/utils')
 
 local X = {}
 
@@ -17,7 +17,7 @@ then
 	return
 end
 
-local BotBuild = require( GetScriptDirectory() .. "/BotLib/" .. string.gsub( botName, "npc_dota_", "" ) )
+local BotBuild = require( GetScriptDirectory() .. "/BotsLib/" .. string.gsub( botName, "npc_dota_", "" ) )
 
 if BotBuild == nil then return end
 
@@ -440,7 +440,7 @@ function ItemPurchaseThink()
 	currentTime = DotaTime()
 
 	-- ARDM: detect stale hero instance and rebuild purchase list on hero swap
-	local isStale, freshBot, freshName = J.IsStaleARDMHero(bot, botName)
+	local isStale, freshBot, freshName = Fu.IsStaleARDMHero(bot, botName)
 	if isStale then return end
 	if freshName ~= botName then
 		if not freshBot:IsAlive() then return end
@@ -450,7 +450,7 @@ function ItemPurchaseThink()
 
 		-- Load new hero's item build
 		local heroFile = string.gsub(botName, "npc_dota_", "")
-		local ok, newBuild = pcall(dofile, GetScriptDirectory().."/BotLib/"..heroFile)
+		local ok, newBuild = pcall(dofile, GetScriptDirectory().."/BotsLib/"..heroFile)
 		if ok and newBuild ~= nil and newBuild['sBuyList'] ~= nil then
 			BotBuild = newBuild
 			sPurchaseList = newBuild['sBuyList']
@@ -567,12 +567,12 @@ function ItemPurchaseThink()
 	-- Detect position swap from !pos command: rebuild purchase list for new role
 	if bot.needPurchaseRebuild then
 		bot.needPurchaseRebuild = nil
-		local nNewPos = J.GetPosition(bot)
+		local nNewPos = Fu.GetPosition(bot)
 		print("[PosSwap] Item purchase rebuild for "..botName.." -> pos"..nNewPos)
 
 		-- Reload BotBuild to get new role's item list
 		local heroFile = string.gsub(botName, "npc_dota_", "")
-		local ok, newBuild = pcall(dofile, GetScriptDirectory().."/BotLib/"..heroFile)
+		local ok, newBuild = pcall(dofile, GetScriptDirectory().."/BotsLib/"..heroFile)
 		if ok and newBuild ~= nil and newBuild['sBuyList'] ~= nil then
 			BotBuild = newBuild
 			sPurchaseList = newBuild['sBuyList']
@@ -639,7 +639,7 @@ function ItemPurchaseThink()
 
 	if bot:IsIllusion()
 	or bot:HasModifier( 'modifier_arc_warden_tempest_double' )
-	or (currentTime > 0 and J.IsMeepoClone(bot))
+	or (currentTime > 0 and Fu.IsMeepoClone(bot))
 	or bot:HasModifier('modifier_dazzle_nothl_projection_soul_debuff')
 	then
 		bot.purchaseListInReverseOrder = {}
@@ -650,7 +650,7 @@ function ItemPurchaseThink()
 	botGold = bot:GetGold()
 	botWorth = bot:GetNetWorth()
 	botMode = bot:GetActiveMode()
-	botHP	= J.GetHP(bot)
+	botHP	= Fu.GetHP(bot)
 	botCourierValue = bot:GetCourierValue()
 	botStashValue = bot:GetStashValue()
 	botDistanceFromFountain = bot:DistanceFromFountain()
@@ -672,7 +672,7 @@ function ItemPurchaseThink()
 	if bot == Utils.GetLoneDruid(bot).hero then
 		local bear = Utils.GetLoneDruid(bot).bear
 		if bear ~= nil then
-			local hEnemyList = J.GetNearbyHeroes(bot, 1000, true, BOT_MODE_NONE)
+			local hEnemyList = Fu.GetNearbyHeroes(bot, 1000, true, BOT_MODE_NONE)
 			if #hEnemyList >= 1 then return end
 			
 			if not bear:IsAlive() or bear:IsChanneling() or bear:IsUsingAbility() or Utils.CountBackpackEmptySpace(bear) <= 0 then return end
@@ -733,7 +733,7 @@ function ItemPurchaseThink()
 	end
 
 	--买小净化
-	if J.GetMP(bot) < 0.3
+	if Fu.GetMP(bot) < 0.3
 	and botDistanceFromFountain > 2000
 	and botCourierValue == 0
 	and GetItemStockCount('item_clarity') > 1
@@ -745,7 +745,7 @@ function ItemPurchaseThink()
 	end
 
 	--辅助定位英雄购买辅助物品
-	if J.GetPosition(bot) >= 4
+	if Fu.GetPosition(bot) >= 4
 	then
 		if currentTime > 30 and not bot.hasBuyClarity
 			and botGold >= GetItemCost( "item_clarity" )
@@ -761,14 +761,14 @@ function ItemPurchaseThink()
 			and Item.GetEmptyInventoryAmount( bot ) >= 2
 			and Item.GetItemCharges( bot, "item_dust" ) <= 0
 			and botCourierValue == 0
-			and not J.HasItem(bot, 'item_ward_sentry')
+			and not Fu.HasItem(bot, 'item_ward_sentry')
 		then
 			bot:ActionImmediate_PurchaseItem( "item_dust" )
 		end
 	end
 
 	-- Init Healing Items in Lane; works for now
-	if J.IsInLaningPhase()
+	if Fu.IsInLaningPhase()
 	then
 		if botLevel < 6
 		and bot:IsAlive()
@@ -785,13 +785,13 @@ function ItemPurchaseThink()
 		and not bot:HasModifier('modifier_warlock_shadow_word')
 		and not IsThereHealingInStash(bot)
 		and Item.GetEmptyInventoryAmount(bot) >= 1
-		and J.GetHP(bot) < 0.5
+		and Fu.GetHP(bot) < 0.5
 		then
-			local partner = J.GetLanePartner(bot)
+			local partner = Fu.GetLanePartner(bot)
 
 			if bot:GetHealthRegen() <= 10
 			then
-				if J.IsCore(bot)
+				if Fu.IsCore(bot)
 				then
 					if partner ~= nil
 					then
@@ -807,8 +807,8 @@ function ItemPurchaseThink()
 						if Item.GetItemCharges(bot, 'item_flask') <= 0
 						and botGold >= GetItemCost('item_flask')
 						and GetItemStockCount('item_flask') > 1
-						and (not J.HasItem(bot, 'item_bottle')
-							or (J.HasItem(bot, 'item_bottle') and Item.GetItemCharges(bot, 'item_bottle') <= 0))
+						and (not Fu.HasItem(bot, 'item_bottle')
+							or (Fu.HasItem(bot, 'item_bottle') and Item.GetItemCharges(bot, 'item_bottle') <= 0))
 						then
 							bot:ActionImmediate_PurchaseItem('item_flask')
 						end
@@ -822,7 +822,7 @@ function ItemPurchaseThink()
 					end
 				end
 			else
-				if J.IsCore(bot)
+				if Fu.IsCore(bot)
 				then
 					if partner ~= nil
 					then
@@ -839,8 +839,8 @@ function ItemPurchaseThink()
 						if Item.GetItemCharges(bot, 'item_flask') <= 0
 						and GetItemStockCount('item_flask') > 1
 						and botGold >= GetItemCost('item_flask')
-						and (not J.HasItem(bot, 'item_bottle')
-							or (J.HasItem(bot, 'item_bottle') and Item.GetItemCharges(bot, 'item_bottle') <= 0))
+						and (not Fu.HasItem(bot, 'item_bottle')
+							or (Fu.HasItem(bot, 'item_bottle') and Item.GetItemCharges(bot, 'item_bottle') <= 0))
 						then
 							bot:ActionImmediate_PurchaseItem('item_flask')
 						end
@@ -857,7 +857,7 @@ function ItemPurchaseThink()
 	end
 
 	-- Observer and Sentry Wards
-	if J.GetPosition(bot) == 4 and DotaTime() > 300 and botWorth < 25000
+	if Fu.GetPosition(bot) == 4 and DotaTime() > 300 and botWorth < 25000
 	then
 		local wardType = 'item_ward_sentry'
 
@@ -871,7 +871,7 @@ function ItemPurchaseThink()
 		end
 	end
 
-	if J.GetPosition(bot) == 5 and botWorth < 25000
+	if Fu.GetPosition(bot) == 5 and botWorth < 25000
 	then
 		local wardType = 'item_ward_observer'
 
@@ -886,7 +886,7 @@ function ItemPurchaseThink()
 	end
 
 	-- Smoke of Deceit
-	if J.GetPosition(bot) == 5 and botWorth < 10000
+	if Fu.GetPosition(bot) == 5 and botWorth < 10000
 	and Utils.CountBackpackEmptySpace(bot) >= 2
 	and GetItemStockCount('item_smoke_of_deceit') > 1
 	and botGold >= GetItemCost('item_smoke_of_deceit')
@@ -900,9 +900,9 @@ function ItemPurchaseThink()
 			local hasSmoke = false
 			for _, allyHero in pairs(GetUnitList(UNIT_LIST_ALLIED_HEROES))
 			do
-				if J.IsValidHero(allyHero)
-				and J.IsNotSelf(bot, allyHero)
-				and J.HasItem(allyHero, 'item_smoke_of_deceit')
+				if Fu.IsValidHero(allyHero)
+				and Fu.IsNotSelf(bot, allyHero)
+				and Fu.HasItem(allyHero, 'item_smoke_of_deceit')
 				then
 					hasSmoke = true
 				end
@@ -913,7 +913,7 @@ function ItemPurchaseThink()
 				bot:ActionImmediate_PurchaseItem('item_smoke_of_deceit')
 			end
 		else
-			if not J.IsInLaningPhase()
+			if not Fu.IsInLaningPhase()
 			then
 				bot:ActionImmediate_PurchaseItem('item_smoke_of_deceit')
 			end
@@ -921,8 +921,8 @@ function ItemPurchaseThink()
 	end
 
 	-- Blood Grenade
-	if J.IsInLaningPhase()
-	and (J.GetPosition(bot) == 4 or J.GetPosition(bot) == 5)
+	if Fu.IsInLaningPhase()
+	and (Fu.GetPosition(bot) == 4 or Fu.GetPosition(bot) == 5)
 	and GetItemStockCount('item_blood_grenade') > 0
 	and botLevel < 5
 	and botGold >= GetItemCost('item_blood_grenade')
@@ -986,7 +986,7 @@ function ItemPurchaseThink()
 	if botGold >= GetItemCost( "item_dust" )
 		and bot:IsAlive()
 		and botLevel > 6
-		and J.GetPosition(bot) >= 4
+		and Fu.GetPosition(bot) >= 4
 		and botGold < ( GetItemCost( "item_dust" )  + botWorth / 40 )
 		and botHP < 0.06
 		and bot:WasRecentlyDamagedByAnyHero( 3.1 )
@@ -1003,7 +1003,7 @@ function ItemPurchaseThink()
 	then
 		local raindrop = bot:FindItemSlot( "item_infused_raindrop" )
 		local raindropCharge = Item.GetItemCharges( bot, "item_infused_raindrop" )
-		local nEnemyHeroes = J.GetNearbyHeroes(bot, 1600, true, BOT_MODE_NONE )
+		local nEnemyHeroes = Fu.GetNearbyHeroes(bot, 1600, true, BOT_MODE_NONE )
 		if ( raindrop >= 0 and raindrop <= 5 )
 			and ( nEnemyHeroes[1] ~= nil
 				or botMode == BOT_MODE_ROSHAN
@@ -1018,7 +1018,7 @@ function ItemPurchaseThink()
 	-- Ward slot management for supports (pos 4/5):
 	-- Move wards to backpack when not actively warding to free up a main slot.
 	-- Move them back to main inventory when entering ward mode.
-	if J.GetPosition(bot) >= 4 and currentTime > (bot._lastWardSwapTime or 0) + 3 then
+	if Fu.GetPosition(bot) >= 4 and currentTime > (bot._lastWardSwapTime or 0) + 3 then
 		local bIsWarding = botMode == BOT_MODE_WARD
 		local tWardNames = { 'item_ward_observer', 'item_ward_sentry', 'item_ward_dispenser' }
 
@@ -1144,7 +1144,7 @@ function ItemPurchaseThink()
 
 	-- Cores drop normal/great lotuses after 30min to free up slots for real items.
 	-- Greater lotus (item_greater_famango) is kept by everyone — too valuable to drop.
-	if currentTime > 30 * 60 and J.IsCore(bot) then
+	if currentTime > 30 * 60 and Fu.IsCore(bot) then
 		local tDropLotus = { 'item_famango', 'item_great_famango' }
 		for _, lotusName in ipairs(tDropLotus) do
 			local slot = bot:FindItemSlot(lotusName)

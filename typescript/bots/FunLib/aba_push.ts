@@ -1,4 +1,4 @@
-import * as jmz from "bots/FunLib/jmz_func";
+import * as Fu from "bots/FuncLib/func_utils";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import Customize = require("bots/Customize/general");
 import { Barracks, BotMode, BotModeDesire, DamageType, Lane, Team, Tower, Unit, UnitType, Vector } from "bots/ts_libs/dota";
@@ -106,18 +106,18 @@ function updateGameStateCache(): CachedGameState {
         enemyTeam,
         ourAncient: GetAncient(team),
         enemyAncient: GetAncient(enemyTeam),
-        aliveAllyCount: jmz.GetNumOfAliveHeroes(false),
-        aliveEnemyCount: jmz.GetNumOfAliveHeroes(true),
-        aliveAllyCoreCount: jmz.GetAliveCoreCount(false),
-        aliveEnemyCoreCount: jmz.GetAliveCoreCount(true),
-        teamNetworth: jmz.GetInventoryNetworth()[0],
-        enemyNetworth: jmz.GetInventoryNetworth()[1],
-        averageLevel: jmz.GetAverageLevel(false),
-        hasAegis: jmz.DoesTeamHaveAegis(),
-        isEarlyGame: jmz.IsEarlyGame(),
-        isMidGame: jmz.IsMidGame(),
-        isLateGame: jmz.IsLateGame(),
-        isLaningPhase: jmz.IsInLaningPhase(),
+        aliveAllyCount: Fu.GetNumOfAliveHeroes(false),
+        aliveEnemyCount: Fu.GetNumOfAliveHeroes(true),
+        aliveAllyCoreCount: Fu.GetAliveCoreCount(false),
+        aliveEnemyCoreCount: Fu.GetAliveCoreCount(true),
+        teamNetworth: Fu.GetInventoryNetworth()[0],
+        enemyNetworth: Fu.GetInventoryNetworth()[1],
+        averageLevel: Fu.GetAverageLevel(false),
+        hasAegis: Fu.DoesTeamHaveAegis(),
+        isEarlyGame: Fu.IsEarlyGame(),
+        isMidGame: Fu.IsMidGame(),
+        isLateGame: Fu.IsLateGame(),
+        isLaningPhase: Fu.IsInLaningPhase(),
     };
 
     return gameStateCache;
@@ -138,11 +138,11 @@ function updateLocationStateCache(): CachedLocationState {
             [Lane.Mid]: GetLaneFrontLocation(team, Lane.Mid, 0),
             [Lane.Bot]: GetLaneFrontLocation(team, Lane.Bot, 0),
         },
-        teamFountain: jmz.GetTeamFountain(),
-        enemyFountain: jmz.GetTeamFountain(), // Note: GetEnemyFountain doesn't exist, using GetTeamFountain as fallback
-        roshanLocation: jmz.GetCurrentRoshanLocation(),
-        tormentorLocation: jmz.GetTormentorLocation(team),
-        tormentorWaitingLocation: jmz.GetTormentorWaitingLocation(team),
+        teamFountain: Fu.GetTeamFountain(),
+        enemyFountain: Fu.GetTeamFountain(), // Note: GetEnemyFountain doesn't exist, using GetTeamFountain as fallback
+        roshanLocation: Fu.GetCurrentRoshanLocation(),
+        tormentorLocation: Fu.GetTormentorLocation(team),
+        tormentorWaitingLocation: Fu.GetTormentorWaitingLocation(team),
     };
 
     return locationStateCache;
@@ -159,7 +159,7 @@ function updateUnitStateCache(): CachedUnitState {
         lastUpdate: now,
         enemyBuildings: GetUnitList(UnitType.EnemyBuildings),
         alliedHeroes: GetUnitList(UnitType.AlliedHeroes),
-        enemyHeroes: GetUnitList(UnitType.Enemies).filter(u => jmz.IsValidHero(u)),
+        enemyHeroes: GetUnitList(UnitType.Enemies).filter(u => Fu.IsValidHero(u)),
         alliedCreeps: GetUnitList(UnitType.AlliedCreeps),
         enemyCreeps: GetUnitList(UnitType.Enemies).filter(u => u.IsCreep() || u.IsAncientCreep()),
     };
@@ -186,8 +186,8 @@ function updateBotStateCache(bot: Unit, targetLoc?: Vector): CachedBotState {
         botId,
         attackRange,
         location,
-        hp: jmz.GetHP(bot),
-        mp: jmz.GetMP(bot),
+        hp: Fu.GetHP(bot),
+        mp: Fu.GetMP(bot),
         nearbyTowers: bot.GetNearbyTowers(1200, true),
         nearbyLaneCreeps: bot.GetNearbyLaneCreeps(1200, false),
         nearbyCreeps: bot.GetNearbyCreeps(1600, true),
@@ -239,7 +239,7 @@ export function GetPushDesire(bot: Unit, lane: Lane): BotModeDesire {
 
     // 1) very small cache by bot+lane for stability
     // const cacheKey = `PushDesire:${bot.GetPlayerID()}:${lane ?? -1}`;
-    // const cachedVar = jmz.Utils.GetCachedVars(cacheKey, 0.6);
+    // const cachedVar = Fu.Utils.GetCachedVars(cacheKey, 0.6);
     // if (cachedVar != null) {
     //     (bot as any).pushDesire = cachedVar;
     //     return cachedVar;
@@ -247,7 +247,7 @@ export function GetPushDesire(bot: Unit, lane: Lane): BotModeDesire {
 
     // 2) compute and publish
     const res = GetPushDesireHelper(bot, lane);
-    // jmz.Utils.SetCachedVars(cacheKey, res);
+    // Fu.Utils.SetCachedVars(cacheKey, res);
     (bot as any).pushDesire = res;
     return res;
 }
@@ -281,7 +281,7 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
     // --- Strong base-defense gate for push ---
     const team = gameState.team;
     const ourAncient = gameState.ourAncient;
-    const enemiesAtAncient = jmz.Utils.CountEnemyHeroesNear(ourAncient!.GetLocation(), BASE_ANC_RADIUS);
+    const enemiesAtAncient = Fu.Utils.CountEnemyHeroesNear(ourAncient!.GetLocation(), BASE_ANC_RADIUS);
     // If Ancient under direct pressure → strongly deprioritize pushes
     if (enemiesAtAncient >= 1) return BotModeDesire.ExtraLow;
 
@@ -303,7 +303,7 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
         }
     }
     // Reduce desire when low HP
-    if (jmz.GetHP(bot) < 0.5) {
+    if (Fu.GetHP(bot) < 0.5) {
         nMaxDesire = math.min(nMaxDesire, 0.25);
     }
     // Caution when all enemies alive and no advantage
@@ -329,18 +329,18 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
     const currentTime = gameState.currentTime;
 
     // Ignore push if someone just pinged "defend" recently
-    (jmz.Utils as any)["GameStates"] = (jmz.Utils as any)["GameStates"] || {};
-    (jmz.Utils as any)["GameStates"]["defendPings"] = (jmz.Utils as any)["GameStates"]["defendPings"] || { pingedTime: GameTime() };
-    if (GameTime() - (jmz.Utils as any)["GameStates"]["defendPings"].pingedTime <= 5.0) {
+    (Fu.Utils as any)["GameStates"] = (Fu.Utils as any)["GameStates"] || {};
+    (Fu.Utils as any)["GameStates"]["defendPings"] = (Fu.Utils as any)["GameStates"]["defendPings"] || { pingedTime: GameTime() };
+    if (GameTime() - (Fu.Utils as any)["GameStates"]["defendPings"].pingedTime <= 5.0) {
         return BotModeDesire.None;
     }
 
     // Early laning rules & neutral objectives that override pushing
     if (
-        (!bMyLane && jmz.IsCore(bot) && gameState.isLaningPhase) ||
-        (jmz.IsDoingRoshan(bot) && jmz.GetAlliesNearLoc(locationState.roshanLocation, 2800).length >= 3) ||
+        (!bMyLane && Fu.IsCore(bot) && gameState.isLaningPhase) ||
+        (Fu.IsDoingRoshan(bot) && Fu.GetAlliesNearLoc(locationState.roshanLocation, 2800).length >= 3) ||
         (isMidOrEarlyGame &&
-            (jmz.GetAlliesNearLoc(locationState.tormentorLocation, 1600).length >= 3 || jmz.GetAlliesNearLoc(locationState.tormentorWaitingLocation, 2500).length >= 3))
+            (Fu.GetAlliesNearLoc(locationState.tormentorLocation, 1600).length >= 3 || Fu.GetAlliesNearLoc(locationState.tormentorWaitingLocation, 2500).length >= 3))
     ) {
         return BOT_MODE_DESIRE_EXTRA_LOW as BotModeDesire;
     }
@@ -354,20 +354,20 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
     }
 
     // Human opponents → delay high-commit pushes before a certain time
-    const [nH] = jmz.Utils.NumHumanBotPlayersInTeam(GetOpposingTeam());
+    const [nH] = Fu.Utils.NumHumanBotPlayersInTeam(GetOpposingTeam());
     if (nH > 0 && currentTime <= StartToPushTime) {
         return BOT_MODE_DESIRE_EXTRA_LOW as BotModeDesire;
     }
 
     // If we are actively defending, cap the max desire slightly lower
-    if (jmz.IsDefending(bot) && nModeDesire >= 0.8) {
+    if (Fu.IsDefending(bot) && nModeDesire >= 0.8) {
         nMaxDesire = 0.75;
     }
 
     // Respect allied "attack here" human ping on a tower if it matches lane
-    const [human, humanPing] = jmz.GetHumanPing();
+    const [human, humanPing] = Fu.GetHumanPing();
     if (human !== null && humanPing !== null && !humanPing.normal_ping && DotaTime() > 0) {
-        const [isPinged, pingedLane] = jmz.IsPingCloseToValidTower(GetOpposingTeam(), humanPing, 700, 5.0);
+        const [isPinged, pingedLane] = Fu.IsPingCloseToValidTower(GetOpposingTeam(), humanPing, 700, 5.0);
         if (isPinged && lane === pingedLane && GameTime() < humanPing.time + pingTimeDelta) {
             return 0.9 as BotModeDesire;
         }
@@ -375,7 +375,7 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
 
     // If we're off doing Tormentor far from enemy ancient, lower desire
     if (hEnemyAncient && hEnemyAncient !== null) {
-        if (jmz.IsDoingTormentor(bot) && GetUnitToUnitDistance(bot, hEnemyAncient) > 4000) {
+        if (Fu.IsDoingTormentor(bot) && GetUnitToUnitDistance(bot, hEnemyAncient) > 4000) {
             return BOT_MODE_DESIRE_EXTRA_LOW as BotModeDesire;
         }
     }
@@ -389,21 +389,21 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
     const hAncient = gameState.ourAncient;
     // Base push desire calculation - missing function implementation
     let nPushDesire = 0.5; // Default base desire
-    //   const allyKills = jmz.GetNumOfTeamTotalKills(false) + 1;
-    //   const enemyKills = jmz.GetNumOfTeamTotalKills(true) + 1;
+    //   const allyKills = Fu.GetNumOfTeamTotalKills(false) + 1;
+    //   const enemyKills = Fu.GetNumOfTeamTotalKills(true) + 1;
     //   const teamKillsRatio = allyKills / enemyKills; // (not used later but retained)
 
     // If enemies are at our ancient and we have few allies nearby → cap desire
     const teamAncientLoc = hAncient!.GetLocation();
-    const nEffAlliesNearAncient = jmz.GetAlliesNearLoc(teamAncientLoc, 4500).length + jmz.Utils.GetAllyIdsInTpToLocation(teamAncientLoc, 4500).length;
-    const nEnemiesAroundAncient = jmz.GetEnemiesAroundLoc(teamAncientLoc, 4500);
+    const nEffAlliesNearAncient = Fu.GetAlliesNearLoc(teamAncientLoc, 4500).length + Fu.Utils.GetAllyIdsInTpToLocation(teamAncientLoc, 4500).length;
+    const nEnemiesAroundAncient = Fu.GetEnemiesAroundLoc(teamAncientLoc, 4500);
     if (nEnemiesAroundAncient > 0 && nEffAlliesNearAncient < 1) {
         nMaxDesire = 0.65;
     }
 
     // Enhanced local threat assessment - consider team advantages
     const networthAdvantage = gameState.teamNetworth - gameState.enemyNetworth;
-    const enemyAverageLevel = jmz.GetAverageLevel(true);
+    const enemyAverageLevel = Fu.GetAverageLevel(true);
     const levelAdvantage = gameState.averageLevel - enemyAverageLevel;
     const hasSignificantAdvantage = networthAdvantage > 15000 || levelAdvantage > 2;
 
@@ -427,7 +427,7 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
 
     // If already targeting a building that is backdoored, kill desire immediately
     const botTarget = bot.GetAttackTarget();
-    if (jmz.IsValidBuilding(botTarget) && !botTarget!.GetUnitName().includes("tower1") && !botTarget!.GetUnitName().includes("tower2")) {
+    if (Fu.IsValidBuilding(botTarget) && !botTarget!.GetUnitName().includes("tower1") && !botTarget!.GetUnitName().includes("tower2")) {
         if (HasBackdoorProtect(botTarget!)) {
             return BOT_MODE_DESIRE_EXTRA_LOW as BotModeDesire;
         }
@@ -437,14 +437,14 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
     if (
         hEnemyAncient &&
         GetUnitToUnitDistance(bot, hEnemyAncient) < nSearchRange * 0.5 &&
-        jmz.CanBeAttacked(hEnemyAncient) &&
+        Fu.CanBeAttacked(hEnemyAncient) &&
         !bot.WasRecentlyDamagedByAnyHero(1) &&
-        jmz.GetHP(bot) > 0.5 &&
+        Fu.GetHP(bot) > 0.5 &&
         !HasBackdoorProtect(hEnemyAncient)
     ) {
         bot.SetTarget(hEnemyAncient);
         bot.Action_AttackUnit(hEnemyAncient, true);
-        return RemapValClamped(jmz.GetHP(bot), 0, 0.5, BotModeDesire.None, 0.98) as BotModeDesire;
+        return RemapValClamped(Fu.GetHP(bot), 0, 0.5, BotModeDesire.None, 0.98) as BotModeDesire;
     }
 
     // Decide which lane to push; consider mid early, ally proximity, etc.
@@ -452,7 +452,7 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
     const isCurrentLanePushLane = pushLane === lane;
 
     // Enhanced group push logic - more aggressive when team has advantages
-    if ((!jmz.IsCore(bot) && isCurrentLanePushLane) || (jmz.IsCore(bot) && ((jmz.IsLateGame() && isCurrentLanePushLane) || isMidOrEarlyGame))) {
+    if ((!Fu.IsCore(bot) && isCurrentLanePushLane) || (Fu.IsCore(bot) && ((Fu.IsLateGame() && isCurrentLanePushLane) || isMidOrEarlyGame))) {
         // More flexible conditions for allowing pushes when team has advantages
 
         // Allow pushes more easily when we have significant advantages
@@ -490,7 +490,7 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
                 nPushDesire = nPushDesire + groupBonus;
             }
 
-            return RemapValClamped(nPushDesire * jmz.GetHP(bot), 0, 1, 0, nMaxDesire) as BotModeDesire;
+            return RemapValClamped(nPushDesire * Fu.GetHP(bot), 0, 1, 0, nMaxDesire) as BotModeDesire;
         }
     }
 
@@ -504,13 +504,13 @@ export function GetPushDesireHelper(bot: Unit, lane: Lane): BotModeDesire {
 
 /** Ally presence should make a lane cheaper (more attractive) */
 function presence_adjust(score: number, loc: Vector): number {
-    const allies = jmz.GetAlliesNearLoc(loc, 1600).length;
+    const allies = Fu.GetAlliesNearLoc(loc, 1600).length;
     // pull toward lanes with allies; 0.25 is mild and safe
     return score / (1 + 0.25 * allies);
 }
 
 function UnitIsValidObjective(u: Unit | null): u is Unit {
-    return !!u && jmz.IsValidBuilding(u) && jmz.CanBeAttacked(u);
+    return !!u && Fu.IsValidBuilding(u) && Fu.CanBeAttacked(u);
 }
 
 function UnitIsBarracks(u: Unit): boolean {
@@ -533,7 +533,7 @@ function UnitIsT4(u: Unit): boolean {
 }
 // function UnitIsFiller(u: Unit): boolean {
 //     // Fillers/other inner-base buildings, exclude barracks/towers
-//     return jmz.IsValidBuilding(u) && !UnitIsBarracks(u) && !UnitIsT3(u) && !UnitIsT4(u);
+//     return Fu.IsValidBuilding(u) && !UnitIsBarracks(u) && !UnitIsT3(u) && !UnitIsT4(u);
 // }
 
 /**
@@ -636,16 +636,16 @@ export function WhichLaneToPush(_bot: Unit, _lane: Lane): Lane {
     // Prefer lanes closer to humans/cores; de-prioritize supports' solo pushes
     const teamMembers = GetUnitList(UnitType.AlliedHeroes);
     for (const member of teamMembers) {
-        if (jmz.IsValidHero(member)) {
+        if (Fu.IsValidHero(member)) {
             let topDist = GetUnitToLocationDistance(member, vTop);
             let midDist = GetUnitToLocationDistance(member, vMid);
             let botDist = GetUnitToLocationDistance(member, vBot);
 
-            if (jmz.IsCore(member) && member && !member.IsBot()) {
+            if (Fu.IsCore(member) && member && !member.IsBot()) {
                 topDist *= 0.2;
                 midDist *= 0.2;
                 botDist *= 0.2;
-            } else if (!jmz.IsCore(member)) {
+            } else if (!Fu.IsCore(member)) {
                 topDist *= 1.5;
                 midDist *= 1.5;
                 botDist *= 1.5;
@@ -668,9 +668,9 @@ export function WhichLaneToPush(_bot: Unit, _lane: Lane): Lane {
             if (info && info !== null) {
                 const dInfo = info[0];
                 if (dInfo && dInfo !== null) {
-                    if (jmz.GetDistance(vTop, dInfo.location) <= 1600) countTop++;
-                    else if (jmz.GetDistance(vMid, dInfo.location) <= 1600) countMid++;
-                    else if (jmz.GetDistance(vBot, dInfo.location) <= 1600) countBot++;
+                    if (Fu.GetDistance(vTop, dInfo.location) <= 1600) countTop++;
+                    else if (Fu.GetDistance(vMid, dInfo.location) <= 1600) countMid++;
+                    else if (Fu.GetDistance(vBot, dInfo.location) <= 1600) countBot++;
                 }
             }
         }
@@ -679,9 +679,9 @@ export function WhichLaneToPush(_bot: Unit, _lane: Lane): Lane {
     const hTeleports = GetIncomingTeleports();
     for (const tp of hTeleports) {
         if (tp && IsEnemyTP(tp.playerid)) {
-            if (jmz.GetDistance(vTop, tp.location) <= 1600) countTop++;
-            else if (jmz.GetDistance(vMid, tp.location) <= 1600) countMid++;
-            else if (jmz.GetDistance(vBot, tp.location) <= 1600) countBot++;
+            if (Fu.GetDistance(vTop, tp.location) <= 1600) countTop++;
+            else if (Fu.GetDistance(vMid, tp.location) <= 1600) countMid++;
+            else if (Fu.GetDistance(vBot, tp.location) <= 1600) countBot++;
         }
     }
 
@@ -696,13 +696,13 @@ export function WhichLaneToPush(_bot: Unit, _lane: Lane): Lane {
 
     if (midTier < topTier && midTier < botTier) {
         midLaneScore *= 0.5;
-        if (!jmz.Utils.IsAnyBarracksOnLaneAlive(false, Lane.Mid)) midLaneScore *= 0.5;
+        if (!Fu.Utils.IsAnyBarracksOnLaneAlive(false, Lane.Mid)) midLaneScore *= 0.5;
     } else if (topTier < midTier && topTier < botTier) {
         topLaneScore *= 0.5;
-        if (!jmz.Utils.IsAnyBarracksOnLaneAlive(false, Lane.Top)) topLaneScore *= 0.5;
+        if (!Fu.Utils.IsAnyBarracksOnLaneAlive(false, Lane.Top)) topLaneScore *= 0.5;
     } else if (botTier < topTier && botTier < midTier) {
         botLaneScore *= 0.5;
-        if (!jmz.Utils.IsAnyBarracksOnLaneAlive(false, Lane.Bot)) botLaneScore *= 0.5;
+        if (!Fu.Utils.IsAnyBarracksOnLaneAlive(false, Lane.Bot)) botLaneScore *= 0.5;
     }
 
     // Pull toward lanes where allies already are
@@ -726,8 +726,8 @@ export function PushThink(bot: Unit, lane: Lane): void {
     const now = DotaTime();
 
     // 1) baseline action gates
-    if (jmz.CanNotUseAction(bot)) return;
-    if (jmz.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "push")) return;
+    if (Fu.CanNotUseAction(bot)) return;
+    if (Fu.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "push")) return;
 
     // Update global caches
     autoCleanupCache();
@@ -759,7 +759,7 @@ export function PushThink(bot: Unit, lane: Lane): void {
     if (alliesHere.length < enemiesHere.length || IsAnyTargetBackdooredAt(bot, lane)) {
         let longestRange = 0;
         for (const enemyHero of enemiesHere) {
-            if (jmz.IsValidHero(enemyHero) && !jmz.IsSuspiciousIllusion(enemyHero)) {
+            if (Fu.IsValidHero(enemyHero) && !Fu.IsSuspiciousIllusion(enemyHero)) {
                 const r = enemyHero.GetAttackRange();
                 if (r > longestRange) longestRange = r;
             }
@@ -768,7 +768,7 @@ export function PushThink(bot: Unit, lane: Lane): void {
         // Consider team advantages when deciding retreat distance
         const gameState = getGlobalGameState();
         const networthAdvantage = gameState.teamNetworth - gameState.enemyNetworth;
-        const enemyAverageLevel = jmz.GetAverageLevel(true);
+        const enemyAverageLevel = Fu.GetAverageLevel(true);
         const levelAdvantage = gameState.averageLevel - enemyAverageLevel;
         const hasTeamAdvantage = networthAdvantage > 5000 || levelAdvantage > 1;
 
@@ -800,7 +800,7 @@ export function PushThink(bot: Unit, lane: Lane): void {
 
     // 6) If the nearest enemy tower is shooting (or just shot) us → kite back
     if (
-        jmz.IsValidBuilding(nEnemyTowers[0]) &&
+        Fu.IsValidBuilding(nEnemyTowers[0]) &&
         (nEnemyTowers[0].GetAttackTarget() === bot || (nEnemyTowers[0].GetAttackTarget() !== bot && bot.WasRecentlyDamagedByTower(nAllyCreeps.length <= 2 ? 4.0 : 2.0)))
     ) {
         const nDamage = nEnemyTowers[0].GetAttackDamage() * nEnemyTowers[0].GetAttackSpeed() * 5.0 - bot.GetHealthRegen() * 5.0;
@@ -814,11 +814,11 @@ export function PushThink(bot: Unit, lane: Lane): void {
 
     // 7) Ancient-endgame logic: if we're in range and it's hittable, do it
     hEnemyAncient = gameState.enemyAncient;
-    const alliesNearAncient = hEnemyAncient && jmz.GetAlliesNearLoc(hEnemyAncient.GetLocation(), 1600);
+    const alliesNearAncient = hEnemyAncient && Fu.GetAlliesNearLoc(hEnemyAncient.GetLocation(), 1600);
     if (
         hEnemyAncient &&
         botState.distanceToAncient < 1000 &&
-        jmz.CanBeAttacked(hEnemyAncient) &&
+        Fu.CanBeAttacked(hEnemyAncient) &&
         !HasBackdoorProtect(hEnemyAncient) &&
         (GetAllyHeroesAttackingUnit(hEnemyAncient).length >= 3 ||
             GetAllyCreepsAttackingUnit(hEnemyAncient).length >= 4 ||
@@ -842,12 +842,12 @@ export function PushThink(bot: Unit, lane: Lane): void {
     nCreeps = getCachedData(creepCacheKey, 0.2, () => GetSpecialUnitsNearby(bot, nCreeps, nRange));
 
     const vTeamFountain = locationState.teamFountain;
-    const bTowerNearby = jmz.IsValidBuilding(nEnemyTowers[0]); // only consider creeps "in front" of tower
+    const bTowerNearby = Fu.IsValidBuilding(nEnemyTowers[0]); // only consider creeps "in front" of tower
     const towerDistanceToFountain = bTowerNearby ? GetUnitToLocationDistance(nEnemyTowers[0], vTeamFountain) : 0;
 
     for (const creep of nCreeps) {
-        if (!jmz.IsValid(creep) || !jmz.CanBeAttacked(creep)) continue;
-        if (jmz.IsTormentor(creep) || jmz.IsRoshan(creep)) continue;
+        if (!Fu.IsValid(creep) || !Fu.CanBeAttacked(creep)) continue;
+        if (Fu.IsTormentor(creep) || Fu.IsRoshan(creep)) continue;
 
         if (bTowerNearby && GetUnitToLocationDistance(creep, vTeamFountain) >= towerDistanceToFountain) continue;
 
@@ -859,7 +859,7 @@ export function PushThink(bot: Unit, lane: Lane): void {
     // Unified high-ground objective selection with stickiness (prevents thrash)
     const hgTarget = SelectOrStickHGTarget(bot, lane, targetLoc);
     if (hgTarget) {
-        if (jmz.IsInRange(bot, hgTarget, botAttackRange + 150)) {
+        if (Fu.IsInRange(bot, hgTarget, botAttackRange + 150)) {
             bot.Action_AttackUnit(hgTarget, true);
         } else {
             bot.Action_MoveToLocation(hgTarget.GetLocation());
@@ -873,7 +873,7 @@ export function PushThink(bot: Unit, lane: Lane): void {
         return;
     } else {
         if (DotaTime() >= fNextMovementTime) {
-            const attackMoveLoc = jmz.GetRandomLocationWithinDist(targetLoc, 0, 400);
+            const attackMoveLoc = Fu.GetRandomLocationWithinDist(targetLoc, 0, 400);
             bot.Action_AttackMove(attackMoveLoc);
             fNextMovementTime = DotaTime() + RandomFloat(0.05, 0.3);
             return;
@@ -892,7 +892,7 @@ export function TryClearingOtherLaneHighGround(_bot: Unit, vLocation: Vector): U
     const unitList = unitState.enemyBuildings;
 
     function IsValid(building: Unit | null): building is Unit {
-        return jmz.IsValidBuilding(building) && jmz.CanBeAttacked(building!) && !HasBackdoorProtect(building!);
+        return Fu.IsValidBuilding(building) && Fu.CanBeAttacked(building!) && !HasBackdoorProtect(building!);
     }
 
     // Prefer closest barracks first
@@ -960,7 +960,7 @@ export function IsInDangerWithinTower(hUnit: Unit, fThreshold: number, fDuration
     const unitState = updateUnitStateCache();
     let totalDamage = 0;
     for (const enemy of unitState.enemyHeroes) {
-        if (jmz.IsValid(enemy) && jmz.IsInRange(hUnit, enemy, 1600) && (enemy.GetAttackTarget() === hUnit || jmz.IsChasingTarget(enemy, hUnit))) {
+        if (Fu.IsValid(enemy) && Fu.IsInRange(hUnit, enemy, 1600) && (enemy.GetAttackTarget() === hUnit || Fu.IsChasingTarget(enemy, hUnit))) {
             totalDamage += hUnit.GetActualIncomingDamage(enemy.GetAttackDamage() * enemy.GetAttackSpeed() * fDuration, DamageType.Physical);
         }
     }
@@ -973,7 +973,7 @@ export function GetSpecialUnitsNearby(bot: Unit, hUnitList: Unit[], nRadius: num
     const hCreepList: Unit[] = [...hUnitList];
 
     for (const unit of unitState.enemyHeroes) {
-        if (IsValidUnit(unit) && jmz.IsInRange(bot, unit, nRadius)) {
+        if (IsValidUnit(unit) && Fu.IsInRange(bot, unit, nRadius)) {
             const s = unit.GetUnitName();
             if (
                 s.includes("invoker_forge_spirit") ||
@@ -997,14 +997,14 @@ export function GetSpecialUnitsNearby(bot: Unit, hUnitList: Unit[], nRadius: num
 }
 
 export function IsHealthyInsideFountain(hUnit: Unit): boolean {
-    return hUnit.HasModifier("modifier_fountain_aura_buff") && jmz.GetHP(hUnit) > 0.9 && jmz.GetMP(hUnit) > 0.85;
+    return hUnit.HasModifier("modifier_fountain_aura_buff") && Fu.GetHP(hUnit) > 0.9 && Fu.GetMP(hUnit) > 0.85;
 }
 
 export function GetAllyHeroesAttackingUnit(hUnit: Unit): Unit[] {
     const unitState = updateUnitStateCache();
     const out: Unit[] = [];
     for (const ally of unitState.alliedHeroes) {
-        if (jmz.IsValidHero(ally) && !jmz.IsSuspiciousIllusion(ally) && !jmz.IsMeepoClone(ally) && ally.GetAttackTarget() === hUnit) {
+        if (Fu.IsValidHero(ally) && !Fu.IsSuspiciousIllusion(ally) && !Fu.IsMeepoClone(ally) && ally.GetAttackTarget() === hUnit) {
             out.push(ally);
         }
     }
@@ -1015,7 +1015,7 @@ export function GetAllyCreepsAttackingUnit(hUnit: Unit): Unit[] {
     const unitState = updateUnitStateCache();
     const out: Unit[] = [];
     for (const creep of unitState.alliedCreeps) {
-        if (jmz.IsValid(creep) && creep.GetAttackTarget() === hUnit) {
+        if (Fu.IsValid(creep) && creep.GetAttackTarget() === hUnit) {
             out.push(creep);
         }
     }
@@ -1052,8 +1052,8 @@ export function GetLaneBuildingTier(nLane: Lane): number {
 export function ShouldWaitForImportantItemsSpells(vLocation: Vector): boolean {
     const gameState = updateGameStateCache();
     if (gameState.isMidGame || gameState.isLateGame) {
-        if (jmz.Utils.HasTeamMemberWithCriticalItemInCooldown(vLocation)) return true;
-        if (jmz.Utils.HasTeamMemberWithCriticalSpellInCooldown(vLocation)) return true;
+        if (Fu.Utils.HasTeamMemberWithCriticalItemInCooldown(vLocation)) return true;
+        if (Fu.Utils.HasTeamMemberWithCriticalSpellInCooldown(vLocation)) return true;
     }
     return false;
 }
@@ -1083,7 +1083,7 @@ export function IsAnyTargetBackdooredAt(_bot: Unit, lane: Lane): boolean {
     let nearest: Unit | null = null;
     let best = Number.POSITIVE_INFINITY;
     for (const b of unitState.enemyBuildings) {
-        if (jmz.IsValidBuilding(b)) {
+        if (Fu.IsValidBuilding(b)) {
             const d = GetUnitToLocationDistance(b, lf);
             if (d < best) {
                 nearest = b;
@@ -1124,7 +1124,7 @@ export function FindBestHGTarget(bot: Unit, radius: number, targetLoc?: Vector |
         bestOtherD = Number.POSITIVE_INFINITY;
 
     for (const b of unitState.enemyBuildings) {
-        if (jmz.IsValidBuilding(b) && jmz.CanBeAttacked(b) && !HasBackdoorProtect(b)) {
+        if (Fu.IsValidBuilding(b) && Fu.CanBeAttacked(b) && !HasBackdoorProtect(b)) {
             const dBot = GetUnitToUnitDistance(bot, b);
             if (dBot <= radius) {
                 // prefer closer to our approach point when bot-distance is similar

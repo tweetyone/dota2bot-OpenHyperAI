@@ -1,0 +1,180 @@
+-- Bot initialization, debug output, idle detection, ARDM support
+local function Init(Fu)
+
+local bDebugMode = ( 1 == 10 )
+
+function Fu.SetUserHeroInit( nAbilityBuildList, nTalentBuildList, sBuyList, sSellList )
+	local bot = GetBot()
+	local botName = bot:GetUnitName()
+	local sBotDir, tBotSet = "game/Customize/hero/" .. string.gsub(botName, "npc_dota_hero_", ""), nil
+	local status, _ = xpcall(function() tBotSet = require( sBotDir ) end, function( err ) print( '[WARN] When loading customized game file: '..err ) end )
+	if not (status and tBotSet) then
+		sBotDir = GetScriptDirectory() .. "/Customize/hero/" .. string.gsub(botName, "npc_dota_hero_", "")
+		status, _ = xpcall(function() tBotSet = require( sBotDir ) end, function( err ) print( '[WARN] When loading customized file: '..err ) end )
+	end
+	if status and tBotSet and tBotSet.Enable then
+		nAbilityBuildList = tBotSet.AbilityUpgrade
+		nTalentBuildList = Fu.GetTalentBuildList( tBotSet.Talent )
+		sBuyList = tBotSet.PurchaseList
+		sSellList = tBotSet.SellList
+	end
+	return nAbilityBuildList, nTalentBuildList, sBuyList, sSellList
+end
+
+function Fu.GetTalentBuildList( nLocalList )
+	local sTargetList = {}
+	for i = 1, #nLocalList
+    do
+		local rawTalent = nLocalList[i] == 'l' and 10 or 0
+		if rawTalent == 10
+		then
+			sTargetList[#sTargetList + 1] = i * 2
+		else
+			sTargetList[#sTargetList + 1] = i * 2 - 1
+		end
+	end
+	for i = 1, #nLocalList
+    do
+		local rawTalent = nLocalList[i] == 'r' and 10 or 0
+		if rawTalent ~= 10
+		then
+			sTargetList[#sTargetList + 1] = i * 2
+		else
+			sTargetList[#sTargetList + 1] = i * 2 - 1
+		end
+	end
+	return sTargetList
+end
+
+function Fu.SetBotPrint( sMessage, vLoc, bReport, bPing )
+	local bot = GetBot()
+	local nTime = Fu.GetOne( DotaTime() / 10 )* 10
+	local sTime = ( Fu.GetOne( nTime / 600 )* 10 )..":"..( nTime%60 )
+	local sTeam = GetTeam() == TEAM_DIRE and "夜魇" or "天辉"
+	if bDebugMode
+	then
+		print( sTeam..sTime.." "..Fu.Chat.GetNormName( bot ).." "..sMessage )
+		if bReport then bot:ActionImmediate_Chat( sTime.."_"..sMessage, true ) end
+		if bPing then bot:ActionImmediate_Ping( vLoc.x, vLoc.y, false ) end
+	end
+end
+
+function Fu.SetReportMotive( bDebugFile, sMotive )
+	if bDebugMode and bDebugFile and sMotive ~= nil
+	then
+		local nTime = Fu.GetOne( DotaTime() / 10 ) * 10
+		local sTime = ( Fu.GetOne( nTime / 600 ) * 10 )..":"..( nTime%60 )
+		local sTeam = GetTeam() == TEAM_DIRE and "夜魇 " or "天辉 "
+		GetBot():ActionImmediate_Chat( sTime.."_"..sMotive, true )
+		print( sTeam..sTime.." "..Fu.Chat.GetNormName( GetBot() ).." "..sMotive )
+	end
+end
+
+function Fu.IsStuck( bot )
+	if bot.stuckLoc ~= nil and bot.stuckTime ~= nil and bot:CanBeSeen()
+	then
+		local attackTarget = bot:GetAttackTarget()
+		local EAd = GetUnitToUnitDistance( bot, GetAncient( GetOpposingTeam() ) )
+		local TAd = GetUnitToUnitDistance( bot, GetAncient( GetTeam() ) )
+		local Et = bot:GetNearbyTowers( 450, true )
+		local At = bot:GetNearbyTowers( 450, false )
+		if bot:GetCurrentActionType() == BOT_ACTION_TYPE_MOVE_TO
+			and attackTarget == nil and EAd > 2200 and TAd > 2200 and #Et == 0 and #At == 0
+			and DotaTime() > bot.stuckTime + 5.0
+			and GetUnitToLocationDistance( bot, bot.stuckLoc ) < 25
+		then
+			print( bot:GetUnitName().." is stuck" )
+			return true
+		end
+	end
+	return false
+end
+
+local botIdelStateTimeThreshold = 3
+local deltaIdleDistance = 100
+local botIdleStateTracker = { }
+
+function Fu.CheckBotIdleState()
+	if DotaTime() <= 0 then return false end
+	local bot = GetBot()
+	if not bot:IsAlive() then return false end
+	local botName = bot:GetUnitName();
+	local botId = bot:GetPlayerID();
+	local botMode = bot:GetActiveMode();
+	local botState = botIdleStateTracker[botId]
+	if botState then
+		if DotaTime() - botState.lastCheckTime >= botIdelStateTimeThreshold then
+			local diffDistance = Fu.GetLocationToLocationDistance( botState.botLocation, bot:GetLocation())
+			if not Fu.IsTryingtoUseAbility(bot)
+			and not Fu.IsAttacking(bot)
+			and diffDistance <= deltaIdleDistance
+			then
+				botState.idleCount = botState.idleCount + 1
+				if bot:GetCurrentActionType() == BOT_ACTION_TYPE_IDLE
+				or botMode == BOT_MODE_ITEM
+				or botMode == BOT_MODE_FARM then
+					local nActions = bot:NumQueuedActions()
+					if nActions > 0 then
+						for i=1, nActions do
+							local aType = bot:GetQueuedActionType(i)
+							print('Bot '..botName.." has enqueued actions i="..i..", type="..tostring(aType))
+						end
+					end
+					bot:Action_ClearActions(true);
+					local frontLoc = GetLaneFrontLocation(GetTeam(), bot:GetAssignedLane(), 0);
+					bot:ActionQueue_AttackMove(frontLoc)
+					print('[ERROR] Relocating the idle bot: '..botName..'. Sending it to the lane# it was originally assigned: '..tostring(bot:GetAssignedLane()))
+				else
+					print('Bot '..botName..' is in idle state for unknown reasons. N/A.')
+				end
+				return true
+			else
+				botState.idleCount = 0
+			end
+			botState.botLocation = bot:GetLocation()
+			botState.lastCheckTime = DotaTime()
+		end
+	else
+		local botIdleState = {
+			botLocation = bot:GetLocation(),
+			lastCheckTime = DotaTime(),
+			idleCount = 0
+		}
+		botIdleStateTracker[botId] = botIdleState
+	end
+	return false
+end
+
+function Fu.IsStaleARDMHero(cachedBot, cachedName)
+	if GetGameMode() ~= GAMEMODE_ARDM then
+		return false, cachedBot, cachedName
+	end
+	local freshBot = GetBot()
+	local freshName = freshBot:GetUnitName()
+	local nPlayerID = cachedBot:GetPlayerID()
+	if freshName ~= cachedName and freshBot ~= cachedBot then
+		return true, freshBot, freshName
+	end
+	if nPlayerID >= 0 and IsHeroAlive(nPlayerID) and not cachedBot:IsAlive() then
+		if freshName ~= cachedName then
+			return true, freshBot, freshName
+		end
+	end
+	return false, freshBot, freshName
+end
+
+function Fu.ModeAnnounce(bot, locKey, cooldown)
+	local Localization = require( GetScriptDirectory()..'/FuncLib/systems/localization' )
+	if bot.lastModeChatTime == nil then bot.lastModeChatTime = {} end
+	local lastTime = bot.lastModeChatTime[locKey] or -999
+	if GameTime() - lastTime < (cooldown or 30) then return end
+	bot.lastModeChatTime[locKey] = GameTime()
+	local msgs = Localization.Get(locKey)
+	if msgs ~= nil and #msgs > 0 then
+		bot:ActionImmediate_Chat(msgs[RandomInt(1, #msgs)], false)
+	end
+end
+
+end
+
+return Init

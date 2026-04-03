@@ -15,7 +15,7 @@ require 'bots.FretBots.Utilities'
 local role 			= require('bots.FretBots.RoleUtility')
 local radiantTowers	= dofile('bots.FretBots.RadiantTowers')
 local direTowers	= dofile('bots.FretBots.DireTowers')
-local Localization = require 'bots/FunLib/localization'
+local Localization = require 'bots/FuncLib/systems/localization'
 
 -- local debug flags
 local thisDebug = false
@@ -677,8 +677,8 @@ end
 
 function DataTables:GetRole(hero)
 	-- Try position weights first (covers 127 heroes, data-driven)
-	local okW, posModule = pcall(require, GetScriptDirectory()..'/FunLib/aba_hero_pos_weights')
-	if not okW then okW, posModule = pcall(require, 'bots.FunLib.aba_hero_pos_weights') end
+	local okW, posModule = pcall(require, GetScriptDirectory()..'/FuncLib/data/hero_pos_weights')
+	if not okW then okW, posModule = pcall(require, 'bots.FuncLib.data.hero_pos_weights') end
 	if okW and posModule and posModule.HeroPositions and posModule.HeroPositions[hero] then
 		local weights = posModule.HeroPositions[hero]
 		local bestRole = 3  -- default offlane

@@ -12,7 +12,7 @@ require 'bots.FretBots.Settings'
 -- Game State Tracker
 require 'bots.FretBots.GameState'
 require 'bots.FretBots.modifiers.Modifier'
-local Localization = require 'bots/FunLib/localization'
+local Localization = require 'bots/FuncLib/systems/localization'
 
 -- local debug flag
 local thisDebug = false;

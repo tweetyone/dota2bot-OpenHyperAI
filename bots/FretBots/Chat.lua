@@ -1,8 +1,8 @@
 local json = require('bots.ts_libs.utils.json')
-local Version = require 'bots.FunLib.version'
-local Utils = require 'bots.FunLib.utils'
-local teamNames = require 'bots.FunLib.aba_team_names'
-local Localization = require 'bots/FunLib/localization'
+local Version = require 'bots.FuncLib.systems.version'
+local Utils = require 'bots.FuncLib.systems.utils'
+local teamNames = require 'bots.FuncLib.data.team_names'
+local Localization = require 'bots/FuncLib/systems/localization'
 require 'bots.FretBots.Utilities'
 require 'bots.FretBots.Timers'
 

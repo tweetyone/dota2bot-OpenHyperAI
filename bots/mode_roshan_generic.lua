@@ -2,7 +2,7 @@ local bot = GetBot()
 local botName = bot:GetUnitName();
 if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
 
-local J = require( GetScriptDirectory()..'/FunLib/jmz_func' )
+local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
 local Customize = require( GetScriptDirectory()..'/Customize/general' )
 
 local killTime = 0.0
@@ -22,7 +22,7 @@ local Roshan
 
 function GetDesire()
 	local res = GetDesireHelper()
-	if res > 0.6 then J.ModeAnnounce(bot, 'say_roshan', 30) end
+	if res > 0.6 then Fu.ModeAnnounce(bot, 'say_roshan', 30) end
 	return res
 end
 function GetDesireHelper()
@@ -39,27 +39,27 @@ function GetDesireHelper()
     end
 
 	-- 如果在打高地 就别撤退去干别的
-	if J.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
+	if Fu.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
 		return BOT_MODE_DESIRE_NONE
 	end
 
-	if J.GetEnemiesAroundAncient(bot, 3200) > 0 or J.GetHP(GetAncient(bot:GetTeam())) < 0.8 then
+	if Fu.GetEnemiesAroundAncient(bot, 3200) > 0 or Fu.GetHP(GetAncient(bot:GetTeam())) < 0.8 then
 		return BOT_MODE_DESIRE_NONE
 	end
 
-    local timeOfDay = J.CheckTimeOfDay()
+    local timeOfDay = Fu.CheckTimeOfDay()
 
-    local nTeamFightLocation = J.GetTeamFightLocation(bot)
+    local nTeamFightLocation = Fu.GetTeamFightLocation(bot)
     if nTeamFightLocation ~= nil
     then
         if timeOfDay == 'day'
-        and GetUnitToLocationDistance(bot, J.Utils.RadiantRoshanLoc) < 1600
+        and GetUnitToLocationDistance(bot, Fu.Utils.RadiantRoshanLoc) < 1600
         and GetUnitToLocationDistance(bot, nTeamFightLocation) < 2000
         then
             return BOT_ACTION_DESIRE_NONE
         else
             if timeOfDay == 'night'
-            and GetUnitToLocationDistance(bot, J.Utils.DireRoshanLoc) < 1600
+            and GetUnitToLocationDistance(bot, Fu.Utils.DireRoshanLoc) < 1600
             and GetUnitToLocationDistance(bot, nTeamFightLocation) < 2000
             then
                 return BOT_ACTION_DESIRE_NONE
@@ -67,21 +67,21 @@ function GetDesireHelper()
         end
     end
 
-    local lEnemyHeroesAroundLoc = J.GetLastSeenEnemiesNearLoc(bot:GetLocation(), 1200)
+    local lEnemyHeroesAroundLoc = Fu.GetLastSeenEnemiesNearLoc(bot:GetLocation(), 1200)
     if #lEnemyHeroesAroundLoc >= 2 then
         return BOT_ACTION_DESIRE_NONE
     end
 
     -- if Roshan is about to get killed, kill it unless there are other absolute actions.
-    if J.Utils.IsValidUnit(Roshan) then
+    if Fu.Utils.IsValidUnit(Roshan) then
         local roshHP = Roshan:GetHealth() / Roshan:GetMaxHealth()
         if roshHP < 0.5 and #lEnemyHeroesAroundLoc == 0 then
             return RemapValClamped(roshHP, 100, 0, BOT_MODE_DESIRE_MODERATE, BOT_MODE_DESIRE_ABSOLUTE )
         end
     end
 
-    local aliveAlly = J.GetNumOfAliveHeroes(false)
-    local aliveEnemy = J.GetNumOfAliveHeroes(true)
+    local aliveAlly = Fu.GetNumOfAliveHeroes(false)
+    local aliveEnemy = Fu.GetNumOfAliveHeroes(true)
     local hasSameOrMoreHero = aliveAlly >= aliveEnemy
 
     if not hasSameOrMoreHero then
@@ -93,7 +93,7 @@ function GetDesireHelper()
     for _, h in pairs(GetUnitList(UNIT_LIST_ALLIED_HEROES)) do
         if h:IsAlive()
         then
-            if J.Utils.CountBackpackEmptySpace(h) <= 0 and J.IsCore(h) then
+            if Fu.Utils.CountBackpackEmptySpace(h) <= 0 and Fu.IsCore(h) then
                 nCoreWithNoEmptySlot = nCoreWithNoEmptySlot + 1
             end
 
@@ -105,7 +105,7 @@ function GetDesireHelper()
         end
     end
 
-    shouldKillRoshan = J.IsRoshanAlive()
+    shouldKillRoshan = Fu.IsRoshanAlive()
 
     if shouldKillRoshan
     and not roshTimeFlag
@@ -120,23 +120,23 @@ function GetDesireHelper()
         end
     end
 
-    if J.HasEnoughDPSForRoshan(aliveHeroesList)
+    if Fu.HasEnoughDPSForRoshan(aliveHeroesList)
     then
         initDPSFlag = true
     end
 
-    if J.IsRoshanCloseToChangingSides()
+    if Fu.IsRoshanCloseToChangingSides()
     then
-        local botTarget = J.GetProperTarget(bot)
-        if J.IsRoshan(botTarget) then
-            return RemapValClamped(J.GetHP(botTarget), 1, 0, BOT_ACTION_DESIRE_NONE, BOT_ACTION_DESIRE_VERYHIGH )
+        local botTarget = Fu.GetProperTarget(bot)
+        if Fu.IsRoshan(botTarget) then
+            return RemapValClamped(Fu.GetHP(botTarget), 1, 0, BOT_ACTION_DESIRE_NONE, BOT_ACTION_DESIRE_VERYHIGH )
         end
-        if not J.IsValid(botTarget) or not J.IsRoshan(botTarget) then
+        if not Fu.IsValid(botTarget) or not Fu.IsRoshan(botTarget) then
             return BOT_ACTION_DESIRE_NONE
         end
     end
 
-    local nEnemyHeroes = J.GetEnemiesNearLoc(bot:GetLocation(), 1300)
+    local nEnemyHeroes = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1300)
     if nEnemyHeroes ~= nil and #nEnemyHeroes > 0
     then
         return BOT_ACTION_DESIRE_NONE
@@ -145,12 +145,12 @@ function GetDesireHelper()
     if shouldKillRoshan
     and initDPSFlag
     then
-        local human, humanPing = J.GetHumanPing()
+        local human, humanPing = Fu.GetHumanPing()
         if human ~= nil and DotaTime() > 5.0 then
             if humanPing ~= nil
             and humanPing.normal_ping
-            and GetUnitToLocationDistance(human, J.GetCurrentRoshanLocation()) < 4500
-            and J.GetDistance(humanPing.location, J.GetCurrentRoshanLocation()) < 600
+            and GetUnitToLocationDistance(human, Fu.GetCurrentRoshanLocation()) < 4500
+            and Fu.GetDistance(humanPing.location, Fu.GetCurrentRoshanLocation()) < 600
             and DotaTime() < humanPing.time + 5.0
             then
                 return 0.95
@@ -160,7 +160,7 @@ function GetDesireHelper()
         local mul = RemapValClamped(DotaTime(), sinceRoshAliveTime, sinceRoshAliveTime + (2.5 * 60), 1, 2)
         local nRoshanDesire = (GetRoshanDesire() * mul)
 
-        if hasSameOrMoreHero or (not hasSameOrMoreHero and J.HasEnoughDPSForRoshan(aliveHeroesList)) then
+        if hasSameOrMoreHero or (not hasSameOrMoreHero and Fu.HasEnoughDPSForRoshan(aliveHeroesList)) then
             return Clamp(nRoshanDesire, 0, 0.95)
         end
     end

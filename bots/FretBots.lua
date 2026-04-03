@@ -5,7 +5,7 @@ end
 -- LinkLuaModifier("modifier_fret_damage_increase", "FretBots/modifiers/modifier_seasonal_party_hat.lua", LUA_MODIFIER_MOTION_NONE)
 if GetScriptDirectory == nil then GetScriptDirectory = function() return "bots" end end
 -- Version information
-local Version = require 'bots.FunLib.version'
+local Version = require 'bots.FuncLib.systems.version'
 -- Print version to console
 print('Open Hyper AI (OHA). Starting Fretbots mode: ' .. Version.number)
 -- Dependencies
@@ -173,7 +173,7 @@ end
 
 -- Start things up (only once)
 if not Flags.isFretBotsInitialized then
-	local teamNames = require 'bots.FunLib.aba_team_names'
+	local teamNames = require 'bots.FuncLib.data.team_names'
 	if teamNames.maxTeamSize ~= 12 then return end
 	-- Welcome Message
 	Utilities:Print('Welcome to Open Hyper AI (OHA)! FretBots enabled: ' .. Version.number, MSG_GOOD, MATCH_READY)

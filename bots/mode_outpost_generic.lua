@@ -2,7 +2,7 @@ local bot = GetBot()
 local botName = bot:GetUnitName()
 if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
 
-local J = require( GetScriptDirectory()..'/FunLib/jmz_func')
+local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils')
 local Customize = require( GetScriptDirectory()..'/Customize/general' )
 
 local Outposts = {}
@@ -15,10 +15,10 @@ local hAbilityCapture = bot:GetAbilityByName('ability_capture')
 
 function GetDesire()
 	-- local cacheKey = 'GetOutpostDesire'..tostring(bot:GetPlayerID())
-	-- local cachedVar = J.Utils.GetCachedVars(cacheKey, 0.5 * (1 + Customize.ThinkLess))
+	-- local cachedVar = Fu.Utils.GetCachedVars(cacheKey, 0.5 * (1 + Customize.ThinkLess))
 	-- if DotaTime() > 30 and cachedVar ~= nil then return cachedVar end
 	local res = GetDesireHelper()
-	-- J.Utils.SetCachedVars(cacheKey, res)
+	-- Fu.Utils.SetCachedVars(cacheKey, res)
 	return res
 end
 function GetDesireHelper()
@@ -34,16 +34,16 @@ function GetDesireHelper()
 		end
 	end
 
-	if J.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
+	if Fu.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
 		return BOT_MODE_DESIRE_NONE;
 	end
 
-	if J.GetEnemiesAroundAncient(bot, 3200) > 0 then
+	if Fu.GetEnemiesAroundAncient(bot, 3200) > 0 then
 		return BOT_MODE_DESIRE_NONE
 	end
 
 	-- local botMode = bot:GetActiveMode()
-	-- if (J.IsPushing(bot) or J.IsDefending(bot) or J.IsDoingRoshan(bot) or J.IsDoingTormentor(bot)
+	-- if (Fu.IsPushing(bot) or Fu.IsDefending(bot) or Fu.IsDoingRoshan(bot) or Fu.IsDoingTormentor(bot)
 	-- or botMode == BOT_MODE_RUNE or botMode == BOT_MODE_SECRET_SHOP or botMode == BOT_MODE_WARD or botMode == BOT_MODE_ROAM)
 	-- and bot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH then
 	-- 	return BOT_MODE_DESIRE_NONE
@@ -77,7 +77,7 @@ function GetDesireHelper()
 	then
 		if GetUnitToUnitDistance(bot, ClosestOutpost) < 600
 		then
-			local nInRangeEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), bot:GetCurrentVisionRange())
+			local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), bot:GetCurrentVisionRange())
 			if nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
 			then
 				return BOT_ACTION_DESIRE_NONE
@@ -101,8 +101,8 @@ function OnEnd()
 end
 
 function Think()
-	if J.CanNotUseAction(bot) then return end
-	if J.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "outpost") then return end
+	if Fu.CanNotUseAction(bot) then return end
+	if Fu.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "outpost") then return end
 
 	if ClosestOutpost ~= nil
 	then
@@ -153,7 +153,7 @@ function IsEnemyCloserToOutpostLoc(opLoc, botDist)
 			then
 				if dInfo ~= nil
 				and dInfo.time_since_seen < 5
-				and J.GetDistance(dInfo.location, opLoc) < botDist
+				and Fu.GetDistance(dInfo.location, opLoc) < botDist
 				then
 					return true
 				end
@@ -165,16 +165,16 @@ function IsEnemyCloserToOutpostLoc(opLoc, botDist)
 end
 
 function IsSuitableToCaptureOutpost()
-	local botTarget = J.GetProperTarget(bot)
+	local botTarget = Fu.GetProperTarget(bot)
 
-	if (J.IsGoingOnSomeone(bot) and J.IsValidTarget(botTarget) and GetUnitToUnitDistance(bot, botTarget) < 700)
-	or J.IsDefending(bot)
-	or (J.IsDoingTormentor(bot) and J.IsTormentor(botTarget) and J.IsAttacking(bot))
-	or (J.IsDoingRoshan(bot) and J.IsRoshan(botTarget) and J.IsAttacking(bot))
-	or (J.IsRetreating(bot) and bot:GetActiveModeDesire() > BOT_MODE_DESIRE_HIGH)
+	if (Fu.IsGoingOnSomeone(bot) and Fu.IsValidTarget(botTarget) and GetUnitToUnitDistance(bot, botTarget) < 700)
+	or Fu.IsDefending(bot)
+	or (Fu.IsDoingTormentor(bot) and Fu.IsTormentor(botTarget) and Fu.IsAttacking(bot))
+	or (Fu.IsDoingRoshan(bot) and Fu.IsRoshan(botTarget) and Fu.IsAttacking(bot))
+	or (Fu.IsRetreating(bot) and bot:GetActiveModeDesire() > BOT_MODE_DESIRE_HIGH)
 	or bot:WasRecentlyDamagedByAnyHero(5)
 	or bot:GetActiveMode() == BOT_MODE_DEFEND_ALLY
-	or J.GetNumOfAliveHeroes( false ) < J.GetNumOfAliveHeroes( true )
+	or Fu.GetNumOfAliveHeroes( false ) < Fu.GetNumOfAliveHeroes( true )
 	then
 		return false
 	end

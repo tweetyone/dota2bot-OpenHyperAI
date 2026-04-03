@@ -2,8 +2,8 @@ local bot = GetBot()
 local botName = bot:GetUnitName()
 if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not string.find(botName, "hero") or bot:IsIllusion() then return end
 
-local Utils = require( GetScriptDirectory()..'/FunLib/utils' )
-local BotBuild = dofile(GetScriptDirectory() .. "/BotLib/" .. string.gsub(botName, "npc_dota_", ""));
+local Utils = require( GetScriptDirectory()..'/FuncLib/systems/utils' )
+local BotBuild = dofile(GetScriptDirectory() .. "/BotsLib/" .. string.gsub(botName, "npc_dota_", ""));
 
 if BotBuild == nil
 then

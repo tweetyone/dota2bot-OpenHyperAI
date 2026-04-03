@@ -1,7 +1,7 @@
 local bot = GetBot()
 if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not string.find(bot:GetUnitName(), "hero") or bot:IsIllusion() then return end
 
-local J = require( GetScriptDirectory()..'/FunLib/jmz_func' )
+local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
 
 local PING_RECENCY = 8        -- respond to pings within this many seconds
 local ASSEMBLE_DURATION = 5    -- stay in assemble mode for this long after ping
@@ -16,7 +16,7 @@ function GetDesire()
 	if not bot:IsAlive() then return BOT_MODE_DESIRE_NONE end
 
 	-- Check for recent human normal pings (not danger pings)
-	local human, ping = J.GetHumanPing()
+	local human, ping = Fu.GetHumanPing()
 	if human ~= nil and ping ~= nil
 	and ping.normal_ping
 	and ping.time ~= 0
@@ -27,7 +27,7 @@ function GetDesire()
 		if dist > ARRIVE_RADIUS and dist < MAX_RESPOND_DIST then
 			assembleLoc = ping.location
 			assembleExpireTime = GameTime() + ASSEMBLE_DURATION
-			J.ModeAnnounce(bot, 'say_assemble', ASSEMBLE_DURATION)
+			Fu.ModeAnnounce(bot, 'say_assemble', ASSEMBLE_DURATION)
 			return ASSEMBLE_DESIRE
 		end
 	end
@@ -52,7 +52,7 @@ function OnEnd()
 end
 
 function Think()
-	if J.CanNotUseAction(bot) then return end
+	if Fu.CanNotUseAction(bot) then return end
 	if assembleLoc == nil then return end
 
 	local dist = GetUnitToLocationDistance(bot, assembleLoc)

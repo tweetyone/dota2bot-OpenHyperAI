@@ -2,7 +2,7 @@ local bot = GetBot();
 local botName = bot:GetUnitName();
 if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
 
-local J = require(GetScriptDirectory()..'/FunLib/jmz_func')
+local Fu = require(GetScriptDirectory()..'/FuncLib/func_utils')
 local Customize = require(GetScriptDirectory()..'/Customize/general')
 Customize.ThinkLess = Customize.Enable and Customize.ThinkLess or 1
 
@@ -16,20 +16,20 @@ local hasItemToSell = false;
 
 function GetDesire()
 	-- local cacheKey = 'GetSecretShopDesire'..tostring(bot:GetPlayerID())
-	-- local cachedVar = J.Utils.GetCachedVars(cacheKey, 0.5 * (1 + Customize.ThinkLess))
+	-- local cachedVar = Fu.Utils.GetCachedVars(cacheKey, 0.5 * (1 + Customize.ThinkLess))
 	-- if DotaTime() > 30 and cachedVar ~= nil then return cachedVar end
 	local res = GetDesireHelper()
-	-- J.Utils.SetCachedVars(cacheKey, res)
+	-- Fu.Utils.SetCachedVars(cacheKey, res)
 	return res
 end
 function GetDesireHelper()
 
 	-- 如果在打高地 就别撤退去干别的
-	if J.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
+	if Fu.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
 		return BOT_MODE_DESIRE_NONE
 	end
 
-	if J.IsFarming(bot) and J.IsPushing(bot) and J.IsDefending(bot) then
+	if Fu.IsFarming(bot) and Fu.IsPushing(bot) and Fu.IsDefending(bot) then
 		return BOT_MODE_DESIRE_NONE
 	end
 
@@ -86,7 +86,7 @@ function OnEnd()
 end
 
 function Think()
-	if J.CanNotUseAction(bot) then return end
+	if Fu.CanNotUseAction(bot) then return end
 	if bot:IsChanneling() 
 		or bot:NumQueuedActions() > 0
 		or bot:IsCastingAbility()
@@ -94,7 +94,7 @@ function Think()
 	then 
 		return
 	end
-	if J.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "secret_shop") then return end
+	if Fu.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "secret_shop") then return end
 
 	if preferedShop == nil then
 		preferedShop = X.GetPreferedSecretShop();
@@ -154,7 +154,7 @@ end
 
 function X.IsSuitableToBuy()
 	local mode = bot:GetActiveMode();
-	local Enemies = J.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE);
+	local Enemies = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE);
 	if not bot:IsAlive() 
 		or bot:HasModifier("modifier_item_shadow_amulet_fade")
 		or ( mode == BOT_MODE_RETREAT and bot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH )

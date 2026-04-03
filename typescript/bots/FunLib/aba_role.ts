@@ -1,7 +1,7 @@
 import { GameMode, GameState, Lane, Team, Unit } from "bots/ts_libs/dota";
-import { NumHumanBotPlayersInTeam } from "bots/FunLib/utils";
-import * as HeroRolesMap from "bots/FunLib/aba_hero_roles_map";
-import { GetEnemyPosition } from "bots/FunLib/enemy_role_estimation";
+import { NumHumanBotPlayersInTeam } from "bots/FuncLib/systems/utils";
+import * as HeroRolesMap from "bots/FuncLib/data/hero_roles_map";
+import { GetEnemyPosition } from "bots/FuncLib/hero/enemy_role_estimation";
 import { HeroName } from "bots/ts_libs/dota/heroes";
 
 export let RoleAssignment: { [key: string]: number[] } = {

@@ -181,7 +181,6 @@ end
 
 
 
--------------------------------------------------------------------
 
 local Inspector = {}
 local Inspector_mt = {__index = Inspector}
@@ -294,7 +293,6 @@ function Inspector:putValue(v)
 	end
 end
 
--------------------------------------------------------------------
 
 function inspect.inspect(root, options)
 	options       = options or {}
