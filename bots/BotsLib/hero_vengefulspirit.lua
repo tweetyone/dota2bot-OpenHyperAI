@@ -133,8 +133,13 @@ local NetherSwapDesire, NetherSwapTarget
 
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -235,7 +240,7 @@ function X.ConsiderMagicMissile()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local target = nil
         local dmg = 0
@@ -324,7 +329,7 @@ function X.ConsiderMagicMissile()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -334,7 +339,7 @@ function X.ConsiderMagicMissile()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -377,7 +382,7 @@ function X.ConsiderWaveOfTerror()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local target = nil
         local dmg = 0
@@ -508,7 +513,7 @@ function X.ConsiderWaveOfTerror()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -518,7 +523,7 @@ function X.ConsiderWaveOfTerror()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -553,7 +558,7 @@ function X.ConsiderNetherSwap()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local target = nil
         local dmg = 0

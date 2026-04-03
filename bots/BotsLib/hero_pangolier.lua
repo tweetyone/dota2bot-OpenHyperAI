@@ -139,8 +139,20 @@ local EndRollUpDesire
 local RollingThunderDesire
 local EndRollingThunderDesire
 
+local botTarget
+local bRetreating
+local bAttacking
+local nBotHP
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     Swashbuckle       = bot:GetAbilityByName('pangolier_swashbuckle')
     ShieldCrash       = bot:GetAbilityByName('pangolier_shield_crash')
@@ -149,8 +161,8 @@ function X.SkillsComplement()
     RollingThunder    = bot:GetAbilityByName('pangolier_gyroshell')
     EndRollingThunder = bot:GetAbilityByName('pangolier_gyroshell_stop')
 
-    local botTarget = Fu.GetProperTarget(bot)
-    local botHP = Fu.GetHP(bot)
+    botTarget = Fu.GetProperTarget(bot)
+    local botHP = nBotHP
     local nAllyHeroes = Fu.GetNearbyHeroes(bot, 1600, false, BOT_MODE_NONE)
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot, 1600, true, BOT_MODE_NONE)
 
@@ -210,7 +222,7 @@ function X.ConsiderSwashbuckle()
 	local nRadius = 140
     local nDamage = Swashbuckle:GetSpecialValueInt('damage')
     local nStrikeCount = Swashbuckle:GetSpecialValueInt('strikes')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -285,7 +297,7 @@ function X.ConsiderSwashbuckle()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
@@ -303,7 +315,7 @@ function X.ConsiderSwashbuckle()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.68 and bot:WasRecentlyDamagedByAnyHero(1.6)))
+                or (nBotHP < 0.68 and bot:WasRecentlyDamagedByAnyHero(1.6)))
             then
                 local loc = Fu.GetEscapeLoc()
 		        return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, loc, nDashRange)
@@ -334,7 +346,7 @@ function X.ConsiderSwashbuckle()
     end
 
     if Fu.IsFarming(bot)
-    and Fu.GetMP(bot) > 0.33
+    and nBotMP > 0.33
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nSwashRange, nRadius, 0, 0)
 
@@ -357,7 +369,7 @@ function X.ConsiderSwashbuckle()
     end
 
     if Fu.IsLaning(bot)
-    and Fu.GetMP(bot) > 0.33
+    and nBotMP > 0.33
 	then
         local canKill = 0
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -431,7 +443,7 @@ function X.ConsiderSwashbuckle()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and bot:IsFacingLocation(botTarget:GetLocation(), 10)
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -442,7 +454,7 @@ function X.ConsiderSwashbuckle()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and bot:IsFacingLocation(botTarget:GetLocation(), 10)
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -461,7 +473,7 @@ function X.ConsiderShieldCrash()
     local nRadius = ShieldCrash:GetSpecialValueInt('radius')
     local nDamage = ShieldCrash:GetSpecialValueInt('damage')
     local nAbilityLevel = ShieldCrash:GetLevel()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if Fu.IsStuck(bot)
 	then
@@ -478,7 +490,7 @@ function X.ConsiderShieldCrash()
         end
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local realEnemyCount = Fu.GetEnemiesNearLoc(bot:GetLocation(), nRadius)
 
@@ -523,7 +535,7 @@ function X.ConsiderShieldCrash()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
@@ -540,7 +552,7 @@ function X.ConsiderShieldCrash()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.68 and bot:WasRecentlyDamagedByAnyHero(1.6)))
+                or (nBotHP < 0.68 and bot:WasRecentlyDamagedByAnyHero(1.6)))
             and bot:IsFacingLocation(Fu.GetEscapeLoc(), 30)
             then
 		        return BOT_ACTION_DESIRE_HIGH
@@ -552,7 +564,7 @@ function X.ConsiderShieldCrash()
     then
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nRadius, true)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
             and bot:IsFacingLocation(nEnemyLaneCreeps[1]:GetLocation(), 30)
@@ -563,10 +575,10 @@ function X.ConsiderShieldCrash()
     end
 
     if Fu.IsFarming(bot)
-    and Fu.GetMP(bot) > 0.33
+    and nBotMP > 0.33
     and nAbilityLevel >= 2
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nRadius)
             if nNeutralCreeps ~= nil
@@ -602,7 +614,7 @@ function X.ConsiderShieldCrash()
 			-- 	local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-            --     and Fu.GetMP(bot) > 0.33
+            --     and nBotMP > 0.33
             --     and bot:IsFacingLocation(creep:GetLocation(), 15)
 			-- 	then
 			-- 		return BOT_ACTION_DESIRE_HIGH
@@ -612,10 +624,10 @@ function X.ConsiderShieldCrash()
             if Fu.IsValid(creep)
             and creep:GetHealth() <= nDamage
             then
-                if Fu.GetMP(bot) > 0.33
+                if nBotMP > 0.33
                 and bot:IsFacingLocation(creep:GetLocation(), 15)
                 and not Fu.IsInRange(bot, creep, bot:GetAttackRange())
-                and not Fu.IsAttacking(bot)
+                and not bAttacking
                 then
                     return BOT_ACTION_DESIRE_HIGH
                 end
@@ -626,7 +638,7 @@ function X.ConsiderShieldCrash()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         and bot:IsFacingLocation(Fu.GetCenterOfUnits(creepList), 15)
         then
@@ -650,7 +662,7 @@ function X.ConsiderShieldCrash()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and bot:IsFacingLocation(botTarget:GetLocation(), 15)
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -661,7 +673,7 @@ function X.ConsiderShieldCrash()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and bot:IsFacingLocation(botTarget:GetLocation(), 15)
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -678,7 +690,7 @@ function X.ConsiderRollingThunder()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
         local realEnemyCount = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
 
@@ -688,7 +700,7 @@ function X.ConsiderRollingThunder()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
@@ -703,7 +715,7 @@ function X.ConsiderRollingThunder()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-            and (Fu.GetHP(bot) < 0.55 and bot:WasRecentlyDamagedByAnyHero(2)))
+            and (nBotHP < 0.55 and bot:WasRecentlyDamagedByAnyHero(2)))
             then
 		        return BOT_ACTION_DESIRE_HIGH
             end
@@ -752,7 +764,7 @@ function X.ConsiderRollUp()
 		end
 	end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local realEnemyCount = Fu.GetEnemiesNearLoc(bot:GetLocation(), 800)
 
@@ -784,7 +796,7 @@ function X.ConsiderEndRollUp()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local weakestTarget = Fu.GetVulnerableWeakestUnit(bot, true, true, 1200)
 

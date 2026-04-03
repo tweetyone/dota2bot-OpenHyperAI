@@ -170,7 +170,13 @@ local GripAlliesDesire
 
 local nStone = 0
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
 
     if bot:IsUsingAbility()
 	or bot:IsChanneling()
@@ -312,9 +318,9 @@ function X.ConsiderBoulderSmash()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
-		local botTarget = Fu.GetProperTarget(bot)
+		botTarget = Fu.GetProperTarget(bot)
 
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -333,7 +339,7 @@ function X.ConsiderBoulderSmash()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and bot:WasRecentlyDamagedByAnyHero(2)
 	then
 		local nAllyHeroes = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
@@ -459,9 +465,9 @@ function X.ConsiderRollingBoulder()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
-		local botTarget = Fu.GetProperTarget(bot)
+		botTarget = Fu.GetProperTarget(bot)
 
 		if nStone >= 1
 		and Fu.IsValidTarget(botTarget)
@@ -497,8 +503,8 @@ function X.ConsiderRollingBoulder()
 	end
 
 	local nInRangeAlly  = Fu.GetNearbyHeroes(bot, nDistance2, false, BOT_MODE_NONE)
-	if Fu.IsRetreating(bot)
-	or Fu.IsRetreating(bot) and (nInRangeAlly ~= nil and nEnemyHeroes ~= nil and #nEnemyHeroes > #nInRangeAlly)
+	if bRetreating
+	or bRetreating and (nInRangeAlly ~= nil and nEnemyHeroes ~= nil and #nEnemyHeroes > #nInRangeAlly)
 	then
 		local nAllyHeroes  = Fu.GetNearbyHeroes(bot, nDistance2, false, BOT_MODE_NONE)
 		local location = Fu.GetEscapeLoc()
@@ -618,9 +624,9 @@ function X.ConsiderGeomagneticGrip()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
-		local botTarget = Fu.GetProperTarget(bot)
+		botTarget = Fu.GetProperTarget(bot)
 
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -693,7 +699,7 @@ function X.ConsiderMagnetize()
 	end
 
 	local nRadius    = Magnetize:GetSpecialValueInt('cast_radius')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsInTeamFight(bot, 1200)
 	then
@@ -705,7 +711,7 @@ function X.ConsiderMagnetize()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nAllyHeroes = Fu.GetNearbyHeroes(bot,nRadius + 200, false, BOT_MODE_NONE)
 		local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
@@ -721,7 +727,7 @@ function X.ConsiderMagnetize()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nAllyHeroes = Fu.GetNearbyHeroes(bot,nRadius + 200, false, BOT_MODE_NONE)
 		local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)

@@ -128,8 +128,14 @@ local ShadowPoisonReleaseDesire
 local DemonicCleanseDesire, DemonicCleanseTarget
 local DemonicPurgeDesire, DemonicPurgeTarget
 
+local botTarget
+local bGoingOnSomeone
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     DisruptionDesire, DisruptionTarget = X.ConsiderDisruption()
     if DisruptionDesire > 0
@@ -182,7 +188,7 @@ function X.ConsiderDisruption()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, Disruption:GetCastRange())
     local nDuration = Disruption:GetSpecialValueFloat('disruption_duration')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange + 150, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -267,7 +273,7 @@ function X.ConsiderDisruption()
         end
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
         for _, allyHero in pairs(nInRangeAlly)
@@ -311,7 +317,7 @@ function X.ConsiderDisruption()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local strongestTarget = Fu.GetStrongestUnit(nCastRange, bot, true, false, nDuration)
 
@@ -371,9 +377,9 @@ function X.ConsiderDisseminate()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, Disseminate:GetCastRange())
 	local nRadius = Disseminate:GetSpecialValueInt('radius')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, 0, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -389,7 +395,7 @@ function X.ConsiderDisseminate()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -454,15 +460,14 @@ function X.ConsiderShadowPoison()
 	local nCastPoint = ShadowPoison:GetCastPoint()
     local nSpeed = ShadowPoison:GetSpecialValueInt('speed')
     local nDuration = ShadowPoison:GetDuration()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
-        and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
         and not botTarget:HasModifier('modifier_dazzle_shallow_graves')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
@@ -551,7 +556,7 @@ function X.ConsiderDemonicPurge()
     local nCastRange = DemonicPurge:GetCastRange()
     local nDuration = DemonicPurge:GetDuration()
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
         local strongestTarget = Fu.GetStrongestUnit(nCastRange, bot, true, false, nDuration)
 
@@ -600,7 +605,7 @@ function X.ConsiderDemonicPurge()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local strongestTarget = Fu.GetStrongestUnit(nCastRange, bot, true, false, nDuration)
 
@@ -637,7 +642,7 @@ function X.ConsiderDemonicCleanse()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, DemonicCleanse:GetCastRange())
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nInRangeAlly = Fu.GetEnemiesNearLoc(bot:GetLocation(), nCastRange + 200)
         for _, allyHero in pairs(nInRangeAlly)

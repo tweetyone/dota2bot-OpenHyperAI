@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils')
@@ -184,13 +183,15 @@ local castEDesire, castETarget
 local castRDesire, castRTarget
 
 
-local nKeepMana,nMP,nHP,nLV,hEnemyList,hAllyList,botTarget,sMotive;
 local aetherRange = 0
 
 
+local bAttacking
 function X.SkillsComplement()
 	
 	if Fu.CanNotUseAbility(bot) or bot:IsInvisible() then return end
+
+	bAttacking = Fu.IsAttacking(bot)
 	
 	nKeepMana = 400
 	aetherRange = 0
@@ -204,10 +205,8 @@ function X.SkillsComplement()
 	local aether = Fu.IsItemAvailable("item_aether_lens");
 	if aether ~= nil then aetherRange = 250 end	
 	
-	castWDesire, castWTarget, sMotive = X.ConsiderW();
 	if ( castWDesire > 0 ) 
 	then
-		Fu.SetReportMotive(bDebugMode,sMotive);
 	
 		Fu.SetQueuePtToINT(bot, true)
 	
@@ -215,10 +214,8 @@ function X.SkillsComplement()
 		return;
 	end
 	
-	castQDesire, castQTarget, sMotive = X.ConsiderQ();
 	if ( castQDesire > 0 ) 
 	then
-		Fu.SetReportMotive(bDebugMode,sMotive);		
 
 		Fu.SetQueuePtToINT(bot, true)
 
@@ -233,10 +230,8 @@ function X.SkillsComplement()
 		return;
 	end
 	
-	castRDesire, castRTarget, sMotive = X.ConsiderR();
 	if ( castRDesire > 0 ) 
 	then
-		Fu.SetReportMotive(bDebugMode,sMotive);
 	
 		Fu.SetQueuePtToINT(bot, true)
 	
@@ -245,10 +240,8 @@ function X.SkillsComplement()
 	
 	end
 	
-	castEDesire, castETarget, sMotive = X.ConsiderE();
 	if ( castEDesire > 0 ) 
 	then
-		Fu.SetReportMotive(bDebugMode,sMotive);
 	
 		Fu.SetQueuePtToINT(bot, true)
 	
@@ -374,7 +367,7 @@ function X.ConsiderQ()
 		if Fu.IsRoshan( botTarget )
 		and Fu.IsInRange( botTarget, bot, nCastRange )
 		and Fu.CanBeAttacked(botTarget)
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		and not botTarget:HasModifier('modifier_roshan_spell_block')
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget, ''
@@ -385,7 +378,7 @@ function X.ConsiderQ()
 	then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange( botTarget, bot, nCastRange )
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget, ''
 		end
@@ -727,7 +720,7 @@ function X.ConsiderE()
 		if Fu.IsRoshan( botTarget )
 		and Fu.IsInRange( botTarget, bot, nRadius )
 		and Fu.CanBeAttacked(botTarget)
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -737,7 +730,7 @@ function X.ConsiderE()
 	then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange( botTarget, bot, nRadius )
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end

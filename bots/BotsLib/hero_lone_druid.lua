@@ -140,8 +140,11 @@ local TrueFormDesire
 
 local botTarget
 
+local nBotHP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	nBotHP = Fu.GetHP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -260,14 +263,14 @@ function X.ConsiderTrueForm()
 
             if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
             and #nInRangeAlly >= #nInRangeEnemy
-            and Fu.GetHP(bot) < 0.85
+            and nBotHP < 0.85
             then
                 return BOT_ACTION_DESIRE_HIGH
             end
 		end
 	end
 
-    if Fu.IsInTeamFight(bot, 1200) and Fu.GetHP(bot) < 0.85 then
+    if Fu.IsInTeamFight(bot, 1200) and nBotHP < 0.85 then
         return BOT_ACTION_DESIRE_HIGH
     end
 
@@ -278,7 +281,7 @@ function X.ConsiderTrueForm()
         do
             if Fu.IsValidHero(enemyHero)
             and Fu.IsChasingTarget(enemyHero, bot)
-            and Fu.GetHP(bot) < 0.45
+            and nBotHP < 0.45
             and not Fu.IsSuspiciousIllusion(enemyHero)
             and not Fu.IsDisabled(enemyHero)
             then

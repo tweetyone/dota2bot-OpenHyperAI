@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -149,12 +148,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -201,13 +195,22 @@ local bAttacking = false
 local botTarget, botHP
 local nAllyHeroes, nEnemyHeroes
 
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
+local bInTeamFight
 function X.SkillsComplement()
 	bot = GetBot()
 
 	if Fu.CanNotUseAbility(bot) then return end
 
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
+
 	bAttacking = Fu.IsAttacking(bot)
-	botHP = Fu.GetHP(bot)
+	botHP = nBotHP
 	botTarget = Fu.GetProperTarget(bot)
 	nAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
 	nEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
@@ -253,8 +256,8 @@ function X.ConsiderViscousNasalGoo()
 	end
 	for _, enemyHero in pairs(nEnemyHeroes) do
 		if Fu.IsValidHero(enemyHero)
-		and Fu.GetHP(bot) < 0.6
-		and Fu.GetHP(bot) < Fu.GetHP(enemyHero)
+		and nBotHP < 0.6
+		and nBotHP < Fu.GetHP(enemyHero)
 		and Fu.IsInRange(bot, enemyHero, 900)
 		and enemyHero:IsFacingLocation(bot:GetLocation(), 40)
 		then
@@ -267,7 +270,7 @@ function X.ConsiderViscousNasalGoo()
 	local fManaAfter = Fu.GetManaAfter(nManaCost)
 	local fManaThreshold1 = Fu.GetManaThreshold(bot, nManaCost, {Bristleback, Hairball})
 
-	if Fu.IsInTeamFight(bot, 1200) then
+	if bInTeamFight then
 		if Fu.IsValidHero(nEnemyHeroes[1])
 		and Fu.CanBeAttacked(nEnemyHeroes[1])
         and Fu.CanCastOnNonMagicImmune(nEnemyHeroes[1])
@@ -278,7 +281,7 @@ function X.ConsiderViscousNasalGoo()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
 		and Fu.CanBeAttacked(botTarget)
@@ -290,9 +293,9 @@ function X.ConsiderViscousNasalGoo()
 		end
 	end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) then
+	if bRetreating and not Fu.IsRealInvisible(bot) then
 		if Fu.IsValidHero(nEnemyHeroes[1]) and Fu.IsInRange(bot, nEnemyHeroes[1], nCastRange) then
-			if Fu.IsInTeamFight(bot, 1200) or not Fu.IsInLaningPhase() then
+			if bInTeamFight or not Fu.IsInLaningPhase() then
 				return BOT_ACTION_DESIRE_HIGH, nEnemyHeroes[1]
 			end
 
@@ -372,13 +375,13 @@ function X.ConsiderQuillSpray()
 	local nRadius = QuillSpray:GetSpecialValueInt('radius')
 	local fManaAfter = Fu.GetManaAfter(QuillSpray:GetManaCost())
 
-	if Fu.IsInTeamFight(bot, 1200) then
+	if bInTeamFight then
 		if Fu.IsValidHero(nEnemyHeroes[1]) then
 			return BOT_ACTION_DESIRE_HIGH
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius - 100)
 		and Fu.CanBeAttacked(botTarget)
@@ -389,7 +392,7 @@ function X.ConsiderQuillSpray()
 		end
 	end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) then
+	if bRetreating and not Fu.IsRealInvisible(bot) then
 		for _, enemyHero in pairs(nEnemyHeroes) do
 			if Fu.IsValidHero(enemyHero)
 			and Fu.CanBeAttacked(enemyHero)
@@ -405,7 +408,7 @@ function X.ConsiderQuillSpray()
 
 	if Fu.IsPushing(bot )
     or Fu.IsDefending(bot)
-    or Fu.IsGoingOnSomeone(bot)
+    or bGoingOnSomeone
     or Fu.IsFarming(bot)
 	then
 		if Fu.CanBeAttacked(nEnemyCreeps[1]) and fManaAfter > 0.25 then
@@ -468,20 +471,18 @@ function X.ConsiderBristleback()
 	local fManaAfter = Fu.GetManaAfter(nManaCost)
 	local fManaThreshold1 = Fu.GetManaThreshold(bot, nManaCost, {Bristleback, Hairball})
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
         and Fu.CanBeAttacked(botTarget)
 		and Fu.IsInRange(bot, botTarget, nRadius)
 		and not Fu.IsChasingTarget(bot, botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
 	end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(3.0) then
+	if bRetreating and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(3.0) then
 		for _, enemyHero in ipairs(nEnemyHeroes) do
 			if Fu.IsValidHero(enemyHero)
 			and Fu.CanBeAttacked(enemyHero)
@@ -568,7 +569,7 @@ function X.ConsiderHairball()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
 		and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -580,7 +581,7 @@ function X.ConsiderHairball()
         end
     end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(3.0) then
+	if bRetreating and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(3.0) then
 		for _, enemyHero in ipairs(nEnemyHeroes) do
 			if Fu.IsValidHero(enemyHero)
 			and Fu.CanBeAttacked(enemyHero)
@@ -608,13 +609,13 @@ function X.ConsiderWarpath()
 	local nInRangeAlly = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
 	local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 800)
 
-	if Fu.IsInTeamFight(bot, 1200) then
+	if bInTeamFight then
 		if #nInRangeEnemy > #nInRangeAlly or (botHP < 0.5 and bot:WasRecentlyDamagedByAnyHero(4.0)) then
 			return BOT_ACTION_DESIRE_HIGH
 		end
 	end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) then
+	if bRetreating and not Fu.IsRealInvisible(bot) then
 		for _, enemyHero in pairs(nEnemyHeroes) do
 			if Fu.IsValidHero(enemyHero) and Fu.IsInRange(bot, enemyHero, 500) and Fu.IsChasingTarget(enemyHero, bot) then
 				if (Fu.GetTotalEstimatedDamageToTarget(nEnemyHeroes, bot, 8.0) > bot:GetHealth() * 1.15)

@@ -126,8 +126,16 @@ local FireSpiritsLaunchTime = 0
 
 if bot.sun_ray_target == nil then bot.sun_ray_target = bot end
 
+local botTarget
+local bGoingOnSomeone
+local bAttacking
+local nBotHP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
 
     FireSpiritsDesire = X.ConsiderFireSpirits()
     if FireSpiritsDesire > 0
@@ -247,7 +255,7 @@ function X.ConsiderIcarusDive()
     local nHealthCost = (IcarusDive:GetSpecialValueInt('hp_cost_perc') / 100) * bot:GetHealth()
 	local nDamage = IcarusDive:GetSpecialValueInt('damage_per_second') * IcarusDive:GetSpecialValueFloat('burn_duration')
     local nHealth = (bot:GetHealth() - nHealthCost) / bot:GetMaxHealth()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local tAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
     local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
@@ -291,7 +299,7 @@ function X.ConsiderIcarusDive()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if  Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -324,7 +332,7 @@ function X.ConsiderIcarusDive()
             end
         end
 
-        if Fu.GetHP(bot) < 0.5 and bot:WasRecentlyDamagedByTower(2.5)
+        if nBotHP < 0.5 and bot:WasRecentlyDamagedByTower(2.5)
         and nHealth > 0.2
         then
             bot.icarus_dive_retreat = true
@@ -376,7 +384,7 @@ function X.ConsiderFireSpirits()
 	local nDamage = FireSpirits:GetSpecialValueInt('damage_per_second') * FireSpirits:GetSpecialValueFloat('duration')
     local nSpeed = FireSpirits:GetSpecialValueInt('spirit_speed')
     local nHealth = (bot:GetHealth() - nHealthCost) / bot:GetMaxHealth()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local tAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
     local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
@@ -398,7 +406,7 @@ function X.ConsiderFireSpirits()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local target = nil
         local targetAttackDamage = 0
@@ -476,7 +484,7 @@ function X.ConsiderFireSpirits()
         and Fu.CanBeAttacked(botTarget)
         and Fu.GetHP(botTarget) > 0.25
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nHealth > 0.6
         and not botTarget:HasModifier('modifier_phoenix_fire_spirit_burn')
         then
@@ -488,7 +496,7 @@ function X.ConsiderFireSpirits()
     then
         if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nHealth > 0.7
         and not botTarget:HasModifier('modifier_phoenix_fire_spirit_burn')
         then
@@ -512,7 +520,7 @@ function X.ConsiderFireSpiritsLaunch()
     local nSpeed = FireSpirits:GetSpecialValueInt('spirit_speed')
     local nDuration = FireSpirits:GetSpecialValueFloat('burn_duration')
 	local nDamage = FireSpirits:GetSpecialValueInt('damage_per_second') * nDuration
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local tAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
     local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
@@ -544,7 +552,7 @@ function X.ConsiderFireSpiritsLaunch()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local target = nil
         local targetAttackDamage = 0
@@ -651,7 +659,7 @@ function X.ConsiderFireSpiritsLaunch()
         and Fu.CanBeAttacked(botTarget)
         and Fu.GetHP(botTarget) > 0.25
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             local eta = GetUnitToUnitDistance(bot, botTarget) / nSpeed
             if DotaTime() > FireSpiritsLaunchTime + eta + 0.25
@@ -665,7 +673,7 @@ function X.ConsiderFireSpiritsLaunch()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not botTarget:HasModifier('modifier_phoenix_fire_spirit_burn')
         then
             local eta = GetUnitToUnitDistance(bot, botTarget) / nSpeed
@@ -702,11 +710,11 @@ function X.ConsiderSunRay()
     end
 
     local nCastRange = Fu.GetProperCastRange(false, bot, SunRay:GetCastRange())
-    local botHP = Fu.GetHP(bot)
+    local botHP = nBotHP
 
     local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local target = nil
         local targetHP = 99999
@@ -768,7 +776,7 @@ function X.ConsiderSunRayStop()
 
 	local tAllyHeroes = Fu.GetAlliesNearLoc(bot:GetLocation(), 1600)
 	local tEnemyHeroes = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1600)
-    local botHP = Fu.GetHP(bot)
+    local botHP = nBotHP
 
     if bot.sun_ray_engage then
         if (X.IsBeingAttackedByRealHero(tEnemyHeroes, bot) and botHP < 0.25 and bot:WasRecentlyDamagedByAnyHero(2.0))

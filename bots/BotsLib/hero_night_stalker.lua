@@ -125,8 +125,18 @@ local CripplingFearDesire
 local HunterInTheNightDesire, HunterInTheNightTarget
 local DarkAscensionDesire
 
+local botTarget
+local bGoingOnSomeone
+local bAttacking
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     DarkAscensionDesire = X.ConsiderDarkAscension()
     if DarkAscensionDesire > 0
@@ -175,7 +185,7 @@ function X.ConsiderVoid()
     local nDamage = Void:GetSpecialValueInt('damage')
     local nDuration = Void:GetSpecialValueFloat('duration_day')
     local timeOfDay = Fu.CheckTimeOfDay()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if timeOfDay == 'night'
     then
@@ -216,7 +226,7 @@ function X.ConsiderVoid()
         end
     end
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         local strongestTarget = Fu.GetStrongestUnit(nCastRange, bot, true, false, nDuration)
 
@@ -247,7 +257,7 @@ function X.ConsiderVoid()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 
@@ -257,8 +267,6 @@ function X.ConsiderVoid()
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
         and not Fu.IsTaunted(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         then
@@ -322,7 +330,7 @@ function X.ConsiderVoid()
 	-- 			local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 	-- 			if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-    --             and Fu.GetMP(bot) > 0.33
+    --             and nBotMP > 0.33
 	-- 			then
 	-- 				return BOT_ACTION_DESIRE_HIGH, creep
 	-- 			end
@@ -335,7 +343,7 @@ function X.ConsiderVoid()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             if bot:HasScepter()
             then
@@ -350,7 +358,7 @@ function X.ConsiderVoid()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             if bot:HasScepter()
             then
@@ -369,7 +377,7 @@ function X.ConsiderVoid()
         if Fu.IsRetreating(allyHero)
         and allyHero:WasRecentlyDamagedByAnyHero(2.1)
         and not allyHero:IsIllusion()
-        and Fu.GetMP(bot) > 0.5
+        and nBotMP > 0.5
         then
             if nAllyInRangeEnemy ~= nil and #nAllyInRangeEnemy >= 1
             and Fu.IsValidHero(nAllyInRangeEnemy[1])
@@ -404,9 +412,9 @@ function X.ConsiderCripplingFear()
     end
 
     local nRadius = CripplingFear:GetSpecialValueInt('radius')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
         local realEnemyCount = Fu.GetEnemiesNearLoc(bot:GetLocation(), nRadius * 2)
 
@@ -416,7 +424,7 @@ function X.ConsiderCripplingFear()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 
@@ -441,7 +449,7 @@ function X.ConsiderCripplingFear()
     then
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nRadius, true)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         and nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -449,9 +457,9 @@ function X.ConsiderCripplingFear()
     end
 
     if Fu.IsFarming(bot)
-    and Fu.GetMP(bot) > 0.25
+    and nBotMP > 0.25
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nRadius)
             if nNeutralCreeps ~= nil
@@ -474,7 +482,7 @@ function X.ConsiderCripplingFear()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -484,7 +492,7 @@ function X.ConsiderCripplingFear()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -511,7 +519,7 @@ function X.ConsiderHunterInTheNight()
             if Fu.IsValid(nCreeps[1])
             and (not nCreeps[1]:IsAncientCreep()
                 or (timeOfDay == 'night' and nCreeps[1]:IsAncientCreep()))
-            and (Fu.GetHP(bot) < 0.65 or Fu.GetMP(bot) < 0.5)
+            and (Fu.GetHP(bot) < 0.65 or nBotMP < 0.5)
             then
                 return BOT_ACTION_DESIRE_HIGH, nCreeps[1]
             end
@@ -527,9 +535,9 @@ function X.ConsiderDarkAscension()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local realEnemyCount = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1000)
 
@@ -539,14 +547,13 @@ function X.ConsiderDarkAscension()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 
         if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, 600)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_enigma_black_hole_pull')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')

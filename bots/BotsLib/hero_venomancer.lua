@@ -163,8 +163,15 @@ local NoxiousPlagueDesire, NoxiousPlagueTarget
 
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -283,14 +290,12 @@ function X.ConsiderVenomousGale()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = botTarget:GetNearbyHeroes(1200, true, BOT_MODE_NONE)
             local nInRangeEnemy = botTarget:GetNearbyHeroes(1200, false, BOT_MODE_NONE)
@@ -349,7 +354,7 @@ function X.ConsiderVenomousGale()
 
         if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
         and nLocationAoE.count >= 3
-        and Fu.GetMP(bot) > 0.5
+        and nBotMP > 0.5
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nEnemyLaneCreeps)
         end
@@ -379,7 +384,7 @@ function X.ConsiderVenomousGale()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.41
+        and nBotMP > 0.41
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         and Fu.CanBeAttacked(creepList[1])
         and not Fu.IsThereCoreNearby(1200)
@@ -393,7 +398,7 @@ function X.ConsiderVenomousGale()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -403,7 +408,7 @@ function X.ConsiderVenomousGale()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -424,7 +429,7 @@ function X.ConsiderPlagueWard()
     local nEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
     local nStacks = 20 -- Fu.GetModifierCount(bot, 'modifier_venomancer_ward_counter') -- 7.39 facet changed
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -501,7 +506,7 @@ function X.ConsiderPlagueWard()
             local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(600, true)
             if Fu.CanBeAttacked(nEnemyLaneCreeps[1])
             and not Fu.IsRunning(nEnemyLaneCreeps[1])
-            and Fu.GetMP(bot) > 0.5
+            and nBotMP > 0.5
             then
                 return BOT_ACTION_DESIRE_HIGH, bot, true
             end
@@ -509,7 +514,7 @@ function X.ConsiderPlagueWard()
             if Fu.IsValidBuilding(botTarget)
             and Fu.CanBeAttacked(botTarget)
             and Fu.IsInRange(bot, botTarget, 550)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, bot, true
             end
@@ -522,7 +527,7 @@ function X.ConsiderPlagueWard()
             if Fu.IsRoshan(botTarget)
             and Fu.CanBeAttacked(botTarget)
             and Fu.IsInRange(bot, botTarget, 500)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, bot, true
             end
@@ -532,7 +537,7 @@ function X.ConsiderPlagueWard()
         then
             if Fu.IsTormentor(botTarget)
             and Fu.IsInRange(bot, botTarget, 500)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, bot, true
             end
@@ -550,7 +555,7 @@ function X.ConsiderNoxiousPlague()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, NoxiousPlague:GetCastRange())
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local target = nil
         local dmg = 0

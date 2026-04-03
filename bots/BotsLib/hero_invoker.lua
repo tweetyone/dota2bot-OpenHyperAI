@@ -129,7 +129,7 @@ X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
     if Utils.IsUnitWithName(hMinionUnit, 'forged_spirit') then
-        local botTarget = Fu.GetProperTarget(bot)
+        botTarget = Fu.GetProperTarget(bot)
         local unitTarget = hMinionUnit:GetAttackTarget()
         if unitTarget == nil then hMinionUnit:GetTarget() end
         
@@ -329,10 +329,23 @@ local previouslyRecordedMana = -1
 
 local nEnemyHeroes, nAllyHeroes, isInLaningPhase
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
 
     CheckAbilityUsage()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     nEnemyHeroes = Fu.GetNearbyHeroes(bot, 1600, true)
     nAllyHeroes = Fu.GetNearbyHeroes(bot, 1600, false)
@@ -340,7 +353,7 @@ function X.SkillsComplement()
 
     if bot:HasModifier(modifier_invoker_ghost_walk_self)
     and (bot:WasRecentlyDamagedByAnyHero(6)
-    or (Fu.GetHP(bot) <= 0.8 or #nEnemyHeroes >= #nAllyHeroes + 1)) then
+    or (nBotHP <= 0.8 or #nEnemyHeroes >= #nAllyHeroes + 1)) then
         return
     end
 
@@ -486,11 +499,11 @@ function X.SkillsComplement()
     if isInLaningPhase
     and bot:GetLevel() >= 2
     and bot:GetLevel() <= 12
-    and Fu.GetHP(bot) > 0.75
+    and nBotHP > 0.75
     and #nEnemyHeroes <= #nAllyHeroes
-    and not Fu.IsRetreating(bot)
-    and not Fu.IsGoingOnSomeone(bot)
-    and not Fu.IsInTeamFight(bot, 1200) then
+    and not bRetreating
+    and not bGoingOnSomeone
+    and not bInTeamFight then
 		local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(300, true)
 		local nEnemyTowers = bot:GetNearbyTowers(700, true)
 		if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps > 3 and nEnemyTowers ~= nil and #nEnemyTowers >= 1
@@ -501,7 +514,7 @@ function X.SkillsComplement()
         for _, enemyHero in pairs(nEnemyHeroes)
         do
             if Fu.IsValidHero(enemyHero)
-            and Fu.GetHP(bot) >= Fu.GetHP(enemyHero)
+            and nBotHP >= Fu.GetHP(enemyHero)
             and bot:GetAttackTarget() ~= enemyHero
             and (bot:HasModifier(modifier_invoker_alacrity)
             or enemyHero:HasModifier(modifier_invoker_cold_snap_freeze)
@@ -584,8 +597,8 @@ function X.ConsiderPreInvoke()
     if DotaTime() - lastTimeChangeModifierAbilities > 1 then
 
         -- -- idle spells. Maybe buggy. some conditions not seem to work properly.
-        if Fu.IsGoingOnSomeone(bot)
-        and not Fu.IsAttacking(bot)
+        if bGoingOnSomeone
+        and not bAttacking
         and not bot:WasRecentlyDamagedByAnyHero(4)
         and Invoke:IsFullyCastable() then
             if nEnemyHeroes == nil or #nEnemyHeroes <= 0 then
@@ -602,9 +615,9 @@ function X.ConsiderPreInvoke()
         end
 
         -- 切满3个一样的球
-        if Fu.GetHP(bot) < 0.6 then
+        if nBotHP < 0.6 then
             if Wex:IsTrained()
-            and Fu.IsRetreating(bot)
+            and bRetreating
             and (bot:HasModifier('modifier_invoker_quas_instance') or bot:HasModifier('modifier_invoker_exort_instance')) then
                 X.QueueElements(Wex, Wex, Wex)
             elseif Quas:IsTrained()
@@ -660,7 +673,7 @@ function X.CanUseRefresherShard()
     and ChaosMeteor:GetCooldownTimeRemaining()/ChaosMeteor:GetCooldown() <= 0.7 -- 不想马上就刷新因为可能可以再连一些技能，或者技能已经快好了
     and X.IsAbilityAvailableOnSlots(ChaosMeteor)
     and #nEnemyHeroes > 0
-    and ( Fu.IsGoingOnSomeone( bot ) or Fu.IsInTeamFight( bot ) )
+    and ( bGoingOnSomeone or Fu.IsInTeamFight( bot ) )
     and bot:GetMana() >= (ChaosMeteorMana * 2 + ChaosMeteorMana) then
         return true
     end
@@ -774,15 +787,15 @@ function X.ConsiderColdSnap()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange - castDeltaRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and (not isInLaningPhase
-            or (isInLaningPhase and Fu.GetManaAfter(ColdSnap:GetManaCost()) > 0.5 and Fu.IsAttacking(bot))
-            or (isInLaningPhase and Fu.GetMP(bot) > 0.5 and Fu.IsAttacking(botTarget)) -- 妨碍补刀
+            or (isInLaningPhase and Fu.GetManaAfter(ColdSnap:GetManaCost()) > 0.5 and bAttacking)
+            or (isInLaningPhase and nBotMP > 0.5 and Fu.IsAttacking(botTarget)) -- 妨碍补刀
             or Fu.GetHP(botTarget) < 0.5)
 		then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -801,15 +814,15 @@ function X.ConsiderColdSnap()
         and Fu.IsInRange(bot, enemyHero, bot:GetAttackRange() - castDeltaRange)
         and not Fu.IsSuspiciousIllusion(enemyHero)
         and bot:GetMana() - ColdSnap:GetManaCost() >= saveManaInLaning
-        and ((Fu.GetManaAfter(ColdSnap:GetManaCost()) > 0.4 and Fu.IsAttacking(bot))
-            or (Fu.GetMP(bot) > 0.5 and Fu.IsAttacking(enemyHero)) -- 妨碍补刀
+        and ((Fu.GetManaAfter(ColdSnap:GetManaCost()) > 0.4 and bAttacking)
+            or (nBotMP > 0.5 and Fu.IsAttacking(enemyHero)) -- 妨碍补刀
         )
 		then
             return BOT_ACTION_DESIRE_HIGH, enemyHero, "对线消耗:"..Fu.Chat.GetNormName( enemyHero )
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local enemyHero
         if nEnemyHeroes ~= nil and #nEnemyHeroes >= 1 then enemyHero = nEnemyHeroes[1] else return BOT_ACTION_DESIRE_NONE, nil end
@@ -846,14 +859,14 @@ function X.ConsiderGhostWalk()
         return BOT_ACTION_DESIRE_NONE, nil
     end
 
-    if Fu.IsRetreating(bot) or (Fu.GetHP(bot) <= 0.4 and #nEnemyHeroes >= #nAllyHeroes) then
+    if bRetreating or (nBotHP <= 0.4 and #nEnemyHeroes >= #nAllyHeroes) then
         for _, enemyHero in pairs(nEnemyHeroes)
         do
             if Fu.IsValidHero(enemyHero)
             and (Fu.IsChasingTarget(enemyHero, bot)
             or GetUnitToUnitDistance(enemyHero, bot) < enemyHero:GetAttackRange() + 100)
-            and ((isInLaningPhase and bot:WasRecentlyDamagedByAnyHero(2) and Fu.GetHP(bot) < 0.7) or not isInLaningPhase)
-            and not Fu.IsAttacking(bot)
+            and ((isInLaningPhase and bot:WasRecentlyDamagedByAnyHero(2) and nBotHP < 0.7) or not isInLaningPhase)
+            and not bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH
             end
@@ -891,7 +904,7 @@ function X.ConsiderTornado()
 	local nRadius = Tornado:GetSpecialValueInt('area_of_effect')
 	local nSpeed = Tornado:GetSpecialValueInt('travel_speed')
 
-    if Fu.IsInTeamFight(bot, 1200) then
+    if bInTeamFight then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
         local nInRangeAlly = Fu.GetAlliesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -917,7 +930,7 @@ function X.ConsiderTornado()
         return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -947,21 +960,21 @@ function X.ConsiderTornado()
         local enemyHero
         if nEnemyHeroes ~= nil and #nEnemyHeroes <= 2 and nEnemyHeroes[1] ~= nil then enemyHero = nEnemyHeroes[1] else return BOT_ACTION_DESIRE_NONE, nil end
 		
-        if enemyHero ~= nil and Fu.GetMP(bot) > 0.7
+        if enemyHero ~= nil and nBotMP > 0.7
 		then
             local nDelay = (GetUnitToUnitDistance(bot, enemyHero) / nSpeed) + nCastPoint
 			return BOT_ACTION_DESIRE_HIGH, Fu.GetCorrectLoc(enemyHero, nDelay), '对线消耗'
 		end
 	end
 
-    if Fu.IsRetreating(bot) then
+    if bRetreating then
         local enemyHero
         if nEnemyHeroes ~= nil and #nEnemyHeroes >= 1 and nEnemyHeroes[1] ~= nil then enemyHero = nEnemyHeroes[1] else return BOT_ACTION_DESIRE_NONE, 0 end
         if Fu.IsValidHero(enemyHero)
         and Fu.CanCastOnNonMagicImmune(enemyHero)
         and Fu.IsChasingTarget(enemyHero, bot)
         and Fu.IsInRange(bot, enemyHero, nCastRange - 200)
-        and (not isInLaningPhase or (isInLaningPhase and Fu.GetHP(bot) < 0.7))
+        and (not isInLaningPhase or (isInLaningPhase and nBotHP < 0.7))
 		then
             if bot:WasRecentlyDamagedByAnyHero(3) then
                 local nInRangeEnemy2 = Fu.GetEnemiesNearLoc(enemyHero:GetLocation(), nRadius)
@@ -1014,7 +1027,7 @@ function X.ConsiderEMP()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -1071,16 +1084,15 @@ function X.ConsiderAlacrity()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and Fu.CanBeAttacked(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and (not isInLaningPhase or (isInLaningPhase and Fu.GetManaAfter(Alacrity:GetManaCost()) > 0.5) or Fu.GetHP(botTarget) < 0.5)
         and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_brewmaster_storm_cyclone')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             if Fu.IsInRange(suitableTarget, botTarget, nCastRange)
@@ -1122,7 +1134,7 @@ function X.ConsiderAlacrity()
 	then
 		local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(700, true)
 		if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 2
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
 			return BOT_ACTION_DESIRE_HIGH, bot
 		end
@@ -1132,7 +1144,7 @@ function X.ConsiderAlacrity()
 
         if Fu.IsValidHero(enemyHero)
         and Fu.CanCastOnNonMagicImmune(enemyHero)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and botTarget == enemyHero
 		then
             return BOT_ACTION_DESIRE_HIGH, bot, "对线消耗:"..Fu.Chat.GetNormName( enemyHero )
@@ -1141,7 +1153,7 @@ function X.ConsiderAlacrity()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, bot
         end
@@ -1152,7 +1164,7 @@ function X.ConsiderAlacrity()
 	then
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(suitableTarget, botTarget, 1000)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, suitableTarget
 		end
@@ -1163,7 +1175,7 @@ function X.ConsiderAlacrity()
 	then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(suitableTarget, botTarget, 1000)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, suitableTarget
 		end
@@ -1229,7 +1241,7 @@ function X.ConsiderChaosMeteor()
         return BOT_ACTION_DESIRE_NONE, 0
     end
 
-    if Fu.IsInTeamFight(bot, 1200) then
+    if bInTeamFight then
 		local nLocationAoE = Fu.GetAoeEnemyHeroLocation( bot, nCastRange, nRadius, 2 )
 		if nLocationAoE ~= nil
         and GetUnitToLocationDistance(bot, nLocationAoE) <= nCastRange
@@ -1239,7 +1251,7 @@ function X.ConsiderChaosMeteor()
 		end
     end
 
-    if not Fu.IsRetreating(bot) then
+    if not bRetreating then
         for _, enemyHero in pairs(GetUnitList(UNIT_LIST_ENEMY_HEROES))
         do
             if Fu.IsInRange(bot, enemyHero, nCastRange) then
@@ -1251,9 +1263,9 @@ function X.ConsiderChaosMeteor()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
     and Fu.IsValidTarget(botTarget)
-    and Fu.IsAttacking(bot)
+    and bAttacking
     and Fu.IsInRange(bot, botTarget, nCastRange)
 	then
         local desire, target = X.ConsiderCmToTarget(botTarget, nDelay, nTravelDistance, nRadius)
@@ -1296,7 +1308,7 @@ function X.ConsiderChaosMeteor()
         if nEnemyHeroes ~= nil and #nEnemyHeroes <=2 and nEnemyHeroes[1] ~= nil then enemyHero = nEnemyHeroes[1] else return BOT_ACTION_DESIRE_NONE, nil end
 
         if Fu.IsValidHero(enemyHero)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and Fu.CanCastOnNonMagicImmune(enemyHero)
         and Fu.IsInRange(bot, enemyHero, nCastRange)
         and not Fu.IsSuspiciousIllusion(enemyHero)
@@ -1313,7 +1325,7 @@ function X.ConsiderChaosMeteor()
     if Fu.IsDoingRoshan(bot) then
 		if Fu.IsRoshan(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, X.AdjustCMLocation(botTarget:GetLocation(), botTarget)
 		end
@@ -1322,7 +1334,7 @@ function X.ConsiderChaosMeteor()
     if Fu.IsDoingTormentor(bot) then
 		if Fu.IsTormentor(botTarget)
 		and Fu.IsInRange(bot, botTarget, 700)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, X.AdjustCMLocation(botTarget:GetLocation(), botTarget)
 		end
@@ -1388,7 +1400,7 @@ function X.ConsiderCataclysm_()
     local nCastPoint = Sunstrike:GetCastPoint()
     local nDelay = Sunstrike:GetSpecialValueFloat('delay') + nCastPoint
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         -- if Fu.IsValidHero(botTarget) then
         --     -- if hero is already under control
@@ -1407,7 +1419,6 @@ function X.ConsiderCataclysm_()
         and not botTarget:HasModifier('modifier_brewmaster_storm_cyclone')
         and not botTarget:HasModifier('modifier_eul_cyclone')
         and not botTarget:HasModifier(modifier_invoker_tornado)
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and not botTarget:HasModifier('modifier_item_aeon_disk_buff')
         and (X.IsUnderLongDurationStun(botTarget)
@@ -1538,7 +1549,7 @@ function X.ConsiderSunstrike()
     if Fu.IsDoingRoshan(bot)
     then
         if Fu.IsRoshan(botTarget)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -1547,7 +1558,7 @@ function X.ConsiderSunstrike()
     if Fu.IsDoingTormentor(bot)
     then
         if Fu.IsTormentor(botTarget)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -1562,7 +1573,7 @@ function X.ConsiderForgeSpirit()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, 1200)
@@ -1572,7 +1583,7 @@ function X.ConsiderForgeSpirit()
 	end
     
     if (Fu.IsLaning( bot ) or Fu.IsFarming(bot))
-    and Fu.IsAttacking(bot)
+    and bAttacking
     and bot:GetMana() - ForgeSpirit:GetManaCost() >= saveManaInLaning
 	then
 		return BOT_ACTION_DESIRE_HIGH
@@ -1580,7 +1591,7 @@ function X.ConsiderForgeSpirit()
 
 	if Fu.IsPushing(bot) or Fu.IsDefending(bot)
 	then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -1589,7 +1600,7 @@ function X.ConsiderForgeSpirit()
 	if Fu.IsDoingRoshan(bot)
 	then
 		if Fu.IsRoshan(botTarget)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -1598,7 +1609,7 @@ function X.ConsiderForgeSpirit()
     if Fu.IsDoingTormentor(bot)
 	then
 		if Fu.IsTormentor(botTarget)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -1618,13 +1629,13 @@ function X.ConsiderIceWall()
     local nCastRange = 300
     local nRadius = 1000
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nSimpleIceWallCheckDistance)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsRunning(botTarget)
-        and (not isInLaningPhase or (isInLaningPhase and Fu.GetMP(bot) > 0.7) or Fu.GetHP(botTarget) < 0.3)
+        and (not isInLaningPhase or (isInLaningPhase and nBotMP > 0.7) or Fu.GetHP(botTarget) < 0.3)
         and bot:IsFacingLocation(botTarget:GetLocation(), 30)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
@@ -1636,14 +1647,14 @@ function X.ConsiderIceWall()
         and Fu.IsValidHero(nEnemyHeroes[1])
         and X.CheckTempModifiers(TempNonMovableModifierNames, nEnemyHeroes[1], 1) > 0
         and Fu.IsInRange(bot, nEnemyHeroes[1], nSimpleIceWallCheckDistance)
-        and (not isInLaningPhase or (isInLaningPhase and Fu.GetMP(bot) > 0.7) or Fu.GetHP(nEnemyHeroes[1]) < 0.3)
+        and (not isInLaningPhase or (isInLaningPhase and nBotMP > 0.7) or Fu.GetHP(nEnemyHeroes[1]) < 0.3)
         and Fu.CanCastOnNonMagicImmune(nEnemyHeroes[1])
         and bot:IsFacingLocation(nEnemyHeroes[1]:GetLocation(), 30) then
             return BOT_ACTION_DESIRE_HIGH, nEnemyHeroes[1]:GetLocation()
         end
 	end
 
-    if Fu.IsInTeamFight(bot, 1200) then
+    if bInTeamFight then
 		local nLocationAoE = Fu.GetAoeEnemyHeroLocation( bot, nCastRange, nRadius, 2 )
 		if nLocationAoE ~= nil
 		then
@@ -1666,7 +1677,7 @@ function X.ConsiderIceWall()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         if nEnemyHeroes ~= nil and #nEnemyHeroes >= 1
         and Fu.IsValidHero(nEnemyHeroes[1])
@@ -1676,7 +1687,7 @@ function X.ConsiderIceWall()
         and bot:WasRecentlyDamagedByAnyHero(2)
         and not Fu.IsSuspiciousIllusion(nEnemyHeroes[1])
         and not Fu.IsDisabled(nEnemyHeroes[1])
-        and (Fu.GetHP(bot) < 0.6 or Fu.GetTotalEstimatedDamageToTarget(nEnemyHeroes, bot) > bot:GetHealth())
+        and (nBotHP < 0.6 or Fu.GetTotalEstimatedDamageToTarget(nEnemyHeroes, bot) > bot:GetHealth())
         and not isInLaningPhase
 		then
             return BOT_ACTION_DESIRE_HIGH
@@ -1718,7 +1729,7 @@ function X.ConsiderDeafeningBlast()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -1750,7 +1761,7 @@ function X.ConsiderDeafeningBlast()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and Fu.IsValidHero(nEnemyHeroes[1])
     and Fu.IsChasingTarget(nEnemyHeroes[1], bot)
     and bot:WasRecentlyDamagedByAnyHero(2)

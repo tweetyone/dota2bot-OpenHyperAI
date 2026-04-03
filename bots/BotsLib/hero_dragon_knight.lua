@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -136,12 +135,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -190,10 +184,17 @@ local bAttacking = false
 local botTarget, botHP
 local nAllyHeroes, nEnemyHeroes
 
+local bGoingOnSomeone
+local bRetreating
+local bInTeamFight
 function X.SkillsComplement()
 	bot = GetBot()
 
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
 	BreatheFire = bot:GetAbilityByName('dragon_knight_breathe_fire')
 	DragonTail = bot:GetAbilityByName('dragon_knight_dragon_tail')
@@ -268,7 +269,7 @@ function X.ConsiderBreatheFire()
 		end
 	end
 
-	if Fu.IsInTeamFight(bot, 1200) then
+	if bInTeamFight then
 		local hTarget = nil
 		local hTargetDamage = 0
 		for _, enemyHero in pairs(nEnemyHeroes) do
@@ -300,16 +301,14 @@ function X.ConsiderBreatheFire()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
 		and Fu.CanBeAttacked(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange - 150)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_dragonknight_breathefire_reduction')
 		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		then
 			if Fu.CanCastAbility(ElderDragonForm) then
 				if fManaAfter > fManaThreshold2 then
@@ -321,7 +320,7 @@ function X.ConsiderBreatheFire()
 		end
 	end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(4.0) then
+	if bRetreating and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(4.0) then
 		for _, enemyHero in pairs(nEnemyHeroes) do
             if  Fu.IsValidHero(enemyHero)
             and Fu.CanBeAttacked(enemyHero)
@@ -502,7 +501,7 @@ function X.ConsiderDragonTail()
 		end
 	end
 
-	if Fu.IsInTeamFight(bot, 1200) then
+	if bInTeamFight then
 		-- fire dragon
 		if bInDragonForm and true then
 			for _, enemyHero in pairs(nEnemyHeroes) do
@@ -551,7 +550,7 @@ function X.ConsiderDragonTail()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
 		and Fu.CanBeAttacked(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange + 300)
@@ -568,7 +567,7 @@ function X.ConsiderDragonTail()
 	end
 
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(3.0) then
+	if bRetreating and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(3.0) then
 		for _, enemyHero in pairs(nEnemyHeroes) do
 			if Fu.IsValidHero(enemyHero)
             and Fu.IsInRange(bot, enemyHero, nCastRange + 300)
@@ -628,29 +627,27 @@ function X.ConsiderFireball()
 	local fManaAfter = Fu.GetManaAfter(nManaCost)
 	local fManaThreshold1 = Fu.GetManaThreshold(bot, nManaCost, {ElderDragonForm})
 
-    if Fu.IsInTeamFight(bot, 1200) then
+    if bInTeamFight then
         local vLocation = Fu.GetAoeEnemyHeroLocation(bot, nCastRange, nRadius, 2)
         if vLocation ~= nil and fManaAfter > fManaThreshold1 then
             return BOT_ACTION_DESIRE_HIGH, vLocation
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
 		and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.GetHP(botTarget) > 0.15
 		and not Fu.IsChasingTarget(bot, botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		and fManaAfter > fManaThreshold1
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
     end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(3.0) then
+	if bRetreating and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(3.0) then
 		for _, enemyHero in pairs(nEnemyHeroes) do
 			if Fu.IsValidHero(enemyHero)
 			and Fu.CanBeAttacked(enemyHero)
@@ -708,7 +705,7 @@ function X.ConsiderElderDragonForm()
 		return BOT_ACTION_DESIRE_NONE
 	end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, 800)
 		and Fu.CanBeAttacked(botTarget)

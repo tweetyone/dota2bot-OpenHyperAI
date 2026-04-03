@@ -107,13 +107,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		if Fu.IsValidHero(hMinionUnit) and hMinionUnit:IsIllusion()
-		then
-			Minion.IllusionThink( hMinionUnit )
-		end
-	end
+	Minion.MinionThink(hMinionUnit)
 end
 
 local ColdFeet          = bot:GetAbilityByName('ancient_apparition_cold_feet')
@@ -132,8 +126,16 @@ local IceBlastReleaseDesire
 
 local IceBlastReleaseLocation
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     IceBlastReleaseDesire = X.ConsiderIceBlastRelease()
     if IceBlastReleaseDesire > 0
@@ -194,7 +196,7 @@ function X.ConsiderColdFeet()
     end
 
     local nCastRange = Fu.GetProperCastRange(false, bot, ColdFeet:GetCastRange())
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nAllyHeroes = Fu.GetNearbyHeroes(bot,nCastRange + 150, false, BOT_MODE_NONE)
     for _, allyHero in pairs(nAllyHeroes)
@@ -225,7 +227,7 @@ function X.ConsiderColdFeet()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -247,7 +249,7 @@ function X.ConsiderColdFeet()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -277,7 +279,7 @@ function X.ConsiderColdFeet()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not botTarget:HasModifier('modifier_cold_feet')
         and not botTarget:HasModifier('modifier_ice_vortex')
         then
@@ -289,7 +291,7 @@ function X.ConsiderColdFeet()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not botTarget:HasModifier('modifier_cold_feet')
         and not botTarget:HasModifier('modifier_ice_vortex')
         then
@@ -309,7 +311,7 @@ function X.ConsiderIceVortex()
     local nCastRange = Fu.GetProperCastRange(false, bot, IceVortex:GetCastRange())
     local nRadius = IceVortex:GetSpecialValueInt('radius')
     local nCastPoint = IceVortex:GetCastPoint()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if Fu.IsInTeamFight(bot, 1200)
     then
@@ -322,7 +324,7 @@ function X.ConsiderIceVortex()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -342,7 +344,7 @@ function X.ConsiderIceVortex()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -390,7 +392,7 @@ function X.ConsiderIceVortex()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -400,7 +402,7 @@ function X.ConsiderIceVortex()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -417,7 +419,7 @@ function X.ConsiderChillingTouch()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, ChillingTouch:GetCastRange()) + ChillingTouch:GetSpecialValueInt('attack_range_bonus')
     local nDamage = ChillingTouch:GetSpecialValueInt('damage')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange + 50, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -465,7 +467,7 @@ function X.ConsiderChillingTouch()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -473,10 +475,7 @@ function X.ConsiderChillingTouch()
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -490,7 +489,7 @@ function X.ConsiderChillingTouch()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -518,7 +517,7 @@ function X.ConsiderChillingTouch()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -528,7 +527,7 @@ function X.ConsiderChillingTouch()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end

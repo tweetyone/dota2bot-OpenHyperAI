@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -100,9 +99,17 @@ local DemonZealDesire
 local TerrorWaveDesire
 local SunderDesire, SunderTarget
 
+local botTarget
+local bGoingOnSomeone
+local nBotHP
+local bInTeamFight
 function X.SkillsComplement()
 
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	nBotHP = Fu.GetHP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
 	SunderDesire, SunderTarget = X.ConsiderSunder()
     if (SunderDesire > 0)
@@ -156,9 +163,9 @@ function X.ConsiderReflection()
 	local nRadius = Reflection:GetSpecialValueInt('range')
 	local nCastRange = Reflection:GetCastRange()
 	local nCastPoint = Reflection:GetCastPoint()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
 
@@ -168,7 +175,7 @@ function X.ConsiderReflection()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -191,7 +198,7 @@ function X.ConsiderReflection()
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.6 and bot:WasRecentlyDamagedByAnyHero(2)))
+			or (nBotHP < 0.6 and bot:WasRecentlyDamagedByAnyHero(2)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 		and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
@@ -229,9 +236,9 @@ function X.ConsiderConjureImage()
 	end
 
 	local nMana = bot:GetMana() / bot:GetMaxMana()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,600, true, BOT_MODE_NONE)
@@ -239,7 +246,6 @@ function X.ConsiderConjureImage()
 		if Fu.IsValidTarget(botTarget)
 		and Fu.IsInRange(bot, botTarget, bot:GetAttackRange() + 50)
 		and not Fu.IsInEtherealForm(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeAlly >= #nInRangeEnemy
@@ -255,7 +261,7 @@ function X.ConsiderConjureImage()
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.5 and bot:WasRecentlyDamagedByAnyHero(2)))
+			or (nBotHP < 0.5 and bot:WasRecentlyDamagedByAnyHero(2)))
 		then
 			return BOT_ACTION_DESIRE_MODERATE
 		end
@@ -314,9 +320,9 @@ function X.ConsiderMetamorphosis()
 	end
 
 	local nRadius = bot:GetAttackRange() + Metamorphosis:GetSpecialValueInt('bonus_range')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
@@ -326,7 +332,7 @@ function X.ConsiderMetamorphosis()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 150, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
@@ -336,9 +342,7 @@ function X.ConsiderMetamorphosis()
 		-- and Fu.IsCore(botTarget)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not Fu.IsInEtherealForm(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and nInRangeAlly ~= nil and nInRangeEnemy
 		and #nInRangeAlly >= #nInRangeEnemy
 		then
@@ -370,7 +374,7 @@ function X.ConsiderSunder()
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 	local nSunderTarget = Fu.GetMostHPPercent(nEnemyHeroes, true)
 
-	if Fu.GetHP(bot) < 0.35
+	if nBotHP < 0.35
 	and nSunderTarget ~= nil
 	and not Fu.IsSuspiciousIllusion(nSunderTarget)
 	then
@@ -389,12 +393,12 @@ function X.ConsiderDemonZeal()
 
     local nHealthCost = bot:GetHealth() * DemonZeal:GetSpecialValueFloat('value')
     local nRadius = bot:GetAttackRange() + Metamorphosis:GetSpecialValueInt('bonus_range')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if (((bot:GetHealth() - nHealthCost) / bot:GetMaxHealth()) > 0.5)
 	and bot:HasModifier('modifier_terrorblade_metamorphosis_transform')
 	then
-		if Fu.IsInTeamFight(bot, 1200)
+		if bInTeamFight
 		then
 			local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
@@ -404,7 +408,7 @@ function X.ConsiderDemonZeal()
 			end
 		end
 
-		if Fu.IsGoingOnSomeone(bot)
+		if bGoingOnSomeone
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 150, false, BOT_MODE_NONE)
 			local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
@@ -414,9 +418,7 @@ function X.ConsiderDemonZeal()
 			-- and Fu.IsCore(botTarget)
 			and not Fu.IsSuspiciousIllusion(botTarget)
 			and not Fu.IsInEtherealForm(botTarget)
-			and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 			and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-			and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 			and nInRangeAlly ~= nil and nInRangeEnemy
 			and #nInRangeAlly >= #nInRangeEnemy
 			then
@@ -437,9 +439,9 @@ function X.ConsiderTerrorWave()
 	end
 
 	local nRadius = bot:GetAttackRange() + Metamorphosis:GetSpecialValueInt('bonus_range')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
@@ -449,7 +451,7 @@ function X.ConsiderTerrorWave()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 150, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
@@ -459,9 +461,7 @@ function X.ConsiderTerrorWave()
 		-- and Fu.IsCore(botTarget)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not Fu.IsInEtherealForm(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and nInRangeAlly ~= nil and nInRangeEnemy
 		and #nInRangeAlly >= #nInRangeEnemy
 		then

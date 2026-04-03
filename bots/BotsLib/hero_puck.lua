@@ -118,8 +118,18 @@ local PhaseOrbDesire, PhaseOrbLocation
 
 local IsRetreatOrb = false
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
     PhaseOrbDesire, PhaseOrbLocation, PhaseDuration = X.ConsiderPhaseOrb()
     if PhaseOrbDesire > 0
@@ -180,7 +190,7 @@ function X.ConsiderIllusoryOrb()
     local nCastPoint = IllusoryOrb:GetCastPoint()
 	local nRadius = IllusoryOrb:GetSpecialValueInt('radius')
     local nDamage = IllusoryOrb:GetSpecialValueInt('damage')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -204,15 +214,13 @@ function X.ConsiderIllusoryOrb()
 		return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, loc, nCastRange)
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
 
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         then
@@ -226,7 +234,7 @@ function X.ConsiderIllusoryOrb()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
@@ -271,7 +279,7 @@ function X.ConsiderIllusoryOrb()
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange)
             if nNeutralCreeps ~= nil
@@ -306,7 +314,7 @@ function X.ConsiderIllusoryOrb()
 			-- 	local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-            --     and Fu.GetMP(bot) > 0.35
+            --     and nBotMP > 0.35
 			-- 	then
 			-- 		return BOT_ACTION_DESIRE_HIGH, creep:GetLocation()
 			-- 	end
@@ -321,7 +329,7 @@ function X.ConsiderIllusoryOrb()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(creepList)
@@ -333,7 +341,7 @@ function X.ConsiderIllusoryOrb()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -343,7 +351,7 @@ function X.ConsiderIllusoryOrb()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -362,7 +370,7 @@ function X.ConsiderWaningRift()
     local nCastPoint = WaningRift:GetCastPoint()
 	local nRadius = WaningRift:GetSpecialValueInt('radius')
     local nDamage = WaningRift:GetSpecialValueInt('damage')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius + 200, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -396,7 +404,7 @@ function X.ConsiderWaningRift()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
 
@@ -404,8 +412,6 @@ function X.ConsiderWaningRift()
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         then
@@ -419,7 +425,7 @@ function X.ConsiderWaningRift()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -457,7 +463,7 @@ function X.ConsiderWaningRift()
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), bot:GetAttackRange() + 150, nRadius, 0, 0)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nRadius)
             if nNeutralCreeps ~= nil
@@ -491,7 +497,7 @@ function X.ConsiderWaningRift()
 			-- 	local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-            --     and Fu.GetMP(bot) > 0.35
+            --     and nBotMP > 0.35
 			-- 	then
 			-- 		return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
 			-- 	end
@@ -506,7 +512,7 @@ function X.ConsiderWaningRift()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         then
             return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
@@ -517,7 +523,7 @@ function X.ConsiderWaningRift()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -527,7 +533,7 @@ function X.ConsiderWaningRift()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -563,7 +569,7 @@ function X.ConsiderPhaseShift()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local blink = bot:GetItemInSlot(bot:FindItemSlot('item_blink'))
 		if blink ~= nil
@@ -606,9 +612,9 @@ function X.ConsiderEtherealJaunt()
     end
 
 	local nAttackRange = bot:GetAttackRange()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and not Fu.IsInRange(bot, botTarget, nAttackRange)
@@ -665,7 +671,7 @@ function X.ConsiderEtherealJaunt()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and IsRetreatOrb
 	then
 		local nProjectiles = GetLinearProjectiles()
@@ -710,7 +716,7 @@ function X.ConsiderDreamCoil()
         end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local strongestTarget = Fu.GetStrongestUnit(nCastRange, bot, true, false, nDuration)
@@ -733,7 +739,7 @@ function X.ConsiderDreamCoil()
             then
                 if #nInRangeAlly == 1 and #nTargetInRangeAlly == 0
                 and Fu.GetHP(strongestTarget) > 0.55
-                and Fu.IsAttacking(bot)
+                and bAttacking
                 then
                     return BOT_ACTION_DESIRE_HIGH, strongestTarget:GetLocation()
                 end
@@ -749,7 +755,7 @@ function X.ConsiderDreamCoil()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, 0, 0)
@@ -803,7 +809,7 @@ function X.ConsiderPhaseOrb()
             return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, loc, nCastRange), nDuration
         end
 
-        if Fu.IsRetreating(bot)
+        if bRetreating
         then
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
 

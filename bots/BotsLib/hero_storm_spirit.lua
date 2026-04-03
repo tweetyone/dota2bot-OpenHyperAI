@@ -145,8 +145,17 @@ local BallLightningDesire, BallLightningLoc
 local BallVortexDesire, BallVortexLocation, eta
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
+local nBotHP
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 	botTarget = Fu.GetProperTarget(bot)
 
 	BallVortexDesire, BallVortexLocation, eta = X.ConsiderBallVortex()
@@ -240,16 +249,13 @@ function X.ConsiderStaticRemnant()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if  Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
 		and not Fu.IsSuspiciousIllusion(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
 			local bChasingTarget = Fu.IsChasingTarget(bot, botTarget)
@@ -266,7 +272,7 @@ function X.ConsiderStaticRemnant()
 			and Fu.CanCastOnNonMagicImmune(enemyHero)
 			then
 				local bTargetChasing = Fu.IsChasingTarget(enemyHero, bot)
-				if (bTargetChasing and #nAllyHeroes < #nEnemyHeroes and Fu.GetHP(bot) < 0.75) or (Fu.GetHP(bot) < 0.5 and bot:WasRecentlyDamagedByHero(enemyHero, 3.0)) then
+				if (bTargetChasing and #nAllyHeroes < #nEnemyHeroes and nBotHP < 0.75) or (nBotHP < 0.5 and bot:WasRecentlyDamagedByHero(enemyHero, 3.0)) then
 					return BOT_ACTION_DESIRE_HIGH, enemyHero:GetLocation()
 				end
 			end
@@ -277,7 +283,7 @@ function X.ConsiderStaticRemnant()
 	if  Fu.IsFarming(bot)
 	and nAbilityLevel >= 2
 	and nManaAfter > 0.25
-	and Fu.IsAttacking(bot)
+	and bAttacking
 	then
 		if Fu.CanBeAttacked(nEnemyCreeps[1]) and not Fu.IsRunning(nEnemyCreeps[1]) then
 			local nLocationAoE = bot:FindAoELocation(true, false, nEnemyCreeps[1]:GetLocation(), 0, nRadius, 0, 0)
@@ -301,7 +307,7 @@ function X.ConsiderStaticRemnant()
         if  Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -311,7 +317,7 @@ function X.ConsiderStaticRemnant()
     then
         if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -357,7 +363,7 @@ function X.ConsiderElectricVortex()
 		end
 	end
 
-	if  Fu.IsInTeamFight(bot, 1200)
+	if  bInTeamFight
 	and bot:HasScepter()
 	then
 		local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nRadius)
@@ -368,7 +374,7 @@ function X.ConsiderElectricVortex()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if  Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -401,7 +407,7 @@ function X.ConsiderOverload()
 
 	local nActivationRadius = 750
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(nActivationRadius, false, BOT_MODE_NONE)
 
@@ -437,7 +443,7 @@ function X.ConsiderBallLightning()
 		return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, loc, 600)
 	end
 
-	if  Fu.IsGoingOnSomeone(bot)
+	if  bGoingOnSomeone
 	and nMana > 0.15
 	then
 		if Fu.IsValidTarget(botTarget)
@@ -461,11 +467,11 @@ function X.ConsiderBallLightning()
 	then
 		if Fu.IsValidHero(nEnemyHeroes[1])
 		and Fu.IsInRange(bot, nEnemyHeroes[1], 600)
-		and (Fu.IsChasingTarget(nEnemyHeroes[1], bot) or Fu.GetHP(bot) < 0.5 or not Fu.WeAreStronger(bot, 1200))
+		and (Fu.IsChasingTarget(nEnemyHeroes[1], bot) or nBotHP < 0.5 or not Fu.WeAreStronger(bot, 1200))
 		and bot:WasRecentlyDamagedByAnyHero(5)
 		then
 			local loc = Fu.GetTeamFountain()
-			local dist = 1400 * (1 - Fu.GetHP(bot))
+			local dist = 1400 * (1 - nBotHP)
 
 			if dist < 700 then dist = 700 end
 
@@ -474,7 +480,7 @@ function X.ConsiderBallLightning()
 	end
 
 	-- if  Fu.IsFarming(bot)
-	-- and Fu.IsAttacking(bot)
+	-- and bAttacking
 	-- and nMana > 0.7
 	-- then
 	-- 	local nCreeps = bot:GetNearbyCreeps(900, true)
@@ -500,7 +506,7 @@ function X.ConsiderBallVortex()
 
 		local nTeamFightLocation = Fu.GetTeamFightLocation(bot)
 
-		if  Fu.IsInTeamFight(bot, 1200)
+		if  bInTeamFight
 		and nTeamFightLocation ~= nil
 		and GetUnitToLocationDistance(bot, nTeamFightLocation) <= 1200
 		then
@@ -526,7 +532,7 @@ function X.CanDoBallVortex()
 	and bot:HasScepter()
 	and not bot:HasModifier('modifier_bloodseeker_rupture')
     then
-		if Fu.IsInTeamFight(bot, 1200)
+		if bInTeamFight
 		then
 			local nMana = bot:GetMaxMana()
 			local nActivationManaCost = BallLightning:GetSpecialValueInt('ball_lightning_initial_mana_base')

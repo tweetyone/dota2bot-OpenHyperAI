@@ -171,8 +171,21 @@ local ClearCreepsDesire, ClearCreepsTarget
 if bot.healInBase == nil then bot.healInBase = false end
 if bot.shouldBlink == nil then bot.shouldBlink = false end
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
-    if Fu.GetMP(bot) > 0.8
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
+    if nBotMP > 0.8
     or bot:HasModifier('modifier_fountain_invulnerability')
     then
         bot.healInBase = false
@@ -200,7 +213,7 @@ function X.SkillsComplement()
     -- Cache per-tick variables
     botTarget = Fu.GetProperTarget(bot)
 
-    if not Fu.IsGoingOnSomeone(bot)
+    if not bGoingOnSomeone
     and not Fu.IsDoingRoshan(bot)
     and not Fu.IsDoingTormentor(bot)
     then
@@ -209,13 +222,13 @@ function X.SkillsComplement()
             if Fu.IsInLaningPhase()
             then
                 if Rearm ~= nil and Rearm:GetManaCost() > bot:GetMana()
-                or Fu.GetHP(bot) < 0.35
+                or nBotHP < 0.35
                 then
                     bot.healInBase = true
                 end
             else
-                if Fu.GetMP(bot) < 0.3
-                or (Fu.GetHP(bot) < 0.35 and Fu.GetMP(bot) < 0.5)
+                if nBotMP < 0.3
+                or (nBotHP < 0.35 and nBotMP < 0.5)
                 then
                     bot.healInBase = true
                 end
@@ -305,7 +318,7 @@ function X.ConsiderLaser()
     end
 
     -- Teamfight: blind the highest DPS enemy
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local bestTarget = nil
         local bestDPS = 0
@@ -334,7 +347,7 @@ function X.ConsiderLaser()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
     -- and (not CanDoCombo1()
     --     and not CanDoCombo2()
     --     and not CanDoCombo3()
@@ -367,7 +380,7 @@ function X.ConsiderLaser()
         end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
     and not Fu.IsRealInvisible(bot)
 	then
         for _, enemyHero in pairs(nEnemyHeroes)
@@ -379,7 +392,7 @@ function X.ConsiderLaser()
             and Fu.CanCastOnTargetAdvanced(enemyHero)
             and Fu.IsChasingTarget(enemyHero, bot)
             and not enemyHero:HasModifier('modifier_abaddon_borrowed_time')
-            and (bot:WasRecentlyDamagedByHero(enemyHero, 3.5) or Fu.GetHP(bot) < 0.4)
+            and (bot:WasRecentlyDamagedByHero(enemyHero, 3.5) or nBotHP < 0.4)
             then
                 return BOT_ACTION_DESIRE_HIGH, enemyHero
             end
@@ -389,10 +402,10 @@ function X.ConsiderLaser()
     local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nCastRange, true)
 
     if (Fu.IsPushing(bot) or Fu.IsDefending(bot))
-    and Fu.GetMP(bot) > 0.35
+    and nBotMP > 0.35
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nCastRange, nRadius, 0, 0)
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if Fu.CanBeAttacked(nEnemyLaneCreeps[1])
             and not Fu.IsRunning(nEnemyLaneCreeps[1])
@@ -404,9 +417,9 @@ function X.ConsiderLaser()
     end
 
     if Fu.IsFarming(bot)
-    and Fu.GetMP(bot) > 0.3
+    and nBotMP > 0.3
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), 1200, nRadius, 0, 0)
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(1000)
@@ -441,7 +454,7 @@ function X.ConsiderLaser()
 			then
 				if Fu.IsValidHero(nEnemyHeroes[1])
                 and GetUnitToUnitDistance(creep, nEnemyHeroes[1]) < 600
-                and Fu.GetMP(bot) > 0.3
+                and nBotMP > 0.3
 				then
 					return BOT_ACTION_DESIRE_HIGH, creep
 				end
@@ -453,7 +466,7 @@ function X.ConsiderLaser()
                 creepList = Fu.GetCreepListAroundTargetCanKill(creep, nRadius, nDamage, true, false, true)
 
                 if #creepList >= 2
-                and Fu.GetMP(bot) > 0.25
+                and nBotMP > 0.25
                 then
                     return BOT_ACTION_DESIRE_HIGH, creep
                 end
@@ -486,7 +499,7 @@ function X.ConsiderLaser()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -496,7 +509,7 @@ function X.ConsiderLaser()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -542,7 +555,7 @@ function X.ConsiderMarchOfTheMachines()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nLocationAoE__A = bot:FindAoELocation(false, true, bot:GetLocation(), nDistance / 2, nRadius, 0, 0)
         local nLocationAoE__E = bot:FindAoELocation(true, true, bot:GetLocation(), nDistance / 2, nRadius, 0, 0)
@@ -559,7 +572,6 @@ function X.ConsiderMarchOfTheMachines()
         and Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nDistance)
         and Fu.CanCastOnNonMagicImmune(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		then
             return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, botTarget:GetLocation(), nCastRange)
@@ -574,7 +586,7 @@ function X.ConsiderMarchOfTheMachines()
     local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(1600, true)
 
     if (Fu.IsPushing(bot) or Fu.IsDefending(bot))
-    and Fu.GetMP(bot) > 0.35
+    and nBotMP > 0.35
     then
         if #nEnemyLaneCreeps >= 2
         and Fu.CanBeAttacked(nEnemyLaneCreeps[1])
@@ -590,9 +602,9 @@ function X.ConsiderMarchOfTheMachines()
     end
 
     if Fu.IsFarming(bot)
-    and Fu.GetMP(bot) > 0.3
+    and nBotMP > 0.3
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), 1200, nRadius, 0, 0)
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(1000)
@@ -617,7 +629,7 @@ function X.ConsiderMarchOfTheMachines()
         if Fu.IsRoshan(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nDistance)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, botTarget:GetLocation(), nCastRange)
         end
@@ -627,7 +639,7 @@ function X.ConsiderMarchOfTheMachines()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nDistance)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, botTarget:GetLocation(), nCastRange)
         end
@@ -647,14 +659,14 @@ function X.ConsiderDeployTurrets()
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot, 1600, true, BOT_MODE_NONE)
 
     -- Mana management: reserve mana for Rearm + TP combo (exception: always deploy in teamfight)
-    if not Fu.IsInTeamFight(bot, 1200)
+    if not bInTeamFight
     and Fu.GetManaAfter(nManaCost) < 0.25
     then
         return BOT_ACTION_DESIRE_NONE, nil
     end
 
     -- When going on someone: deploy turrets at the target's location
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -664,7 +676,7 @@ function X.ConsiderDeployTurrets()
     end
 
     -- When retreating: deploy turrets near approaching enemies to slow their chase
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     then
         for _, enemyHero in pairs(nEnemyHeroes)
@@ -680,7 +692,7 @@ function X.ConsiderDeployTurrets()
     end
 
     -- In teamfights: deploy turrets near the cluster of enemy heroes
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, 400, 0, 0)
         if nLocationAoE.count >= 2
@@ -735,7 +747,7 @@ function X.ConsiderDeployTurrets()
     then
         if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -777,16 +789,16 @@ function X.ConsiderKeenConveyance()
         return BOT_ACTION_DESIRE_HIGH, Fu.GetTeamFountain(), 'loc'
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
-    and not Fu.IsRetreating(bot)
+    if bInTeamFight
+    and not bRetreating
     then
         return BOT_ACTION_DESIRE_NONE, 0, ''
     end
 
     local nTeamFightLocation = Fu.GetTeamFightLocation(bot)
     if nTeamFightLocation ~= nil
-    and Fu.GetMP(bot) > 0.65
-    and not Fu.IsRetreating(bot)
+    and nBotMP > 0.65
+    and not bRetreating
     and not Fu.IsInLaningPhase()
     then
         local nInRangeAlly = Fu.GetAlliesNearLoc(nTeamFightLocation, 1200)
@@ -983,7 +995,7 @@ function X.ConsiderRearm()
         return BOT_ACTION_DESIRE_HIGH
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.IsInRange(bot, botTarget, 1500)
@@ -1021,12 +1033,12 @@ function X.ConsiderRearm()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(800)
             if nNeutralCreeps ~= nil
             and (#nNeutralCreeps >= 2 or (#nNeutralCreeps >= 1 and nNeutralCreeps[1]:IsAncientCreep()))
-            and Fu.GetMP(bot) > 0.25
+            and nBotMP > 0.25
             and (Laser ~= nil and Laser:GetCooldownTimeRemaining() > nChannelTime
                 or MarchOfTheMachines ~= nil and MarchOfTheMachines:GetCooldownTimeRemaining() > nChannelTime)
             then
@@ -1034,7 +1046,7 @@ function X.ConsiderRearm()
             end
 
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 2
-            and Fu.GetMP(bot) > 0.25
+            and nBotMP > 0.25
             and (Laser ~= nil and Laser:GetCooldownTimeRemaining() > nChannelTime
                 or MarchOfTheMachines ~= nil and MarchOfTheMachines:GetCooldownTimeRemaining() > nChannelTime)
             then
@@ -1047,7 +1059,7 @@ function X.ConsiderRearm()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 800)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and (DeployTurrets ~= nil and DeployTurrets:GetCooldownTimeRemaining() > nChannelTime
             or MarchOfTheMachines ~= nil and MarchOfTheMachines:GetCooldownTimeRemaining() > nChannelTime)
         then
@@ -1059,7 +1071,7 @@ function X.ConsiderRearm()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 800)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and (DeployTurrets ~= nil and DeployTurrets:GetCooldownTimeRemaining() > nChannelTime
             or MarchOfTheMachines ~= nil and MarchOfTheMachines:GetCooldownTimeRemaining() > nChannelTime)
         then
@@ -1078,7 +1090,7 @@ function X.ConsiderWarpFlare()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, WarpFlare:GetCastRange())
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -1165,7 +1177,7 @@ function X.ConsiderCombos()
         ComboFlag = 1
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local target = nil
         local hp = 20000
@@ -1523,8 +1535,8 @@ function X.ConsiderSoulRing()
     SoulRing = Fu.Utils.GetItem('item_soul_ring')
     if SoulRing ~= nil and SoulRing:IsFullyCastable()
     then
-        if Fu.GetHP(bot) > 0.3
-        and Fu.GetMP(bot) < 0.8
+        if nBotHP > 0.3
+        and nBotMP < 0.8
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -1543,7 +1555,7 @@ function X.ConsiderShivasGuard()
     ShivasGuard = Fu.Utils.GetItem('item_shivas_guard')
     if ShivasGuard ~= nil and ShivasGuard:IsFullyCastable()
     then
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         and not CanDoCombo2()
         then
             if Fu.IsValidTarget(botTarget)

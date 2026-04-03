@@ -86,8 +86,14 @@ local HomingMissileDesire, HomingMissileTarget
 local FlakCannonDesire
 local CallDownDesire, CallDownLocation
 
+local botTarget
+local bGoingOnSomeone
+local bInTeamFight
 function X.SkillsComplement()
     if Fu.CanNotUseAbility( bot ) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     HomingMissileDesire, HomingMissileTarget = X.ConsiderHomingMissile()
     if HomingMissileDesire > 0
@@ -133,7 +139,7 @@ function X.ConsiderRocketBarrage()
     local nDuration = 3
     local nAbilityLevel = RocketBarrage:GetLevel()
     local nMana = bot:GetMana() / bot:GetMaxMana()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -155,7 +161,7 @@ function X.ConsiderRocketBarrage()
         end
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius - 75, true, BOT_MODE_NONE)
 
@@ -165,7 +171,7 @@ function X.ConsiderRocketBarrage()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nCreeps = bot:GetNearbyCreeps(nRadius, true)
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 150, false, BOT_MODE_NONE)
@@ -174,7 +180,6 @@ function X.ConsiderRocketBarrage()
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and nInRangeAlly ~= nil and nInRangeEnemy
@@ -250,7 +255,7 @@ function X.ConsiderHomingMissile()
     local nLaunchDelay = HomingMissile:GetSpecialValueFloat('pre_flight_time')
 	local nDamage = HomingMissile:GetAbilityDamage()
     local nMana = bot:GetMana() / bot:GetMaxMana()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -268,7 +273,7 @@ function X.ConsiderHomingMissile()
         end
     end
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         local strongestEnemy = Fu.GetStrongestUnit(nCastRange, bot, true, false, 5)
 
@@ -285,7 +290,7 @@ function X.ConsiderHomingMissile()
         end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -379,10 +384,10 @@ function X.ConsiderFlakCannon()
 	local nRadius = FlakCannon:GetSpecialValueInt('radius')
     local nMana = bot:GetMana() / bot:GetMaxMana()
     local nAbilityLevel = FlakCannon:GetLevel()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		if nEnemyHeroes ~= nil and #nEnemyHeroes >= 2
         then
@@ -390,7 +395,7 @@ function X.ConsiderFlakCannon()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 100, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
@@ -398,7 +403,6 @@ function X.ConsiderFlakCannon()
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and nInRangeAlly ~= nil and nInRangeEnemy
@@ -454,7 +458,7 @@ function X.ConsiderCallDown()
 	local nRadius = CallDown:GetSpecialValueInt('radius')
     local nDamage = CallDown:GetSpecialValueInt('damage_first')
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius / 2, nCastPoint, 0)
 

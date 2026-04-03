@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -167,8 +166,15 @@ local BodyguardDesire, BodyguardTarget
 local SpecialDeliveryDesire
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     botTarget = Fu.GetProperTarget(bot)
     UnleashDesire = X.ConsiderUnleash()
@@ -226,12 +232,12 @@ function X.ConsiderBodyguard()
 
     local tEnemyLaneCreeps = bot:GetNearbyLaneCreeps(1200, true)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     or Fu.IsPushing(bot)
     or Fu.IsDefending(bot)
     or (Fu.IsLaning(bot) and #tEnemyLaneCreeps >= 3)
-    or (Fu.IsDoingRoshan(bot) and Fu.IsRoshan(botTarget) and Fu.IsInRange(bot, botTarget, 800) and Fu.IsAttacking(bot) and Fu.CanBeAttacked(botTarget))
-    or (Fu.IsDoingTormentor(bot) and Fu.IsTormentor(botTarget) and Fu.IsInRange(bot, botTarget, 800) and Fu.IsAttacking(bot) and Fu.CanBeAttacked(botTarget))
+    or (Fu.IsDoingRoshan(bot) and Fu.IsRoshan(botTarget) and Fu.IsInRange(bot, botTarget, 800) and bAttacking and Fu.CanBeAttacked(botTarget))
+    or (Fu.IsDoingTormentor(bot) and Fu.IsTormentor(botTarget) and Fu.IsInRange(bot, botTarget, 800) and bAttacking and Fu.CanBeAttacked(botTarget))
     then
         local nAllyHeroes = bot:GetNearbyHeroes(nCastRange, false, BOT_MODE_NONE)
 
@@ -298,14 +304,13 @@ function X.ConsiderDispose()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.CanCastOnTargetAdvanced(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_enigma_black_hole_pull')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
@@ -317,7 +322,7 @@ function X.ConsiderDispose()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     and bot:WasRecentlyDamagedByAnyHero(3.0)
 	then
@@ -346,7 +351,7 @@ end
 function X.ConsiderRebound()
     if not Fu.CanCastAbility(Rebound)
     or bot:IsRooted()
-    or (bot:HasModifier('modifier_marci_unleash') and not Fu.IsRetreating(bot))
+    or (bot:HasModifier('modifier_marci_unleash') and not bRetreating)
     then
         return BOT_ACTION_DESIRE_NONE, nil
     end
@@ -367,7 +372,7 @@ function X.ConsiderRebound()
         and not ally:HasModifier('modifier_enigma_black_hole_pull')
         and not ally:HasModifier('modifier_faceless_void_chronosphere_freeze')
         then
-            if Fu.IsGoingOnSomeone(bot) and not Fu.IsInTeamFight(bot, 1600) then -- don't go jumping around teamfights
+            if bGoingOnSomeone and not Fu.IsInTeamFight(bot, 1600) then -- don't go jumping around teamfights
                 if Fu.IsValidHero(botTarget)
                 and Fu.CanBeAttacked(botTarget)
                 and Fu.IsInRange(bot, ally, nRadius)
@@ -380,7 +385,7 @@ function X.ConsiderRebound()
                 end
             end
 
-            if Fu.IsRetreating(bot)
+            if bRetreating
             and not Fu.IsRealInvisible(bot)
             and bot:WasRecentlyDamagedByAnyHero(3.0)
             and GetUnitToUnitDistance(bot, ally) >= nJumpDistance - 300
@@ -459,7 +464,7 @@ function X.ConsiderRebound()
                 if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
                 and Fu.CanBeAttacked(botTarget)
                 and Fu.IsInRange(ally, botTarget, nRadius)
-                and Fu.IsAttacking(bot)
+                and bAttacking
                 then
                     return BOT_ACTION_DESIRE_HIGH, ally
                 end
@@ -501,12 +506,12 @@ function X.ConsiderSidekick()
 
     local tEnemyLaneCreeps = bot:GetNearbyLaneCreeps(1200, true)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     or Fu.IsPushing(bot)
     or Fu.IsDefending(bot)
     or (Fu.IsLaning(bot) and #tEnemyLaneCreeps >= 3)
-    or (Fu.IsDoingRoshan(bot) and Fu.IsRoshan(botTarget) and Fu.IsInRange(bot, botTarget, 800) and Fu.IsAttacking(bot) and Fu.CanBeAttacked(botTarget))
-    or (Fu.IsDoingTormentor(bot) and Fu.IsTormentor(botTarget) and Fu.IsInRange(bot, botTarget, 800) and Fu.IsAttacking(bot) and Fu.CanBeAttacked(botTarget))
+    or (Fu.IsDoingRoshan(bot) and Fu.IsRoshan(botTarget) and Fu.IsInRange(bot, botTarget, 800) and bAttacking and Fu.CanBeAttacked(botTarget))
+    or (Fu.IsDoingTormentor(bot) and Fu.IsTormentor(botTarget) and Fu.IsInRange(bot, botTarget, 800) and bAttacking and Fu.CanBeAttacked(botTarget))
     then
         local nAllyHeroes = bot:GetNearbyHeroes(nCastRange, false, BOT_MODE_NONE)
 
@@ -563,13 +568,12 @@ function X.ConsiderUnleash()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange() * 1.5)
         and Fu.CanBeAttacked(botTarget)
         and botTarget:GetHealth() > (nPulseDamage + bot:GetAttackDamage() * (nPunchCount + 2))
         and not Fu.IsChasingTarget(bot, botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
         and not botTarget:HasModifier('modifier_item_blade_mail_reflect')

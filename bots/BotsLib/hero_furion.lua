@@ -200,8 +200,13 @@ end
 -- Cached per-tick variables
 local botTarget, botHP, nAllyHeroes, nEnemyHeroes, bAttacking
 
+local bGoingOnSomeone
+local bInTeamFight
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     RefreshAbilities()
     botTarget = Fu.GetProperTarget(bot)
@@ -286,7 +291,7 @@ function X.ConsiderSprout()
     end
 
     -- Teamfight: target highest-threat enemy
-    if Fu.IsInTeamFight(bot, 1200) then
+    if bInTeamFight then
         local bestTarget, bestDmg = nil, 0
         for _, enemy in pairs(nEnemyHeroes) do
             if CanBeSprouted(enemy)
@@ -303,7 +308,7 @@ function X.ConsiderSprout()
     end
 
     -- Going on someone
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if CanBeSprouted(botTarget)
         and Fu.CanCastOnMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -477,12 +482,12 @@ function X.ConsiderNaturesCall()
     local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nCastRange, true)
 
     -- Teamfight: summon treants for extra damage/body block
-    if Fu.IsInTeamFight(bot, 1200) then
+    if bInTeamFight then
         return BOT_ACTION_DESIRE_HIGH, nInRangeTrees[1]
     end
 
     -- Going on someone
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, 900)
         and Fu.CanBeAttacked(botTarget)
@@ -555,7 +560,7 @@ function X.ConsiderWrathOfNature()
     end
 
     -- Teamfight: lowest HP enemy
-    if Fu.IsInTeamFight(bot, 1200) then
+    if bInTeamFight then
         local hTarget, hp = nil, 99999
         for _, enemyHero in pairs(nEnemyHeroes) do
             if Fu.IsValidTarget(enemyHero)
@@ -576,12 +581,10 @@ function X.ConsiderWrathOfNature()
     end
 
     -- Going on someone: cast when attacking or have scepter (treants on hit)
-    if Fu.IsGoingOnSomeone(bot) and (bAttacking or bot:HasScepter()) then
+    if bGoingOnSomeone and (bAttacking or bot:HasScepter()) then
         if Fu.IsValidHero(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.CanCastOnTargetAdvanced(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_oracle_false_promise_timer') then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -598,7 +601,7 @@ function X.ConsiderCurseOfTheOldGrowth()
     local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nRadius)
 
     -- Teamfight or going on someone with 2+ enemies
-    if (Fu.IsInTeamFight(bot, 1200) or Fu.IsGoingOnSomeone(bot))
+    if (bInTeamFight or bGoingOnSomeone)
     and #nInRangeEnemy >= 2 then
         return BOT_ACTION_DESIRE_HIGH
     end

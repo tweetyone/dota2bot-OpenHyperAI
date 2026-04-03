@@ -96,8 +96,16 @@ local nInRangeEnemy
 
 if bot.chargeRetreat == nil then bot.chargeRetreat = false end
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     nInRangeEnemy = Fu.GetNearbyHeroes(bot, 1600, true, BOT_MODE_NONE)
 
@@ -154,12 +162,12 @@ function X.ConsiderChargeOfDarkness()
         return BOT_ACTION_DESIRE_NONE, nil
     end
 
-    if not Fu.IsRetreating(bot) then
+    if not bRetreating then
         bot.chargeRetreat = false
     end
 
     local nRadius = ChargeOfDarkness:GetSpecialValueInt('bash_radius')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     for _, enemyHero in pairs(nInRangeEnemy)
     do
@@ -193,7 +201,7 @@ function X.ConsiderChargeOfDarkness()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local target = nil
         local dmg = 0
@@ -229,7 +237,7 @@ function X.ConsiderChargeOfDarkness()
         end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
     and Fu.GetHP(bot) < 0.5
     and Fu.IsValidHero(nInRangeEnemy[1])
     and Fu.IsInRange(bot, nInRangeEnemy[1], 500)
@@ -271,7 +279,7 @@ function X.ConsiderChargeOfDarkness()
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), bot:GetCurrentVisionRange(), nRadius, 0, 0)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         and Fu.GetMP(bot) > 0.25
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nRadius)
@@ -332,7 +340,7 @@ function X.ConsiderChargeOfDarkness()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -342,7 +350,7 @@ function X.ConsiderChargeOfDarkness()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -382,14 +390,14 @@ function X.ConsiderBulldoze()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if bot:HasModifier('modifier_spirit_breaker_charge_of_darkness')
     then
         return BOT_ACTION_DESIRE_HIGH
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -402,7 +410,7 @@ function X.ConsiderBulldoze()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         if Fu.IsValidHero(nInRangeEnemy[1])
         and Fu.IsInRange(bot, nInRangeEnemy[1], 600)
@@ -453,7 +461,7 @@ function X.ConsiderNetherStrike()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local target = nil
         local dmg = 0
@@ -501,7 +509,7 @@ function X.ConsiderPlanarPocket()
     end
 
     local nRadius = PlanarPocket:GetSpecialValueInt('radius')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if Fu.IsInTeamFight(bot, 1200)
 	then
@@ -514,7 +522,7 @@ function X.ConsiderPlanarPocket()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -528,7 +536,7 @@ function X.ConsiderPlanarPocket()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
 

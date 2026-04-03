@@ -165,7 +165,16 @@ local PulverizeDesire, PulverizeTarget
 local OnslaughtStartTime = 0
 local OnslaughtETA = 0
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
 
     Onslaught       = bot:GetAbilityByName('primal_beast_onslaught')
     Trample         = bot:GetAbilityByName('primal_beast_trample')
@@ -273,7 +282,7 @@ function X.ConsiderOnslaught()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nDistance)
@@ -292,13 +301,13 @@ function X.ConsiderOnslaught()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     and bot:WasRecentlyDamagedByAnyHero(4)
     and bot:GetActiveModeDesire() > 0.7
     then
         if Fu.IsValidHero(nEnemyHeroes[1])
-        and ((not Fu.WeAreStronger(bot, 1200) and Fu.GetHP(bot) < 0.75)
+        and ((not Fu.WeAreStronger(bot, 1200) and nBotHP < 0.75)
             or Fu.IsChasingTarget(nEnemyHeroes[1], bot))
         then
             local dist = RemapValClamped(GetUnitToUnitDistance(bot, nEnemyHeroes[1]), 600, 1200, nChannelTime * 0.6, nChannelTime)
@@ -316,7 +325,7 @@ function X.ConsiderOnslaught()
         and Fu.GetManaAfter(nManaCost) > 0.3
         and not Fu.IsRunning(nCreeps[1])
         and Fu.CanBeAttacked(nCreeps[1])
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             local nLocationAoE = bot:FindAoELocation(true, false, nCreeps[1]:GetLocation(), 0, nRadius, 0, 0)
             if ((#nCreeps >= 4 and nLocationAoE.count >= 4) and not Fu.HasItem(bot, 'item_radiance'))
@@ -359,15 +368,12 @@ function X.ConsiderTrample()
 
     local nEnemyTowers = bot:GetNearbyTowers(1600, true)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         if Fu.IsValidHero(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_item_blade_mail_reflect')
         then
             bot.trample_status = {'engaging', botTarget:GetLocation(), botTarget}
@@ -375,7 +381,7 @@ function X.ConsiderTrample()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     and bot:WasRecentlyDamagedByAnyHero(3)
     then
@@ -397,7 +403,7 @@ function X.ConsiderTrample()
         and ((#nCreeps >= 3 and not Fu.HasItem(bot, 'item_radiance')) or #nCreeps >= 2 and nCreeps[1]:IsAncientCreep())
         and not Fu.IsRunning(nCreeps[1])
         and Fu.CanBeAttacked(nCreeps[1])
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             bot.trample_status = {'farming', 0, nil}
             return BOT_ACTION_DESIRE_HIGH
@@ -409,7 +415,7 @@ function X.ConsiderTrample()
         and Fu.IsValid(nCreeps[1])
         and not Fu.IsRunning(nCreeps[1])
         and Fu.CanBeAttacked(nCreeps[1])
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             if #nEnemyTowers == 0
             or Fu.IsValidBuilding(nEnemyTowers[1]) and GetUnitToUnitDistance(nCreeps[1], nEnemyTowers[1]) > 900 then
@@ -439,7 +445,7 @@ function X.ConsiderTrample()
         if Fu.IsRoshan(botTarget)
         and not botTarget:IsAttackImmune()
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             bot.trample_status = {'miniboss', botTarget:GetLocation(), botTarget}
             return BOT_ACTION_DESIRE_HIGH
@@ -449,7 +455,7 @@ function X.ConsiderTrample()
     if Fu.IsDoingTormentor(bot) then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             bot.trample_status = {'miniboss', botTarget:GetLocation(), botTarget}
             return BOT_ACTION_DESIRE_HIGH
@@ -468,7 +474,7 @@ function X.ConsiderUproar()
     local nRadius = Uproar:GetSpecialValueInt('radius')
     local nStacks = Fu.GetModifierCount(bot, 'modifier_primal_beast_uproar')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
@@ -477,21 +483,21 @@ function X.ConsiderUproar()
         then
             if nStacks >= 4
             or Fu.IsChasingTarget(bot, botTarget) and nStacks >= 2
-            or Fu.GetHP(bot) < 0.5 and nStacks >= 3
-            or Fu.GetHP(bot) < 0.25 and nStacks >= 1
+            or nBotHP < 0.5 and nStacks >= 3
+            or nBotHP < 0.25 and nStacks >= 1
             then
                 return BOT_ACTION_DESIRE_HIGH
             end
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     and bot:WasRecentlyDamagedByAnyHero(3)
     then
         if Fu.IsValidTarget(nEnemyHeroes[1])
         and Fu.IsInRange(bot, nEnemyHeroes[1], nRadius)
-        and (Fu.IsChasingTarget(nEnemyHeroes[1], bot) or Fu.GetHP(bot) < 0.5)
+        and (Fu.IsChasingTarget(nEnemyHeroes[1], bot) or nBotHP < 0.5)
         and not Fu.IsDisabled(nEnemyHeroes[1])
         and nStacks >= 2
         then
@@ -581,15 +587,12 @@ function X.ConsiderPulverize()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange * 2)
         and Fu.CanCastOnMagicImmune(botTarget)
         and Fu.CanCastOnTargetAdvanced(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         then
             if Fu.IsInLaningPhase() and not Fu.IsInTeamFight(bot, 1600) then
                 local nAllyHeroes = Fu.GetAlliesNearLoc(botTarget:GetLocation(), 800)

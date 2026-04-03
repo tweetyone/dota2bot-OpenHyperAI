@@ -139,8 +139,14 @@ local VendettaDesire
 if bot.canVendettaKill == nil then bot.canVendettaKill = false end
 if bot.vendettaTarget == nil then bot.vendettaTarget = nil end
 
+local botTarget
+local bGoingOnSomeone
+local nBotMP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	nBotMP = Fu.GetMP(bot)
 
     VendettaDesire = X.ConsiderVendetta()
     if VendettaDesire > 0
@@ -196,7 +202,7 @@ function X.ConsiderImpale()
     local nCastPoint = Impale:GetCastPoint()
     local nStunDuration = Impale:GetSpecialValueInt('duration')
     local nDamage = Impale:GetSpecialValueInt('impale_damage')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -229,7 +235,7 @@ function X.ConsiderImpale()
         if Fu.IsRetreating(allyHero)
         and allyHero:WasRecentlyDamagedByAnyHero(2.1)
         and not allyHero:IsIllusion()
-        and Fu.GetMP(bot) > 0.31
+        and nBotMP > 0.31
         then
             if nAllyInRangeEnemy ~= nil and #nAllyInRangeEnemy >= 1
             and Fu.IsValidHero(nAllyInRangeEnemy[1])
@@ -250,7 +256,7 @@ function X.ConsiderImpale()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local strongestTarget = Fu.GetStrongestUnit(nCastRange, bot, true, false, nStunDuration)
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
@@ -323,7 +329,7 @@ function X.ConsiderImpale()
 			-- 	local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-            --     and Fu.GetMP(bot) > 0.41
+            --     and nBotMP > 0.41
 			-- 	then
 			-- 		return BOT_ACTION_DESIRE_HIGH, creep:GetLocation()
 			-- 	end
@@ -338,7 +344,7 @@ function X.ConsiderImpale()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(creepList)
@@ -396,7 +402,7 @@ function X.ConsiderMindflare()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local weakestTarget = Fu.GetVulnerableWeakestUnit(bot, true, true, nCastRange)
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
@@ -490,7 +496,7 @@ function X.ConsiderVendetta()
     end
 
     local nDamage = Vendetta:GetSpecialValueInt('bonus_damage')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -525,7 +531,7 @@ function X.ConsiderVendetta()
         return BOT_ACTION_DESIRE_HIGH
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1600, false, BOT_MODE_NONE)
 
@@ -534,7 +540,6 @@ function X.ConsiderVendetta()
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
         and not Fu.IsTaunted(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_enigma_black_hole_pull')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')

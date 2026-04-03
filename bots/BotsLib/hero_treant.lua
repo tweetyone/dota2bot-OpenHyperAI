@@ -148,8 +148,18 @@ local OvergrowthDesire
 local Blink
 local BlinkOvergrowthDesire, BlinkLocation
 
+local botTarget
+local bGoingOnSomeone
+local bAttacking
+local nBotHP
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     BlinkOvergrowthDesire, BlinkLocation = X.ConsiderBlinkOvergrowth()
     if BlinkOvergrowthDesire > 0
@@ -211,9 +221,9 @@ function X.ConsiderNaturesGrasp()
 
 	local nCastRange = Fu.GetProperCastRange(false, bot, NaturesGrasp:GetCastRange())
     local nRadius = NaturesGrasp:GetSpecialValueInt('latch_range')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, 0, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -224,7 +234,7 @@ function X.ConsiderNaturesGrasp()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -262,7 +272,7 @@ function X.ConsiderNaturesGrasp()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.75 and bot:WasRecentlyDamagedByAnyHero(1)))
+                or (nBotHP < 0.75 and bot:WasRecentlyDamagedByAnyHero(1)))
             then
                 return BOT_ACTION_DESIRE_HIGH, nInRangeEnemy[1]:GetLocation()
             end
@@ -322,7 +332,7 @@ function X.ConsiderNaturesGrasp()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -332,7 +342,7 @@ function X.ConsiderNaturesGrasp()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -348,10 +358,10 @@ function X.ConsiderLeechSeed()
     end
 
     local nCastRange = Fu.GetProperCastRange(false, bot, LeechSeed:GetCastRange())
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
     local nRadius = LeechSeed:GetSpecialValueInt('radius')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         bLeechSeedGround = false
         if Fu.IsValidHero(botTarget)
@@ -416,7 +426,7 @@ function X.ConsiderLeechSeed()
         and not nInRangeEnemy[1]:HasModifier('modifier_treant_natures_grasp_damage')
 		then
             if (#nInRangeEnemy > #nInRangeAlly
-                or Fu.GetHP(bot) < 0.75 and bot:WasRecentlyDamagedByAnyHero(1.5))
+                or nBotHP < 0.75 and bot:WasRecentlyDamagedByAnyHero(1.5))
             then
                 return BOT_ACTION_DESIRE_HIGH, nInRangeEnemy[1]
             end
@@ -428,7 +438,7 @@ function X.ConsiderLeechSeed()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             bLeechSeedGround = true
             return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
@@ -439,7 +449,7 @@ function X.ConsiderLeechSeed()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             bLeechSeedGround = true
             return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
@@ -459,7 +469,7 @@ function X.ConsiderLivingArmor()
     local strongestAlly = nil
     local off = 0
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     or Fu.IsInTeamFight(bot, 1600)
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1600, false, BOT_MODE_NONE)
@@ -538,7 +548,7 @@ function X.ConsiderLivingArmor()
     end
 
     -- Self
-    if Fu.GetHP(bot) < 0.75
+    if nBotHP < 0.75
     and not bot:HasModifier('modifier_treant_living_armor')
     and not bot:HasModifier('modifier_fountain_aura')
     then
@@ -556,7 +566,7 @@ function X.ConsiderOvergrowth()
 
     local nRadius = Overgrowth:GetSpecialValueInt('radius')
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
 		local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nRadius)
 
@@ -580,9 +590,9 @@ function X.ConsiderEyesInTheForest()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, EyesInTheForest:GetCastRange())
     local nRadius = EyesInTheForest:GetSpecialValueInt('vision_aoe')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
@@ -611,7 +621,7 @@ function X.ConsiderBlinkOvergrowth()
     then
         local nRadius = Overgrowth:GetSpecialValueInt('radius')
 
-        if Fu.IsInTeamFight(bot, 1200)
+        if bInTeamFight
         then
             local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), 1199, nRadius, 0, 0)
             local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)

@@ -160,7 +160,15 @@ local NaturesAttendantDesire
 local SproinkDesire
 local LittleFriendsDesire, LittleFriendsTarget
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotMP
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotMP = Fu.GetMP(bot)
 	if Fu.CanNotUseAbility(bot)
     then
         return
@@ -209,9 +217,9 @@ function X.ConsiderImpetus()
 
     local nAttackRange = bot:GetAttackRange()
     local nAbilityLevel = Impetus:GetLevel()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -219,7 +227,7 @@ function X.ConsiderImpetus()
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
         and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
         and #nInRangeAlly >= #nInRangeEnemy
         then
@@ -247,7 +255,7 @@ function X.ConsiderImpetus()
                 return BOT_ACTION_DESIRE_HIGH
             else
                 if Impetus:GetAutoCastState()
-                and Fu.GetMP(bot) < 0.25
+                and nBotMP < 0.25
                 then
                     Impetus:ToggleAutoCast()
                     return BOT_ACTION_DESIRE_HIGH
@@ -270,7 +278,7 @@ function X.ConsiderImpetus()
                 return BOT_ACTION_DESIRE_HIGH
             else
                 if Impetus:GetAutoCastState()
-                and Fu.GetMP(bot) < 0.25
+                and nBotMP < 0.25
                 then
                     Impetus:ToggleAutoCast()
                     return BOT_ACTION_DESIRE_HIGH
@@ -293,7 +301,7 @@ function X.ConsiderImpetus()
                 return BOT_ACTION_DESIRE_HIGH
             else
                 if Impetus:GetAutoCastState()
-                and Fu.GetMP(bot) < 0.25
+                and nBotMP < 0.25
                 then
                     Impetus:ToggleAutoCast()
                     return BOT_ACTION_DESIRE_HIGH
@@ -323,7 +331,7 @@ function X.ConsiderEnchant()
     local nDamage = Enchant:GetSpecialValueInt('enchant_damage')
     local nDuration = Enchant:GetSpecialValueFloat('slow_duration')
 	local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange)
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     -- local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     -- for _, enemyHero in pairs(nEnemyHeroes)
@@ -354,16 +362,15 @@ function X.ConsiderEnchant()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
-        and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere')
         and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
         and ((#nInRangeAlly >= #nInRangeEnemy) or (#nInRangeEnemy > #nInRangeAlly and Fu.WeAreStronger(bot, nCastRange + 100)))
@@ -406,7 +413,7 @@ function X.ConsiderNaturesAttendant()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         if Fu.GetHP(bot) < 0.65
         and bot:DistanceFromFountain() > 800
@@ -430,7 +437,7 @@ function X.ConsiderSproink()
     local nAllyHeroes = Fu.GetNearbyHeroes(bot,nAttackRange + 100, false, BOT_MODE_NONE)
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nAttackRange, true, BOT_MODE_NONE)
     local nImpetusMul = Impetus:GetSpecialValueFloat('value') / 100
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     for _, enemyHero in pairs(nEnemyHeroes)
     do
@@ -445,19 +452,18 @@ function X.ConsiderSproink()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and bot:IsFacingLocation(botTarget:GetLocation(), 15)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         then
             return BOT_ACTION_DESIRE_HIGH
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         if nAllyHeroes ~= nil and nEnemyHeroes ~= nil
         and #nEnemyHeroes > #nAllyHeroes
@@ -515,7 +521,7 @@ function X.ConsiderLittleFriends()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 150, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)

@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -96,12 +95,7 @@ X['bDeafaultItem'] = false
 
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -151,6 +145,7 @@ local nKeepMana, nMP, nHP, nLV, hEnemyHeroList
 local lastToggleTime = 0
 
 
+local botTarget
 function X.SkillsComplement()
 
 	Fu.ConsiderForMkbDisassembleMask( bot )
@@ -219,7 +214,7 @@ function X.ConsiderGorgonGrasp()
 	local nDamage = GorgonGrasp:GetSpecialValueInt('damage')
 	local nDPS = GorgonGrasp:GetSpecialValueInt('damage_pers')
 	local nDuration = GorgonGrasp:GetSpecialValueInt('duration')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local tAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
 	local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
@@ -321,7 +316,7 @@ function X.ConsiderQ()
 	local nInRangeEnemyCreepList = bot:GetNearbyCreeps(nCastRange, true)
 	local nInRangeEnemyLaneCreepList = bot:GetNearbyLaneCreeps(nCastRange, true)
 	local nAllyLaneCreepList = bot:GetNearbyLaneCreeps(800, false)
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 	
 	--关闭分裂的情况
 	if Fu.IsLaning( bot )

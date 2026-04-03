@@ -93,8 +93,20 @@ local WorkHorseDesire
 local HitchARideDesire, HitchARideTarget
 local StampedeDesire
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     HitchARideDesire, HitchARideTarget = X.ConsiderHitchARide()
     if HitchARideDesire > 0
@@ -140,7 +152,7 @@ function X.ConsiderHoofStomp()
 
 	local nRadius = HoofStomp:GetSpecialValueInt('radius')
 	local nDamage = HoofStomp:GetSpecialValueInt('stomp_damage')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -166,7 +178,7 @@ function X.ConsiderHoofStomp()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -195,7 +207,7 @@ function X.ConsiderHoofStomp()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -225,7 +237,7 @@ function X.ConsiderHoofStomp()
 		if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsDisabled(botTarget)
 		then
 			return BOT_ACTION_DESIRE_HIGH
@@ -236,7 +248,7 @@ function X.ConsiderHoofStomp()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -256,7 +268,7 @@ function X.ConsiderDoubleEdge()
     local nAttackRange = bot:GetAttackRange()
     local nStrengthDamageMul = DoubleEdge:GetSpecialValueInt("strength_damage") / 100
 	local nDamage = DoubleEdge:GetSpecialValueInt("edge_damage") + (nStrength * nStrengthDamageMul)
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange + nAttackRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -276,16 +288,13 @@ function X.ConsiderDoubleEdge()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange * 2)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and bot:GetHealth() > nDamage * 1.5
 		then
@@ -306,7 +315,7 @@ function X.ConsiderDoubleEdge()
 
         if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
         and Fu.CanBeAttacked(nEnemyLaneCreeps[1])
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and bot:GetHealth() > nDamage * 1.5
         and (bot:GetHealth() - nDamage) / bot:GetMaxHealth() > 0.5
         and Fu.GetHP(nEnemyLaneCreeps[1]) > 0.33
@@ -317,8 +326,8 @@ function X.ConsiderDoubleEdge()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
-        and Fu.GetHP(bot) > 0.3
+        if bAttacking
+        and nBotHP > 0.3
         and bot:GetHealth() > nDamage * 1.5
         and (bot:GetHealth() - nDamage) / bot:GetMaxHealth() > 0.3
         then
@@ -355,7 +364,7 @@ function X.ConsiderDoubleEdge()
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
             --     and Fu.CanBeAttacked(creep)
-            --     and Fu.GetHP(bot) > 0.3
+            --     and nBotHP > 0.3
             --     and bot:GetHealth() > nDamage * 1.5
             --     and (bot:GetHealth() - nDamage) / bot:GetMaxHealth() > 0.3
 			-- 	then
@@ -373,7 +382,7 @@ function X.ConsiderDoubleEdge()
 
         if canKill >= 2
         and Fu.CanBeAttacked(creepList[1])
-        and Fu.GetHP(bot) > 0.3
+        and nBotHP > 0.3
         and bot:GetHealth() > nDamage * 1.5
         and (bot:GetHealth() - nDamage) / bot:GetMaxHealth() > 0.3
         then
@@ -394,7 +403,7 @@ function X.ConsiderDoubleEdge()
 		if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange * 2)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and bot:GetHealth() > nDamage * 1.5
 		then
 			return BOT_ACTION_DESIRE_HIGH
@@ -405,7 +414,7 @@ function X.ConsiderDoubleEdge()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange * 2)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and bot:GetHealth() > nDamage * 1.5
         and (bot:GetHealth() - nDamage) / bot:GetMaxHealth() > 0.45
         then
@@ -424,7 +433,7 @@ function X.ConsiderStampede()
 		return BOT_ACTION_DESIRE_NONE
 	end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
         local nTeamFightLocation = Fu.GetTeamFightLocation(bot)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
@@ -439,7 +448,7 @@ function X.ConsiderStampede()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -457,7 +466,7 @@ function X.ConsiderStampede()
             and #nTargetInRangeAlly > #nInRangeAlly
             and #nTargetInRangeAlly >= 2
             and #nInRangeAlly <= 1
-            and Fu.GetHP(bot) < 0.5
+            and nBotHP < 0.5
             then
 		        return BOT_ACTION_DESIRE_HIGH
             end
@@ -475,7 +484,7 @@ function X.ConsiderWorkHorse()
         return BOT_ACTION_DESIRE_NONE, nil
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
         local nTeamFightLocation = Fu.GetTeamFightLocation(bot)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
@@ -490,7 +499,7 @@ function X.ConsiderWorkHorse()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -508,7 +517,7 @@ function X.ConsiderWorkHorse()
             and #nTargetInRangeAlly > #nInRangeAlly
             and #nTargetInRangeAlly >= 2
             and #nInRangeAlly <= 1
-            and Fu.GetHP(bot) < 0.5
+            and nBotHP < 0.5
             then
 		        return BOT_ACTION_DESIRE_HIGH
             end
@@ -527,8 +536,8 @@ function X.ConsiderHitchARide()
 
     local nCastRange = HitchARide:GetCastRange()
 
-    if Fu.IsGoingOnSomeone(bot)
-    or Fu.IsInTeamFight(bot, 1200)
+    if bGoingOnSomeone
+    or bInTeamFight
     then
         local nInRangeAlly = Fu.GetAlliesNearLoc(bot:GetLocation(), nCastRange)
         for _, allyHero in pairs(nInRangeAlly)
@@ -544,7 +553,7 @@ function X.ConsiderHitchARide()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetAlliesNearLoc(bot:GetLocation(), nCastRange)
         for _, allyHero in pairs(nInRangeAlly)

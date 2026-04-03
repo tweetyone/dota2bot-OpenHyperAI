@@ -138,8 +138,15 @@ local InkSwellCastTime = -1
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -216,15 +223,13 @@ function X.ConsiderStrokeOfFate()
 		end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = botTarget:GetNearbyHeroes(1200, true, BOT_MODE_NONE)
             local nInRangeEnemy = botTarget:GetNearbyHeroes(1200, false, BOT_MODE_NONE)
@@ -246,7 +251,7 @@ function X.ConsiderStrokeOfFate()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
         local nInRangeEnemy = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
@@ -323,7 +328,7 @@ function X.ConsiderStrokeOfFate()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -334,7 +339,7 @@ function X.ConsiderStrokeOfFate()
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
         and Fu.GetHP(botTarget) < 0.5
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -373,7 +378,7 @@ function X.ConsiderPhantomsEmbrace()
 		end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -382,7 +387,6 @@ function X.ConsiderPhantomsEmbrace()
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		then
             local nInRangeAlly = botTarget:GetNearbyHeroes(1200, true, BOT_MODE_NONE)
             local nInRangeEnemy = botTarget:GetNearbyHeroes(1200, false, BOT_MODE_NONE)
@@ -395,7 +399,7 @@ function X.ConsiderPhantomsEmbrace()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeEnemy = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
         if Fu.IsValidHero(nInRangeEnemy[1])
@@ -509,7 +513,7 @@ function X.ConsiderInkSwell()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -534,7 +538,7 @@ function X.ConsiderInkSwell()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() > 0.75
     and not StrokeOfFate:IsFullyCastable()
 	then
@@ -563,7 +567,7 @@ function X.ConsiderInkSwell()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, bot
         end
@@ -573,7 +577,7 @@ function X.ConsiderInkSwell()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, bot
         end
@@ -641,7 +645,7 @@ function X.ConsiderSoulBind()
 	local nRadius = SoulBind:GetSpecialValueInt('chain_latch_radius')
     local nDuration = SoulBind:GetSpecialValueInt('chain_duration')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local strongestTarget = Fu.GetStrongestUnit(1200, bot, true, true, nDuration)
         if strongestTarget == nil
@@ -678,7 +682,7 @@ function X.ConsiderDarkPortrait()
         return BOT_ACTION_DESIRE_NONE, nil
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local strongestTarget = Fu.GetStrongestUnit(1600, bot, true, true, 5)
         if strongestTarget == nil

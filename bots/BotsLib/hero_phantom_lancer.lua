@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -131,7 +130,6 @@ local castWDesire, castWLocation
 local castRDesire
 
 
-local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local talent4Damage = 0
 local aetherRange = 0
 
@@ -165,10 +163,8 @@ function X.SkillsComplement()
 	if aether ~= nil then aetherRange = 250 end
 
 
-	castQDesire, castQTarget, sMotive = X.ConsiderQ()
 	if ( castQDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -177,10 +173,8 @@ function X.SkillsComplement()
 	end
 
 
-	castWDesire, castWLocation, sMotive = X.ConsiderW()
 	if ( castWDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, false )
 
@@ -188,10 +182,8 @@ function X.SkillsComplement()
 		return
 	end
 	
-	castRDesire, sMotive = X.ConsiderR()
 	if ( castRDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, false )
 

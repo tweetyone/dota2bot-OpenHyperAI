@@ -138,7 +138,15 @@ local HuntersBoomerangDesire, HuntersBoomerangTarget
 local DecoyDesire
 local SharpshooterDesire, SharpshooterLocation
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
 	if Fu.CanNotUseAbility(bot)
     then
         return
@@ -199,7 +207,7 @@ function X.ConsiderAcornShot()
     local nDamage = AcornShot:GetSpecialValueInt('acorn_shot_damage') * (bot:GetAttackDamage() * 0.75)
     local nSpeed = AcornShot:GetSpecialValueInt('projectile_speed')
     local nAbilityLevel = AcornShot:GetLevel()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -240,17 +248,15 @@ function X.ConsiderAcornShot()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
-		and Fu.IsInRange(bot, botTarget, nCastRange)
-        and not Fu.IsSuspiciousIllusion(botTarget)
 		and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
         and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
         and #nInRangeAlly >= #nInRangeEnemy
 		then
@@ -259,14 +265,14 @@ function X.ConsiderAcornShot()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
         if nInRangeAlly ~= nil and nInRangeEnemy
         and ((#nInRangeEnemy > #nInRangeAlly)
-            or (Fu.GetHP(bot) < 0.65 and bot:WasRecentlyDamagedByAnyHero(2.5)))
+            or (nBotHP < 0.65 and bot:WasRecentlyDamagedByAnyHero(2.5)))
         and Fu.IsValidHero(nInRangeEnemy[1])
         and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
         and not Fu.IsDisabled(nInRangeEnemy[1])
@@ -310,7 +316,7 @@ function X.ConsiderBushwhack()
     local nDamage = Bushwhack:GetSpecialValueInt('total_damage')
 	local nRadius = Bushwhack:GetSpecialValueInt('trap_radius')
     local nSpeed = Bushwhack:GetSpecialValueInt('projectile_speed')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -396,7 +402,7 @@ function X.ConsiderBushwhack()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -414,14 +420,14 @@ function X.ConsiderBushwhack()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
         if nInRangeAlly ~= nil and nInRangeEnemy
         and ((#nInRangeEnemy > #nInRangeAlly)
-            or (Fu.GetHP(bot) < 0.65 and bot:WasRecentlyDamagedByAnyHero(2.5)))
+            or (nBotHP < 0.65 and bot:WasRecentlyDamagedByAnyHero(2.5)))
         and Fu.IsValidHero(nInRangeEnemy[1])
         and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
         and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
@@ -447,7 +453,7 @@ function X.ConsiderScurry()
         return BOT_ACTION_DESIRE_NONE
     end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,600, true, BOT_MODE_NONE)
@@ -457,7 +463,7 @@ function X.ConsiderScurry()
         then
             if nInRangeAlly ~= nil and nInRangeEnemy
             and ((#nInRangeEnemy > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.55 and bot:WasRecentlyDamagedByAnyHero(2)))
+                or (nBotHP < 0.55 and bot:WasRecentlyDamagedByAnyHero(2)))
             and Fu.IsValidHero(nInRangeEnemy[1])
             and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
             and not Fu.IsDisabled(nInRangeEnemy[1])
@@ -465,7 +471,7 @@ function X.ConsiderScurry()
                 return BOT_ACTION_DESIRE_HIGH
             end
 
-            if Fu.GetHP(bot) < 0.55 and bot:WasRecentlyDamagedByTower(2.5)
+            if nBotHP < 0.55 and bot:WasRecentlyDamagedByTower(2.5)
             then
                 return BOT_ACTION_DESIRE_HIGH
             end
@@ -484,18 +490,16 @@ function X.ConsiderSharpshooter()
 	local nCastRange = 1600
 	local nAttackRange = bot:GetAttackRange()
 	local nSpeed = Sharpshooter:GetSpecialValueInt('arrow_speed')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsInRange(bot, botTarget, nAttackRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
 			local nDelay = (GetUnitToUnitDistance(bot, botTarget) / nSpeed)
@@ -582,7 +586,7 @@ function X.ConsiderDecoy()
 
     local nEnemyTowers = bot:GetNearbyTowers(900, true)
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,900, true, BOT_MODE_NONE)
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
 	if	bot:DistanceFromFountain() > 600
     and nEnemyTowers ~= nil and #nEnemyTowers == 0
@@ -599,12 +603,12 @@ function X.ConsiderDecoy()
 			return BOT_ACTION_DESIRE_HIGH
 		end
 
-		if (Fu.IsRetreating(bot)
+		if (bRetreating
 		    and bot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH
 		    and not bot:HasModifier('modifier_fountain_aura'))
 		or (botTarget == nil
 			and nEnemyHeroes ~= nil and #nEnemyHeroes >= 1
-			and Fu.GetHP(bot) < 0.33 + ( 0.09 * #nEnemyHeroes ))
+			and nBotHP < 0.33 + ( 0.09 * #nEnemyHeroes ))
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end

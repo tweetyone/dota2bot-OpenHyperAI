@@ -97,8 +97,11 @@ local BlinkVoidDesire, BlinkVoidLocation, BlinkVoidTarget
 
 local botTarget
 
+local bGoingOnSomeone
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
 
 	botTarget = Fu.GetProperTarget(bot)
 
@@ -184,7 +187,7 @@ function X.ConsiderBlink()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnMagicImmune(botTarget)
@@ -456,7 +459,7 @@ function X.ConsiderManaVoid()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -465,9 +468,7 @@ function X.ConsiderManaVoid()
 		and not Fu.IsHaveAegis(botTarget)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_arc_warden_tempest_double')
-		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
 			local nTargetInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, false, BOT_MODE_NONE)
@@ -534,7 +535,7 @@ function X.ConsiderBlinkFragment()
 
 	local nCastRange = BlinkFragment:GetCastRange()
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local target = nil
 		local hp = 99999

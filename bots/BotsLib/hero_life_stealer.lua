@@ -215,6 +215,8 @@ local ConsumeDesire
 local bAttacking = false
 local botHP, botMaxMana, botManaRegen
 
+local bGoingOnSomeone
+local bRetreating
 function X.SkillsComplement()
     -- Re-fetch ability handles each tick for safety
     Rage       = bot:GetAbilityByName('life_stealer_rage')
@@ -238,6 +240,9 @@ function X.SkillsComplement()
 
     if not bot:HasModifier('modifier_life_stealer_infest') then
         if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
     end
 
     -- InfestDesire, InfestTarget = X.ConsiderInfest()
@@ -279,8 +284,8 @@ function X.ConsiderRage()
             or Fu.IsWillBeCastUnitTargetSpell(bot, 500)
             or Fu.IsWillBeCastPointSpell(bot, 500)
             then
-                if (Fu.IsGoingOnSomeone(bot) and Fu.IsValidTarget(botTarget) and not Fu.IsInRange(bot, botTarget, bot:GetAttackRange()))
-                or (Fu.IsRetreating(bot) and botHP < 0.55) then
+                if (bGoingOnSomeone and Fu.IsValidTarget(botTarget) and not Fu.IsInRange(bot, botTarget, bot:GetAttackRange()))
+                or (bRetreating and botHP < 0.55) then
                     return BOT_ACTION_DESIRE_HIGH
                 end
             end
@@ -291,12 +296,12 @@ function X.ConsiderRage()
             end
         end
 
-        if (Fu.IsGoingOnSomeone(bot) or (Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot))) then
+        if (bGoingOnSomeone or (bRetreating and not Fu.IsRealInvisible(bot))) then
             -- Rooted: use Rage only if target is out of attack range (going) or retreating
             if bot:IsRooted() then
-                if Fu.IsRetreating(bot) then
+                if bRetreating then
                     return BOT_ACTION_DESIRE_HIGH
-                elseif Fu.IsGoingOnSomeone(bot) and Fu.IsValidTarget(botTarget)
+                elseif bGoingOnSomeone and Fu.IsValidTarget(botTarget)
                 and not Fu.IsInRange(bot, botTarget, bot:GetAttackRange()) then
                     return BOT_ACTION_DESIRE_HIGH
                 end
@@ -305,7 +310,7 @@ function X.ConsiderRage()
             nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 600)
             if bot:IsSilenced()
             and #nInRangeEnemy >= 2
-            and Fu.IsGoingOnSomeone(bot)
+            and bGoingOnSomeone
             and not bot:HasModifier('modifier_item_mask_of_madness_berserk')
             then
                 return BOT_ACTION_DESIRE_HIGH
@@ -355,15 +360,13 @@ function X.ConsiderOpenWounds()
     local fManaAfter = Fu.GetManaAfter(nManaCost)
     local fManaThreshold1 = Fu.GetManaThreshold(bot, nManaCost, {Rage, Infest})
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
         if  Fu.IsValidTarget(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.CanCastOnTargetAdvanced(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -377,7 +380,7 @@ function X.ConsiderOpenWounds()
         end
 	end
 
-    if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) then
+    if bRetreating and not Fu.IsRealInvisible(bot) then
         for _, enemy in pairs(nEnemyHeroes) do
             if Fu.IsValidHero(enemy)
             and Fu.IsInRange(bot, enemy, nCastRange)
@@ -443,13 +446,12 @@ function X.ConsiderInfest()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, Infest:GetCastRange())
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
         if  Fu.IsValidHero(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
-        and Fu.IsInRange(bot, botTarget, 1200)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
         and not botTarget:HasModifier('modifier_enigma_black_hole_pull')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
 		then
@@ -489,7 +491,7 @@ function X.ConsiderInfest()
 		end
 	end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) then
+	if bRetreating and not Fu.IsRealInvisible(bot) then
         for _, enemyHero in pairs(nEnemyHeroes) do
             if Fu.IsValidHero(enemyHero)
             and Fu.IsInRange(bot, enemyHero, 800)
@@ -549,7 +551,7 @@ function X.ConsiderConsume()
     local nDamage = Infest:GetSpecialValueInt('damage')
 	local nRadius = Infest:GetSpecialValueInt('radius')
 
-    if not Fu.IsRetreating(bot) then
+    if not bRetreating then
         for _, enemy in pairs(nEnemyHeroes) do
             if Fu.IsValidHero(enemy)
             and Fu.CanBeAttacked(enemy)
@@ -570,12 +572,11 @@ function X.ConsiderConsume()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if  Fu.IsValidHero(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_enigma_black_hole_pull')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
@@ -586,7 +587,7 @@ function X.ConsiderConsume()
 		end
 	end
 
-	if Fu.IsRetreating(bot) then
+	if bRetreating then
         if #nEnemyHeroes == 0 and botHP > 0.9 then
             return BOT_ACTION_DESIRE_HIGH
         end

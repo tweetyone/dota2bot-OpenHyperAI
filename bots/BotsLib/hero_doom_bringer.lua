@@ -139,8 +139,15 @@ local DevourAbility2Desire, DevourAbility2TargetLocation
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -225,7 +232,7 @@ function X.ConsiderDevour()
     --     'npc_dota_neutral_polar_furbolg_ursa_warrior',
     -- }
 
-    if not Fu.IsRetreating(bot)
+    if not bRetreating
     then
         -- if nMaxLevel < 5
         -- then
@@ -338,14 +345,13 @@ function X.ConsiderScorchedEarth()
 
     local nRadius = ScorchedEarth:GetSpecialValueInt('radius')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius + 150)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_skeleton_king_reincarnation_scepter_active')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -359,7 +365,7 @@ function X.ConsiderScorchedEarth()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() >= 0.75
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius + 200, true, BOT_MODE_NONE)
@@ -391,7 +397,7 @@ function X.ConsiderScorchedEarth()
         if nEnemyLaneCreeps ~= nil
         and (#nCreeps >= 3 or (#nCreeps >= 2 and nCreeps[1]:IsAncientCreep()))
         and Fu.CanBeAttacked(nCreeps[1])
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and Fu.GetManaAfter(ScorchedEarth:GetManaCost()) * bot:GetMana() > Doom:GetManaCost() * 1.75
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -403,7 +409,7 @@ function X.ConsiderScorchedEarth()
 		if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and Fu.GetManaAfter(ScorchedEarth:GetManaCost()) * bot:GetMana() > Doom:GetManaCost() * 2
 		then
 			return BOT_ACTION_DESIRE_HIGH
@@ -414,7 +420,7 @@ function X.ConsiderScorchedEarth()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and Fu.GetManaAfter(ScorchedEarth:GetManaCost()) * bot:GetMana() > Doom:GetManaCost() * 2
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -478,7 +484,7 @@ function X.ConsiderInfernalBlade()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -502,7 +508,7 @@ function X.ConsiderInfernalBlade()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -569,7 +575,7 @@ function X.ConsiderInfernalBlade()
         -- Remove Spell Block
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget
 		end
@@ -579,7 +585,7 @@ function X.ConsiderInfernalBlade()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -596,7 +602,7 @@ function X.ConsiderDoom()
 
     local nDuration = Doom:GetSpecialValueInt('duration')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		local target = nil
 		local dmg = 0
@@ -716,7 +722,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
     then
         nCastRange = 600
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             if Fu.IsValidTarget(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -738,7 +744,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             end
         end
 
-        if Fu.IsRetreating(bot)
+        if bRetreating
         and bot:GetActiveModeDesire() > 0.5
         then
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -811,7 +817,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             end
         end
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             if Fu.IsValidTarget(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -819,8 +825,6 @@ function X.ConsiderDevourAbility(DevouredAbility)
             and Fu.IsInRange(bot, botTarget, nCastRange)
             and not Fu.IsSuspiciousIllusion(botTarget)
             and not Fu.IsDisabled(botTarget)
-            and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-            and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
             and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
             and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
             then
@@ -835,7 +839,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             end
         end
 
-        if Fu.IsRetreating(bot)
+        if bRetreating
         then
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
             for _, enemyHero in pairs(nInRangeEnemy)
@@ -866,7 +870,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             if nCreeps ~= nil
             and ((#nCreeps >= 3)
                 or (#nCreeps >= 2 and nCreeps[1]:IsAncientCreep()))
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 for _, creep in pairs(nCreeps)
                 do
@@ -889,7 +893,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             if Fu.IsRoshan(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
             and Fu.IsInRange(bot, botTarget, nCastRange)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, botTarget, 'unit'
             end
@@ -899,7 +903,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
         then
             if Fu.IsTormentor(botTarget)
             and Fu.IsInRange(bot, botTarget, nCastRange)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, botTarget, 'unit'
             end
@@ -937,7 +941,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             end
         end
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             if Fu.IsValidTarget(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -960,7 +964,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             end
         end
 
-        if Fu.IsRetreating(bot)
+        if bRetreating
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -990,7 +994,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             if Fu.IsRoshan(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
             and Fu.IsInRange(bot, botTarget, nRadius)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             and not Fu.IsDisabled(botTarget)
             then
                 return BOT_ACTION_DESIRE_HIGH, nil, ''
@@ -1001,7 +1005,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
         then
             if Fu.IsTormentor(botTarget)
             and Fu.IsInRange(bot, botTarget, nRadius)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, nil, ''
             end
@@ -1013,13 +1017,12 @@ function X.ConsiderDevourAbility(DevouredAbility)
     then
         nRadius = DevouredAbility:GetSpecialValueInt('radius')
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             if Fu.IsValidTarget(botTarget)
             and Fu.IsInRange(bot, botTarget, nRadius)
             and not Fu.IsSuspiciousIllusion(botTarget)
             and not Fu.IsDisabled(botTarget)
-            and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
             and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
             then
                 local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
@@ -1033,7 +1036,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             end
         end
 
-        if Fu.IsRetreating(bot)
+        if bRetreating
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -1062,7 +1065,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
         then
             if Fu.IsRoshan(botTarget)
             and Fu.IsInRange(bot, botTarget, nRadius)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             and not Fu.IsDisabled(botTarget)
             then
                 return BOT_ACTION_DESIRE_HIGH, nil, ''
@@ -1073,7 +1076,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
         then
             if Fu.IsTormentor(botTarget)
             and Fu.IsInRange(bot, botTarget, nRadius)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, nil, ''
             end
@@ -1132,7 +1135,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             end
         end
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             if Fu.IsValidTarget(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -1155,7 +1158,7 @@ function X.ConsiderDevourAbility(DevouredAbility)
             end
         end
 
-        if Fu.IsRetreating(bot)
+        if bRetreating
         then
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
             for _, enemyHero in pairs(nInRangeEnemy)

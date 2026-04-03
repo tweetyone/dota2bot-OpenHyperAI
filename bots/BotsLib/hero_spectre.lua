@@ -96,8 +96,18 @@ local ShadowStepEnemyTarget = nil
 local HauntCastTime = -1
 local HauntDuration = 0
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
     RealityDesire, RealityLocation = X.ConsiderReality()
     if RealityDesire > 0
@@ -154,7 +164,7 @@ function X.ConsiderSpectralDagger()
     local nRadius = SpectralDagger:GetSpecialValueInt('path_radius')
     local nDamage = SpectralDagger:GetSpecialValueInt('damage')
     local nSpeed = SpectralDagger:GetSpecialValueInt('speed')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if Fu.IsStuck(bot)
     then
@@ -204,15 +214,13 @@ function X.ConsiderSpectralDagger()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -226,7 +234,7 @@ function X.ConsiderSpectralDagger()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -302,8 +310,8 @@ function X.ConsiderSpectralDagger()
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nCastRange, nRadius, 0, 0)
 
-        if Fu.IsAttacking(bot)
-        and Fu.GetMP(bot) > 0.45
+        if bAttacking
+        and nBotMP > 0.45
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nRadius)
             if nNeutralCreeps ~= nil
@@ -338,7 +346,7 @@ function X.ConsiderSpectralDagger()
 			-- 	local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-            --     and Fu.GetMP(bot) > 0.35
+            --     and nBotMP > 0.35
 			-- 	then
 			-- 		return BOT_ACTION_DESIRE_HIGH, creep:GetLocation(), 'loc'
 			-- 	end
@@ -353,7 +361,7 @@ function X.ConsiderSpectralDagger()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(creepList)
@@ -365,7 +373,7 @@ function X.ConsiderSpectralDagger()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation(), 'loc'
         end
@@ -375,7 +383,7 @@ function X.ConsiderSpectralDagger()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation(), 'loc'
         end
@@ -392,9 +400,9 @@ function X.ConsiderDispersion()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         then
@@ -409,7 +417,7 @@ function X.ConsiderDispersion()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:WasRecentlyDamagedByAnyHero(1.5)
     then
         return BOT_ACTION_DESIRE_HIGH
@@ -420,7 +428,7 @@ function X.ConsiderDispersion()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -430,7 +438,7 @@ function X.ConsiderDispersion()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -502,8 +510,8 @@ function X.ConsiderReality()
 
                 if Fu.IsGoingOnSomeone(allyHero)
                 and not Fu.IsInRange(bot, allyHero, 1300)
-                and not Fu.IsRetreating(bot)
-                and not Fu.IsGoingOnSomeone(bot)
+                and not bRetreating
+                and not bGoingOnSomeone
                 and Fu.IsValidTarget(allyTarget)
                 and not Fu.IsSuspiciousIllusion(allyTarget)
                 and not Fu.IsLocationInChrono(allyTarget:GetLocation())
@@ -565,7 +573,7 @@ function X.ConsiderShadowStep()
     ShadowStepDuration = ShadowStep:GetSpecialValueFloat('duration')
     local nTeamFightLocation = Fu.GetTeamFightLocation(bot)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local weakestTarget = Fu.GetVulnerableWeakestUnit(bot, true, true, 1600)
 
@@ -592,8 +600,8 @@ function X.ConsiderShadowStep()
     and GetUnitToLocationDistance(bot, nTeamFightLocation) > 1600
     and bot:GetLevel() >= 6
     and bot:GetNetWorth() > 5000
-    and not Fu.IsRetreating(bot)
-    and not Fu.IsGoingOnSomeone(bot)
+    and not bRetreating
+    and not bGoingOnSomeone
     then
         local nHealth = 99999
         local weakestTarget = nil
@@ -651,8 +659,8 @@ function X.ConsiderHaunt()
 
             if Fu.IsGoingOnSomeone(allyHero)
             and not Fu.IsInRange(bot, allyHero, 1300)
-            and not Fu.IsRetreating(bot)
-            and not Fu.IsGoingOnSomeone(bot)
+            and not bRetreating
+            and not bGoingOnSomeone
             and Fu.IsValidTarget(allyTarget)
             and not Fu.IsSuspiciousIllusion(allyTarget)
             and not Fu.IsLocationInChrono(allyTarget:GetLocation())

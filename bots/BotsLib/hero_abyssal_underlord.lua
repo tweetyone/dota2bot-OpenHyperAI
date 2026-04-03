@@ -136,8 +136,15 @@ local FiendsGateDesire, FiendsGateLocation
 
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -184,16 +191,13 @@ function X.ConsiderFirestorm()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange + nRadius)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1200, false, BOT_MODE_NONE)
@@ -224,18 +228,18 @@ function X.ConsiderFirestorm()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange + nRadius)
             if nNeutralCreeps ~= nil and #nNeutralCreeps >= 3
-            and Fu.GetMP(bot) > 0.3
+            and nBotMP > 0.3
             then
                 return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nNeutralCreeps)
             end
 
             local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nCastRange + nRadius, true)
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
-            and Fu.GetMP(bot) > 0.3
+            and nBotMP > 0.3
             then
                 return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nEnemyLaneCreeps)
             end
@@ -249,8 +253,8 @@ function X.ConsiderFirestorm()
 
         if nInRangeEnemy ~= nil and #nInRangeEnemy == 0
         and nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
-        and Fu.IsAttacking(bot)
-        and Fu.GetMP(bot) > 0.5
+        and bAttacking
+        and nBotMP > 0.5
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nEnemyLaneCreeps)
         end
@@ -261,7 +265,7 @@ function X.ConsiderFirestorm()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -271,7 +275,7 @@ function X.ConsiderFirestorm()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -301,7 +305,7 @@ function X.ConsiderPitOfMalice()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -371,7 +375,7 @@ function X.ConsiderPitOfMalice()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -390,7 +394,7 @@ function X.ConsiderFiendsGate()
 
     if nTeamFightLocation ~= nil
     and GetUnitToLocationDistance(bot, nTeamFightLocation) > 2500
-    and not Fu.IsGoingOnSomeone(bot)
+    and not bGoingOnSomeone
     and not Fu.IsRetreating(bot)
     and not Fu.IsInLaningPhase()
     then
@@ -414,7 +418,7 @@ function X.ConsiderFiendsGate()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and GetUnitToUnitDistance(bot, botTarget) > 2500

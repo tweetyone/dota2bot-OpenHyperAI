@@ -133,8 +133,15 @@ local ScoutRoshanTime = -1
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -215,7 +222,7 @@ function X.ConsiderBatteryAssault()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -234,7 +241,7 @@ function X.ConsiderBatteryAssault()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() > 0.5
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -273,7 +280,7 @@ function X.ConsiderBatteryAssault()
 		if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             return BOT_ACTION_DESIRE_HIGH
 		end
@@ -283,7 +290,7 @@ function X.ConsiderBatteryAssault()
 	then
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             return BOT_ACTION_DESIRE_HIGH
 		end
@@ -306,7 +313,7 @@ function X.ConsiderPowerCogs()
 		return BOT_ACTION_DESIRE_NONE
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius - 25)
@@ -324,7 +331,7 @@ function X.ConsiderPowerCogs()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() > 0.5
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -391,7 +398,7 @@ function X.ConsiderRocketFlare()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -399,9 +406,7 @@ function X.ConsiderRocketFlare()
         and Fu.IsChasingTarget(bot, botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		then
             local nInRangeAlly = botTarget:GetNearbyHeroes(1200, true, BOT_MODE_NONE)
             local nInRangeEnemy = botTarget:GetNearbyHeroes(1200, false, BOT_MODE_NONE)
@@ -420,7 +425,7 @@ function X.ConsiderRocketFlare()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -467,7 +472,7 @@ function X.ConsiderRocketFlare()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -485,7 +490,7 @@ function X.ConsiderRocketFlare()
 	then
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -505,7 +510,7 @@ function X.ConsiderHookshot()
 	local nRadius = Hookshot:GetSpecialValueInt('stun_radius')
 	local nSpeed = Hookshot:GetSpecialValueInt('speed')
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nCastRange)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -550,7 +555,7 @@ function X.ConsiderHookshot()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() > 0.75
 	then
         local nAllyHeroes = Fu.GetAlliesNearLoc(bot:GetLocation(), nCastRange)
@@ -624,7 +629,7 @@ function X.ConsiderJetpack()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() > 0.5
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -662,7 +667,7 @@ function X.ConsiderOverclocking()
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
 
         if nInRangeEnemy ~= nil and #nInRangeEnemy >= 2
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end

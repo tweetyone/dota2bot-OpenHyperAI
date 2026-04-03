@@ -126,7 +126,15 @@ local ConvergeHammerLocation = nil
 local CelestialHammerTime = -1
 local IsHammerCastedWhenRetreatingToEnemy = false
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
 	if Fu.CanNotUseAbility(bot)
     then
         return
@@ -190,7 +198,7 @@ function X.ConsiderStarBreaker()
     local nDamage = bot:GetAttackDamage()
                     + Starbreaker:GetSpecialValueInt('swipe_damage')
                     + Starbreaker:GetSpecialValueInt('smash_damage')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -230,7 +238,7 @@ function X.ConsiderStarBreaker()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius * 2, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius * 1.5, true, BOT_MODE_NONE)
@@ -356,9 +364,9 @@ function X.ConsiderCelestialHammer()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
-		local botTarget = Fu.GetProperTarget(bot)
+		botTarget = Fu.GetProperTarget(bot)
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
@@ -376,14 +384,14 @@ function X.ConsiderCelestialHammer()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
         and ((#nInRangeEnemy > #nInRangeAlly)
-            or Fu.GetHP(bot) < 0.7 and bot:WasRecentlyDamagedByAnyHero(2))
+            or nBotHP < 0.7 and bot:WasRecentlyDamagedByAnyHero(2))
         and Fu.IsValidHero(nInRangeEnemy[1])
         and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
         and not Fu.IsDisabled(nInRangeEnemy[1])
@@ -437,7 +445,7 @@ function X.ConsiderConverge()
 
     local nCastRange = CelestialHammer:GetSpecialValueInt('range')
     local nSpeed = CelestialHammer:GetSpecialValueInt('projectile_speed')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if CelestialHammerCastRangeTalent:IsTrained()
     then
@@ -445,7 +453,7 @@ function X.ConsiderConverge()
         nSpeed = nSpeed * (1 + (CelestialHammerCastRangeTalent:GetSpecialValueInt('value') / 100))
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     and ConvergeHammerLocation ~= nil
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
@@ -472,7 +480,7 @@ function X.ConsiderConverge()
 		end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not IsHammerCastedWhenRetreatingToEnemy
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
@@ -480,7 +488,7 @@ function X.ConsiderConverge()
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
         and ((#nInRangeEnemy > #nInRangeAlly)
-            or Fu.GetHP(bot) and bot:WasRecentlyDamagedByAnyHero(2))
+            or nBotHP and bot:WasRecentlyDamagedByAnyHero(2))
         and Fu.IsValidHero(nInRangeEnemy[1])
         and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
         and not Fu.IsDisabled(nInRangeEnemy[1])
@@ -543,7 +551,7 @@ function X.ConsiderSolarGuardian()
     end
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
-    if (Fu.IsRetreating(bot) and bot:DistanceFromFountain() > 1600 and Fu.GetHP(bot) < 0.33)
+    if (bRetreating and bot:DistanceFromFountain() > 1600 and nBotHP < 0.33)
 	then
 		for _, enemyHero in pairs(nEnemyHeroes)
 		do

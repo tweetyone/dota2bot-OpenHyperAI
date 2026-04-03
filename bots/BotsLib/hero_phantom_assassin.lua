@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -70,12 +69,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -120,7 +114,6 @@ local castEDesire
 local castASDesire, castASTarget
 
 
-local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 
 
 local lastSkillCreep

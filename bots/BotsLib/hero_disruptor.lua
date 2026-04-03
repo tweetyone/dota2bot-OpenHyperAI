@@ -133,8 +133,17 @@ local KineticStormDesire, KineticStormLocation
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -246,16 +255,13 @@ function X.ConsiderThunderStrike()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.CanCastOnTargetAdvanced(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange + 300)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_skeleton_king_reincarnation_scepter_active')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -269,7 +275,7 @@ function X.ConsiderThunderStrike()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() > 0.5
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -323,7 +329,7 @@ function X.ConsiderThunderStrike()
         -- Remove Spell Block
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget
 		end
@@ -333,7 +339,7 @@ function X.ConsiderThunderStrike()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -342,7 +348,7 @@ function X.ConsiderThunderStrike()
     then
         if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -392,7 +398,7 @@ function X.ConsiderGlimpse()
                 return BOT_ACTION_DESIRE_HIGH, enemyHero
             end
 
-            if Fu.IsGoingOnSomeone(bot)
+            if bGoingOnSomeone
             then
                 local nInRangeAlly = Fu.GetNearbyHeroes(enemyHero, 1200, false, BOT_MODE_NONE)
                 if Fu.IsChasingTarget(bot, enemyHero)
@@ -405,7 +411,7 @@ function X.ConsiderGlimpse()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() >= 0.75
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -508,7 +514,7 @@ function X.ConsiderKineticFence()
 
 	local nEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
 
-    if Fu.IsInTeamFight(bot, 1200) then
+    if bInTeamFight then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nCastPoint + nDelay, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
 		if #nInRangeEnemy >= 2 then
@@ -516,7 +522,7 @@ function X.ConsiderKineticFence()
 		end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
 		if  Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -546,7 +552,7 @@ function X.ConsiderKineticFence()
 		end
 	end
 
-    if  Fu.IsRetreating(bot)
+    if  bRetreating
     and not Fu.IsRealInvisible(bot)
     and bot:GetActiveModeDesire() > 0.9
 	then
@@ -576,7 +582,7 @@ function X.ConsiderKineticField()
 	local nCastPoint = KineticField:GetCastPoint()
 	local nRadius = KineticField:GetSpecialValueInt('radius')
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
     and not CanCastKineticStorm()
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius * 0.8, 0, 0)
@@ -588,7 +594,7 @@ function X.ConsiderKineticField()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -647,7 +653,7 @@ function X.ConsiderKineticField()
 	end
 
     local desireCheck = RemapValClamped(KineticField:GetLevel(), 1, 4, 0.75, 0.5)
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() >= desireCheck
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -689,7 +695,7 @@ function X.ConsiderKineticField()
         and allyHero:GetActiveModeDesire() >= 0.75
         and allyHero:WasRecentlyDamagedByAnyHero(2)
         and not allyHero:IsIllusion()
-        and not Fu.IsGoingOnSomeone(bot)
+        and not bGoingOnSomeone
         then
             if nAllyInRangeEnemy ~= nil and #nAllyInRangeEnemy >= 1
             and Fu.IsValidHero(nAllyInRangeEnemy[1])
@@ -720,7 +726,7 @@ function X.ConsiderStaticStorm()
 	local nRadius = StaticStorm:GetSpecialValueInt('radius')
 	local nCastRange = StaticStorm:GetCastRange()
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
     and not CanCastKineticStorm()
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius * 0.8, 0, 0)
@@ -744,7 +750,7 @@ function X.ConsiderKineticStorm()
 	    local nCastRange = Fu.GetProperCastRange(false, bot, KineticField:GetCastRange())
         local nRadius = KineticField:GetSpecialValueInt('radius')
 
-        if Fu.IsInTeamFight(bot, 1200)
+        if bInTeamFight
         then
             local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius * 0.8, 0, 0)
             local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius * 0.8)

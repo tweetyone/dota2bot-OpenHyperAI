@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -172,12 +171,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = true
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 local abilityQ = bot:GetAbilityByName('silencer_curse_of_the_silent')
@@ -195,6 +189,7 @@ local castRDesire = 0
 local nKeepMana, nMP, nHP, nLV, hEnemyHeroList
 local aetherRange = 0
 
+local botTarget
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility( bot ) or bot:IsInvisible() then return end
 
@@ -733,7 +728,7 @@ function X.ConsiderE()
 
 	local nCastRange = Fu.GetProperCastRange(false, bot, abilityE:GetCastRange())
 	local nBaseDamage = abilityE:GetSpecialValueInt('damage')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nRadius = 0
 	local bAoETalent = talent20Left ~= nil and talent20Left:IsTrained()
@@ -816,10 +811,7 @@ function X.ConsiderE()
         and Fu.CanCastOnTargetAdvanced(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
 		and not Fu.IsDisabled(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_troll_warlord_battle_trance')
 		and not botTarget:HasModifier('modifier_ursa_enrage')
         then

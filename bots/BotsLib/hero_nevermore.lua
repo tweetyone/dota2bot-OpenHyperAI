@@ -150,12 +150,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -206,11 +201,14 @@ local castRDesire
 
 local nKeepMana, nMP, nHP, nLV, nInRangeEnemy, botTarget
 
+local bAttacking
 function X.SkillsComplement()
 	if bot.invisUltCombo then return end
 
 	Fu.ConsiderTarget()
 	if Fu.CanNotUseAbility( bot ) then return end
+
+	bAttacking = Fu.IsAttacking(bot)
 
 	nKeepMana = 340
 	nLV = bot:GetLevel()
@@ -502,8 +500,6 @@ function X.ConsiderFeastOfSouls()
         and Fu.IsInRange(bot, botTarget, nAttackRange)
         and not Fu.IsChasingTarget(bot, botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -520,7 +516,7 @@ function X.ConsiderFeastOfSouls()
     if Fu.IsFarming(bot)
 	and nManaAfter > 0.3
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(1000)
             if nNeutralCreeps ~= nil
@@ -551,7 +547,7 @@ function X.ConsiderFeastOfSouls()
 
 		if Fu.IsValidBuilding(botTarget)
 		and Fu.CanBeAttacked(botTarget)
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -561,7 +557,7 @@ function X.ConsiderFeastOfSouls()
 	then
 		if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, nAttackRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end

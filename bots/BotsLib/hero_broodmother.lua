@@ -125,8 +125,16 @@ local SpawnSpiderlingsDesire, SpirderlingsTarget
 local WebGapTime = 1
 local LastWebTime = 0
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     SpawnSpiderlingsDesire, SpirderlingsTarget = X.ConsiderSpawnSpiderlings()
     if SpawnSpiderlingsDesire > 0
@@ -167,7 +175,7 @@ function X.ConsiderInsatiableHunger()
     end
 
     local nAttackRange = bot:GetAttackRange()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if Fu.IsInTeamFight(bot, 1200)
 	then
@@ -175,24 +183,22 @@ function X.ConsiderInsatiableHunger()
 
         if nInRangeEnemy ~= nil and #nInRangeEnemy >= 2
         and Fu.GetHP(bot) < 0.75
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
 			return BOT_ACTION_DESIRE_HIGH
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nAttackRange + 150)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -212,7 +218,7 @@ function X.ConsiderInsatiableHunger()
 
         if nCreeps ~= nil and #nCreeps > 0
         and Fu.GetHP(bot) < 0.4
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -222,7 +228,7 @@ function X.ConsiderInsatiableHunger()
 	then
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -232,7 +238,7 @@ function X.ConsiderInsatiableHunger()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -251,7 +257,7 @@ function X.ConsiderSpinWeb()
     local nRadius = SpinWeb:GetSpecialValueInt('radius')
     local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nCastRange, true)
     local nEnemyTowers = bot:GetNearbyTowers(nCastRange, true)
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if Fu.IsStuck(bot)
     and not DoesLocationHaveWeb(bot:GetLocation(), nRadius)
@@ -273,16 +279,13 @@ function X.ConsiderSpinWeb()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not DoesLocationHaveWeb(botTarget:GetLocation(), nRadius)
         and not Fu.IsLocationInChrono(botTarget:GetLocation())
         and not Fu.IsLocationInBlackHole(botTarget:GetLocation())
@@ -298,7 +301,7 @@ function X.ConsiderSpinWeb()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -351,7 +354,7 @@ function X.ConsiderSpinWeb()
 	then
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not DoesLocationHaveWeb(botTarget:GetLocation(), nRadius)
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -362,7 +365,7 @@ function X.ConsiderSpinWeb()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not DoesLocationHaveWeb(botTarget:GetLocation(), nRadius)
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -380,7 +383,7 @@ end
 
 -- 	local nCastRange = SilkenBola:GetCastRange()
 --     local nDamage = SilkenBola:GetSpecialValueInt('impact_damage')
---     local botTarget = Fu.GetProperTarget(bot)
+--     botTarget = Fu.GetProperTarget(bot)
 
 --     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 --     for _, enemyHero in pairs(nEnemyHeroes)
@@ -399,7 +402,7 @@ end
 --         end
 --     end
 
---     if Fu.IsGoingOnSomeone(bot)
+--     if bGoingOnSomeone
 -- 	then
 -- 		if Fu.IsValidTarget(botTarget)
 --         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -420,7 +423,7 @@ end
 -- 		end
 -- 	end
 
---     if Fu.IsRetreating(bot)
+--     if bRetreating
 -- 	then
 --         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
 --         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -468,7 +471,7 @@ end
 -- 	then
 -- 		if Fu.IsRoshan(botTarget)
 --         and Fu.IsInRange(bot, botTarget, 500)
---         and Fu.IsAttacking(bot)
+--         and bAttacking
 -- 		then
 -- 			return BOT_ACTION_DESIRE_HIGH, botTarget
 -- 		end
@@ -478,7 +481,7 @@ end
 --     then
 --         if Fu.IsTormentor(botTarget)
 --         and Fu.IsInRange(bot, botTarget, 500)
---         and Fu.IsAttacking(bot)
+--         and bAttacking
 --         then
 --             return BOT_ACTION_DESIRE_HIGH, botTarget
 --         end
@@ -549,7 +552,7 @@ function X.ConsiderSpawnSpiderlings()
         if Fu.IsValid(creep)
         and Fu.CanBeAttacked(creep)
         and Fu.CanKillTarget(creep, nDamage, DAMAGE_TYPE_MAGICAL)
-        and not Fu.IsRetreating(bot)
+        and not bRetreating
         then
             return BOT_ACTION_DESIRE_HIGH, creep
         end

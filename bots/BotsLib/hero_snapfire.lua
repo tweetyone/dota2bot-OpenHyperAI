@@ -115,8 +115,16 @@ local GobbleUpDesire, GobbleUpTarget
 local SpitOutDesire, SpitOutLocation
 local MortimerKissesDesire, MortimerKissesLocation
 
+local botTarget
+local bGoingOnSomeone
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
     MortimerKissesDesire, MortimerKissesLocation = X.ConsiderMortimerKisses()
     if MortimerKissesDesire > 0
@@ -172,7 +180,7 @@ function X.ConsiderScatterBlast()
 	local nCastPoint = ScatterBlast:GetCastPoint()
 	local nRadius = ScatterBlast:GetSpecialValueInt('blast_width_end')
 	local nDamage = ScatterBlast:GetSpecialValueInt('damage');
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -203,14 +211,12 @@ function X.ConsiderScatterBlast()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -269,13 +275,13 @@ function X.ConsiderScatterBlast()
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange)
             if nNeutralCreeps ~= nil
             and ((#nNeutralCreeps >= 3 and nLocationAoE.count >= 3)
                 or (#nNeutralCreeps >= 2 and nNeutralCreeps[1]:IsAncientCreep() and nLocationAoE.count >= 2))
-            and Fu.GetMP(bot) > 0.33
+            and nBotMP > 0.33
             then
                 return BOT_ACTION_DESIRE_HIGH, nLocationAoE.targetloc
             end
@@ -283,7 +289,7 @@ function X.ConsiderScatterBlast()
             local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nCastRange, true)
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
             and nLocationAoE.count >= 3
-            and Fu.GetMP(bot) > 0.37
+            and nBotMP > 0.37
             then
                 return BOT_ACTION_DESIRE_HIGH, nLocationAoE.targetloc
             end
@@ -306,7 +312,7 @@ function X.ConsiderScatterBlast()
 			-- 	local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-            --     and Fu.GetMP(bot) > 0.35
+            --     and nBotMP > 0.35
 			-- 	then
 			-- 		return BOT_ACTION_DESIRE_HIGH, creep:GetLocation()
 			-- 	end
@@ -321,7 +327,7 @@ function X.ConsiderScatterBlast()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(creepList)
@@ -330,7 +336,7 @@ function X.ConsiderScatterBlast()
         if nInRangeEnemy ~= nil and #nInRangeEnemy ~= nil
         and Fu.IsValidHero(nInRangeEnemy[1])
         and Fu.IsAttacking(nInRangeEnemy[1])
-        and Fu.GetMP(bot) > 0.55
+        and nBotMP > 0.55
         and Fu.GetHP(bot) < Fu.GetHP(nInRangeEnemy[1])
         and nInRangeEnemy[1]:GetAttackTarget() == bot
         then
@@ -343,7 +349,7 @@ function X.ConsiderScatterBlast()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -353,7 +359,7 @@ function X.ConsiderScatterBlast()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -373,7 +379,7 @@ function X.ConsiderFiresnapCookie()
 	local nRadius = FiresnapCookie:GetSpecialValueInt('impact_radius')
 	local nJumpDistance = FiresnapCookie:GetSpecialValueInt('jump_horizontal_distance')
     local nJumpDuration = FiresnapCookie:GetSpecialValueInt('jump_duration')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -416,7 +422,7 @@ function X.ConsiderFiresnapCookie()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,600, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -540,23 +546,21 @@ function X.ConsiderLilShredder()
     end
 
     local nAttackRange = bot:GetAttackRange() + LilShredder:GetSpecialValueInt('attack_range_bonus')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
 	if botTarget ~= nil
     and botTarget:IsBuilding()
-    and Fu.IsAttacking(bot)
+    and bAttacking
     then
 		return BOT_ACTION_DESIRE_HIGH
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nAttackRange - 100)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -576,7 +580,7 @@ function X.ConsiderLilShredder()
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nAttackRange, true)
         local nEnemyTowers = bot:GetNearbyTowers(bot:GetAttackRange(), true)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         and nInRangeEnemy ~= nil and #nInRangeEnemy <= 1
         and ((nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4)
             or (nEnemyTowers ~= nil and #nEnemyTowers >= 1))
@@ -587,8 +591,8 @@ function X.ConsiderLilShredder()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
-        and Fu.GetMP(bot) > 0.33
+        if bAttacking
+        and nBotMP > 0.33
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nAttackRange)
             if nNeutralCreeps ~= nil
@@ -610,7 +614,7 @@ function X.ConsiderLilShredder()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -620,7 +624,7 @@ function X.ConsiderLilShredder()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -637,7 +641,7 @@ function X.ConsiderMortimerKisses()
 
     local nMinDistance = MortimerKisses:GetSpecialValueInt('min_range')
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -692,17 +696,15 @@ function X.ConsiderGobbleUp()
 
 	local nCastRange = Fu.GetProperCastRange(false, bot, GobbleUp:GetCastRange())
     local nSpitRange = Fu.GetProperCastRange(false, bot, MortimerKisses:GetCastRange())
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nSpitRange)
         and not Fu.IsInRange(bot, botTarget, 600)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not Fu.IsLocationInChrono(botTarget:GetLocation())
         and not Fu.IsLocationInBlackHole(botTarget:GetLocation())
@@ -755,9 +757,9 @@ function X.ConsiderSpitOut()
     end
 
 	local nSpitRange = Fu.GetProperCastRange(false, bot, MortimerKisses:GetCastRange())
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
     and GobbleUp == 'creep'
 	then
 		if Fu.IsValidTarget(botTarget)

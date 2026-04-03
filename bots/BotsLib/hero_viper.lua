@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -145,8 +144,17 @@ local ViperStrikeDesire, ViperStrikeTarget
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility( bot ) or bot:IsInvisible() then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
 	botTarget = Fu.GetProperTarget(bot)
 
@@ -223,7 +231,7 @@ function X.ConsiderPoisonAttack()
 	local nDamage = PoisonAttack:GetSpecialValueInt('damage')
 	local nDuration = PoisonAttack:GetSpecialValueInt('duration')
 
-	if not Fu.IsRetreating(bot) then
+	if not bRetreating then
 		local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 		for _, enemyHero in pairs(nEnemyHeroes)
 		do
@@ -242,15 +250,13 @@ function X.ConsiderPoisonAttack()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and botTarget:CanBeSeen()
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not botTarget:IsMagicImmune()
 		and not botTarget:IsInvulnerable()
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -281,7 +287,7 @@ function X.ConsiderPoisonAttack()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
@@ -299,16 +305,16 @@ function X.ConsiderPoisonAttack()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
 			if not PoisonAttack:GetAutoCastState()
-			and Fu.GetMP(bot) > 0.25
+			and nBotMP > 0.25
 			then
 				PoisonAttack:ToggleAutoCast()
 				return BOT_ACTION_DESIRE_HIGH, nil
 			else
 				if PoisonAttack:GetAutoCastState()
-				and Fu.GetMP(bot) < 0.25
+				and nBotMP < 0.25
 				then
 					PoisonAttack:ToggleAutoCast()
 					return BOT_ACTION_DESIRE_HIGH, nil
@@ -323,16 +329,16 @@ function X.ConsiderPoisonAttack()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
 			if not PoisonAttack:GetAutoCastState()
-			and Fu.GetMP(bot) > 0.25
+			and nBotMP > 0.25
 			then
 				PoisonAttack:ToggleAutoCast()
 				return BOT_ACTION_DESIRE_HIGH, nil
 			else
 				if PoisonAttack:GetAutoCastState()
-				and Fu.GetMP(bot) < 0.25
+				and nBotMP < 0.25
 				then
 					PoisonAttack:ToggleAutoCast()
 					return BOT_ACTION_DESIRE_HIGH, nil
@@ -389,7 +395,7 @@ function X.ConsiderNetherToxin()
 	local nRadius = NetherToxin:GetSpecialValueInt('radius')
 	local nAbilityLevel = NetherToxin:GetLevel()
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -417,7 +423,7 @@ function X.ConsiderNetherToxin()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
     and bot:GetActiveModeDesire() > 0.5
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -455,7 +461,7 @@ function X.ConsiderNetherToxin()
 	and Fu.GetManaAfter(NetherToxin:GetManaCost()) * bot:GetMana() > ViperStrike:GetManaCost()
 	and nAbilityLevel >= 2
     then
-		if Fu.IsAttacking(bot)
+		if bAttacking
 		then
 			local nNeutralCreeps = bot:GetNearbyNeutralCreeps(bot:GetAttackRange() + 200)
 			local nCreepCount = Fu.GetNearbyAroundLocationUnitCount(true, false, nRadius, Fu.GetCenterOfUnits(nNeutralCreeps))
@@ -494,7 +500,7 @@ function X.ConsiderNetherToxin()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		and not botTarget:IsMagicImmune()
 		and not botTarget:HasModifier('modifier_viper_nethertoxin')
         then
@@ -506,7 +512,7 @@ function X.ConsiderNetherToxin()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		and not botTarget:HasModifier('modifier_viper_nethertoxin')
         then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -529,7 +535,7 @@ function X.ConsiderViperStrike()
 	local nEnemysHerosInCastRange = Fu.GetNearbyHeroes(bot, nCastRange + 80 , true, BOT_MODE_NONE )
 	local nWeakestEnemyHeroInCastRange = Fu.GetVulnerableWeakestUnit(bot, true, true, nCastRange + 80)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -591,10 +597,7 @@ function X.ConsiderViperStrike()
 				and Fu.CanCastOnNonMagicImmune(botTarget)
 				and Fu.CanCastOnTargetAdvanced(botTarget)
 				and not Fu.IsSuspiciousIllusion(botTarget)
-				and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-				and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 				and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-				and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 				and not botTarget:HasModifier('modifier_item_sphere_target')
 				then
 					return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -623,7 +626,7 @@ function X.ConsiderViperStrike()
 	then
 		if Fu.IsRoshan(botTarget)
 		and Fu.IsInRange(bot, botTarget, 500)
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		and not botTarget:HasModifier('modifier_roshan_spell_block')
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -643,13 +646,11 @@ function X.ConsiderNosedive()
 	local nCastRange = Fu.GetProperCastRange(false, bot, Nosedive:GetCastRange())
 	local nRadius = 500
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not botTarget:IsMagicImmune()
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1200, false, BOT_MODE_NONE)
@@ -687,7 +688,7 @@ function X.ConsiderNosedive()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and bot:GetActiveModeDesire() > 0.75
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)

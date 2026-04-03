@@ -184,12 +184,15 @@ local lastTimeStealSpell = 0
 
 if bot.shouldBlink == nil then bot.shouldBlink = false end
 
+local bRetreating
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
 
+	bRetreating = Fu.IsRetreating(bot)
+
     -- if Rubick is in good health condition and is casting an ability with some enmey still nearby, don't consider any other spells.
     if Fu.GetHP(bot) > 0.3
-    and not Fu.IsRetreating(bot)
+    and not bRetreating
     and (bot:IsChanneling()
     or bot:IsUsingAbility()
     or bot:IsCastingAbility())
@@ -317,7 +320,7 @@ function X.ConsiderTelekinesis()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 		for _, enemyHero in pairs(nInRangeEnemy)
@@ -578,8 +581,6 @@ function X.ConsiderFadeBolt()
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_rubick_telekinesis')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
@@ -595,7 +596,7 @@ function X.ConsiderFadeBolt()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)

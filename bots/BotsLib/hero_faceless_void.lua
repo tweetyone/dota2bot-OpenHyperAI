@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -93,8 +92,13 @@ local announceCount, lastAnnouncedTime = 0, GameTime()
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
     if not Chronosphere or Chronosphere:IsHidden() then Chronosphere = bot:GetAbilityByName('faceless_void_time_zone') end
 
 	botTarget = Fu.GetProperTarget(bot)
@@ -161,7 +165,7 @@ function X.CanUseRefresherShard()
 	local nInRangeEnmyList = Fu.GetNearbyHeroes(bot, nCastRange, true, BOT_MODE_NONE )
 
 	if #nInRangeEnmyList > 0
-		and ( Fu.IsGoingOnSomeone( bot ) or Fu.IsInTeamFight( bot ) )
+		and ( bGoingOnSomeone or Fu.IsInTeamFight( bot ) )
 		and Fu.CanUseRefresherShard( bot )
 		and not bot:HasModifier("modifier_faceless_void_chronosphere_speed")
 	then
@@ -204,7 +208,7 @@ function X.ConsiderTimeWalk()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -240,7 +244,7 @@ function X.ConsiderTimeWalk()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
 		for _, enemyHero in pairs(nInRangeEnemy)
@@ -384,7 +388,7 @@ function X.ConsiderTimeDilation()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -397,7 +401,7 @@ function X.ConsiderTimeDilation()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 		for _, enemyHero in pairs(nInRangeEnemy)
@@ -474,17 +478,14 @@ function X.ConsiderChronosphere()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange + nRadius)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:IsAttackImmune()
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
@@ -520,7 +521,7 @@ function X.ConsiderChronosphere()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -601,7 +602,7 @@ function X.ConsiderTimeWalkReverse()
 		end
 
 		-- if TimeDilation:IsTrained() and TimeDilation:IsFullyCastable()
-		-- and Fu.IsGoingOnSomeone(bot)
+		-- and bGoingOnSomeone
 		-- then
 		-- 	return BOT_ACTION_DESIRE_HIGH
 		-- end

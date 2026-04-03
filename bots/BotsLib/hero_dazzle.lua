@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -187,7 +186,6 @@ local castFDesire, castFTarget
 local castRDesire, castRTarget
 local NothlProjectionDesire, NothlProjectionLocation, NothlProjectionEndDesire
 
-local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local aetherRange = 0
 local talent4Damage = 0
 
@@ -221,10 +219,8 @@ function X.SkillsComplement()
 	local aether = Fu.IsItemAvailable( "item_aether_lens" )
 	if aether ~= nil then aetherRange = 225 end
 
-	castWDesire, castWTarget, sMotive = X.ConsiderW()
 	if ( castWDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -234,7 +230,6 @@ function X.SkillsComplement()
 
 	NothlProjectionDesire, NothlProjectionLocation = X.ConsiderNothlProjection()
 	if NothlProjectionDesire > 0 then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 		Fu.SetQueuePtToINT( bot, true )
 		bot:ActionQueue_UseAbilityOnLocation( NothlProjection, NothlProjectionLocation )
 		return
@@ -246,10 +241,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	castQDesire, castQTarget, sMotive = X.ConsiderQ()
 	if ( castQDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -258,10 +251,8 @@ function X.SkillsComplement()
 	end
 
 
-	castEDesire, castETarget, sMotive = X.ConsiderE()
 	if ( castEDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -269,10 +260,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	-- castRDesire, castRTarget, sMotive = X.ConsiderR()
 	-- if ( castRDesire > 0 )
 	-- then
-	-- 	Fu.SetReportMotive( bDebugMode, sMotive )
 
 	-- 	-- Fu.SetQueuePtToINT( bot, true )
 	-- 	Fu.SetQueuePtToINT( bot, true )

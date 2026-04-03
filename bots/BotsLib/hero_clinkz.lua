@@ -138,8 +138,15 @@ local SearingArrowsDesire, SearingArrowsTarget
 
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -201,14 +208,12 @@ function X.ConsiderStrafe()
 
     local nAttackRange = bot:GetAttackRange()
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nAttackRange)
         and not Fu.IsChasingTarget(bot, botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -224,7 +229,7 @@ function X.ConsiderStrafe()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(1000)
             if nNeutralCreeps ~= nil
@@ -238,7 +243,7 @@ function X.ConsiderStrafe()
                         return BOT_ACTION_DESIRE_HIGH
                     end
                 else
-                    if Fu.GetMP(bot) > 0.25
+                    if nBotMP > 0.25
                     then
                         return BOT_ACTION_DESIRE_HIGH
                     end
@@ -255,7 +260,7 @@ function X.ConsiderStrafe()
                         return BOT_ACTION_DESIRE_HIGH
                     end
                 else
-                    if Fu.GetMP(bot) > 0.25
+                    if nBotMP > 0.25
                     then
                         return BOT_ACTION_DESIRE_HIGH
                     end
@@ -276,7 +281,7 @@ function X.ConsiderStrafe()
                     return BOT_ACTION_DESIRE_HIGH
                 end
             else
-                if Fu.GetMP(bot) > 0.25
+                if nBotMP > 0.25
                 then
                     return BOT_ACTION_DESIRE_HIGH
                 end
@@ -288,7 +293,7 @@ function X.ConsiderStrafe()
 	then
 		if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, nAttackRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -326,15 +331,13 @@ function X.ConsiderTarBomb()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange + nRadius)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -343,7 +346,7 @@ function X.ConsiderTarBomb()
             if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
             and #nInRangeAlly >= #nInRangeEnemy
             then
-                if Fu.IsAttacking(bot)
+                if bAttacking
                 or (Fu.IsChasingTarget(bot, botTarget)
                     and bot:GetCurrentMovementSpeed() < botTarget:GetCurrentMovementSpeed())
                 then
@@ -391,7 +394,7 @@ function X.ConsiderTarBomb()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(1000)
             if nNeutralCreeps ~= nil and #nNeutralCreeps >= 1
@@ -404,7 +407,7 @@ function X.ConsiderTarBomb()
                         return BOT_ACTION_DESIRE_HIGH, nNeutralCreeps[1]
                     end
                 else
-                    if Fu.GetMP(bot) > 0.4
+                    if nBotMP > 0.4
                     then
                         return BOT_ACTION_DESIRE_HIGH, nNeutralCreeps[1]
                     end
@@ -422,7 +425,7 @@ function X.ConsiderTarBomb()
                         return BOT_ACTION_DESIRE_HIGH, nEnemyLaneCreeps[1]
                     end
                 else
-                    if Fu.GetMP(bot) > 0.4
+                    if nBotMP > 0.4
                     then
                         return BOT_ACTION_DESIRE_HIGH, nEnemyLaneCreeps[1]
                     end
@@ -446,7 +449,7 @@ function X.ConsiderTarBomb()
 				if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
                 and GetUnitToUnitDistance(creep, nCreepInRangeHero[1]) < 600
                 and botTarget ~= creep
-                and Fu.GetMP(bot) > 0.3
+                and nBotMP > 0.3
                 and Fu.CanBeAttacked(creep)
                 and Fu.IsInLaningPhase()
 				then
@@ -460,7 +463,7 @@ function X.ConsiderTarBomb()
 	then
 		if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             if SkeletonWalk:IsTrained()
             then
@@ -561,7 +564,7 @@ function X.ConsiderSkeletonWalk()
     local TormentorLocation = Fu.GetTormentorLocation(GetTeam())
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     and bot:GetActiveModeDesire() > 0.65
 	then
 		if Fu.IsValidTarget(botTarget)
@@ -691,14 +694,12 @@ function X.ConsiderSearingArrows()
 
     local bIsAutoCasted = SearingArrows:GetAutoCastState()
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if  Fu.IsValidHero(botTarget)
 		and Fu.CanBeAttacked(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange + 300)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not botTarget:IsMagicImmune()
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             if fManaAfter > fManaThreshold1 + 0.1 then
@@ -777,13 +778,11 @@ function X.ConsiderBurningBarrage()
     local nCastRange = Fu.GetProperCastRange(false, bot, BurningBarrage:GetCastRange())
     local nRadius = BurningBarrage:GetSpecialValueInt('radius')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange - 125)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetAlliesNearLoc(botTarget:GetLocation(), 1200)
@@ -807,7 +806,7 @@ function X.ConsiderBurningBarrage()
     then
         local nNeutralCreeps = bot:GetNearbyNeutralCreeps(1000)
         if nNeutralCreeps ~= nil and #nNeutralCreeps >= 1
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and Fu.GetManaAfter(BurningBarrage:GetManaCost()) * bot:GetMana() > SkeletonWalk:GetManaCost()
         then
             if Fu.IsBigCamp(nNeutralCreeps)
@@ -845,7 +844,7 @@ function X.ConsiderBurningBarrage()
 	then
 		if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -882,13 +881,11 @@ function X.ConsiderBurningArmy()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetAlliesNearLoc(botTarget:GetLocation(), 1200)

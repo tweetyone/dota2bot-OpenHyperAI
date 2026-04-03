@@ -147,8 +147,13 @@ local SummonFamiliarsDesire
 
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -197,7 +202,7 @@ function X.ConsiderGraveChill()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, GraveChill:GetCastRange())
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local target = nil
         local atkSpd = 0
@@ -258,7 +263,7 @@ function X.ConsiderGraveChill()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -268,7 +273,7 @@ function X.ConsiderGraveChill()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -317,7 +322,7 @@ function X.ConsiderSoulAssumption()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local target = nil
         local hp = 20000
@@ -362,7 +367,7 @@ function X.ConsiderSoulAssumption()
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.CanCastOnTargetAdvanced(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and Stacks == nStackLimit
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -373,7 +378,7 @@ function X.ConsiderSoulAssumption()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and Stacks == nStackLimit
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -436,14 +441,12 @@ function X.ConsiderSilentAsTheGrave()
     local roshanLoc = Fu.GetCurrentRoshanLocation()
     local tormentorLoc = Fu.GetTormentorLocation(GetTeam())
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, 1200)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)

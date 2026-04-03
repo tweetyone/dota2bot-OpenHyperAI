@@ -135,8 +135,22 @@ local SpringEarlyDesire
 local MischiefDesire
 local WukongsCommandDesire, WukongsCommandLocation
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     WukongsCommandDesire, WukongsCommandLocation = X.ConsiderWukongsCommand()
     if WukongsCommandDesire > 0
@@ -197,7 +211,7 @@ function X.ConsiderBoundlessStrike()
     local nCastPoint = BoundlessStrike:GetCastPoint()
     local nRadius = BoundlessStrike:GetSpecialValueInt('strike_radius')
     local nDamage = bot:GetAttackDamage() * (BoundlessStrike:GetSpecialValueInt('strike_crit_mult') / 100)
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 	for _, enemyHero in pairs(nEnemyHeroes)
@@ -228,7 +242,7 @@ function X.ConsiderBoundlessStrike()
         end
 	end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
 
@@ -242,7 +256,7 @@ function X.ConsiderBoundlessStrike()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
 
@@ -251,7 +265,6 @@ function X.ConsiderBoundlessStrike()
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -265,7 +278,7 @@ function X.ConsiderBoundlessStrike()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -282,7 +295,7 @@ function X.ConsiderBoundlessStrike()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.65 and bot:WasRecentlyDamagedByAnyHero(2.2)))
+                or (nBotHP < 0.65 and bot:WasRecentlyDamagedByAnyHero(2.2)))
             then
                 return BOT_ACTION_DESIRE_HIGH, nInRangeEnemy[1]:GetExtrapolatedLocation(nCastPoint)
             end
@@ -311,7 +324,7 @@ function X.ConsiderBoundlessStrike()
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange)
             if nNeutralCreeps ~= nil
@@ -346,7 +359,7 @@ function X.ConsiderBoundlessStrike()
 			-- 	local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-            --     and Fu.GetMP(bot) > 0.33
+            --     and nBotMP > 0.33
 			-- 	then
 			-- 		return BOT_ACTION_DESIRE_HIGH, creep:GetLocation()
 			-- 	end
@@ -361,7 +374,7 @@ function X.ConsiderBoundlessStrike()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(creepList)
@@ -373,7 +386,7 @@ function X.ConsiderBoundlessStrike()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -383,7 +396,7 @@ function X.ConsiderBoundlessStrike()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -397,7 +410,7 @@ function X.ConsiderBoundlessStrike()
         if Fu.IsRetreating(allyHero)
         and allyHero:WasRecentlyDamagedByAnyHero(2.1)
         and not allyHero:IsIllusion()
-        and Fu.GetMP(bot) > 0.59
+        and nBotMP > 0.59
         then
             if nAllyInRangeEnemy ~= nil and #nAllyInRangeEnemy >= 1
             and Fu.IsValidHero(nAllyInRangeEnemy[1])
@@ -427,7 +440,7 @@ function X.ConsiderTreeDance()
     end
 
     local nCastRange = TreeDance:GetCastRange()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
 	if nEnemyHeroes == nil
@@ -435,7 +448,7 @@ function X.ConsiderTreeDance()
 		return BOT_ACTION_DESIRE_NONE, nil
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
     and PrimalSpring:IsFullyCastable()
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
@@ -444,9 +457,7 @@ function X.ConsiderTreeDance()
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
 			local nTrees = bot:GetNearbyTrees(nCastRange)
@@ -464,7 +475,7 @@ function X.ConsiderTreeDance()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -481,7 +492,7 @@ function X.ConsiderTreeDance()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.65 and bot:WasRecentlyDamagedByAnyHero(2.2)))
+                or (nBotHP < 0.65 and bot:WasRecentlyDamagedByAnyHero(2.2)))
             and bot:DistanceFromFountain() > 1000
             then
                 local nTrees = bot:GetNearbyTrees(nCastRange)
@@ -498,7 +509,7 @@ function X.ConsiderTreeDance()
 	end
 
     if Fu.IsFarming(bot)
-    and Fu.GetMP(bot) > 0.35
+    and nBotMP > 0.35
     then
         local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange)
         if nNeutralCreeps ~= nil
@@ -544,7 +555,7 @@ function X.ConsiderPrimalSpring()
 	local nChannelTime = PrimalSpring:GetChannelTime()
 	local nRadius = PrimalSpring:GetSpecialValueInt('impact_radius')
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nMaxDistance, nRadius, nChannelTime, 0)
 		if nLocationAoE.count >= 2
@@ -557,7 +568,7 @@ function X.ConsiderPrimalSpring()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local weakestTarget = Fu.GetAttackableWeakestUnit(bot, nMaxDistance, true, true)
@@ -580,7 +591,7 @@ function X.ConsiderPrimalSpring()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -597,7 +608,7 @@ function X.ConsiderPrimalSpring()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.71 and bot:WasRecentlyDamagedByAnyHero(2.2)))
+                or (nBotHP < 0.71 and bot:WasRecentlyDamagedByAnyHero(2.2)))
             then
                 local loc = Fu.GetEscapeLoc()
 		        return BOT_ACTION_DESIRE_MODERATE, Fu.Site.GetXUnitsTowardsLocation(bot, loc, nMaxDistance)
@@ -620,7 +631,7 @@ function X.ConsiderPrimalSpring()
     end
 
     if Fu.IsFarming(bot)
-    and Fu.GetMP(bot) > 0.35
+    and nBotMP > 0.35
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nMaxDistance, nRadius, nChannelTime, 0)
 
@@ -677,9 +688,9 @@ function X.ConsiderWukongsCommand()
 
     local nCastRange = WukongsCommand:GetSpecialValueInt('cast_range')
 	local nRadius = WukongsCommand:GetSpecialValueInt('second_radius')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius / 2, 1, 0)
 		if nLocationAoE.count >= 2
@@ -694,7 +705,7 @@ function X.ConsiderWukongsCommand()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
 
@@ -703,7 +714,6 @@ function X.ConsiderWukongsCommand()
         and Fu.IsInRange(bot, botTarget, nCastRange)
         -- and Fu.IsCore(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and not Fu.IsLocationInChrono(botTarget:GetLocation())

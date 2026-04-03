@@ -132,7 +132,17 @@ local TerrorizeDesire, TerrorizeLocation
 local BedlamTime    = 0
 local TerrorizeTime = 0
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
+local bInTeamFight
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 	if Fu.CanNotUseAbility(bot)
     then
         return
@@ -183,7 +193,7 @@ function X.ConsiderBrambleMaze()
 
 	local nCastRange = BrambleMaze:GetCastRange()
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
 	for _, enemyHero in pairs(nEnemyHeroes)
 	do
@@ -196,7 +206,7 @@ function X.ConsiderBrambleMaze()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -209,7 +219,7 @@ function X.ConsiderBrambleMaze()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
     and	Fu.IsValid(nEnemyHeroes[1])
     and Fu.CanCastOnNonMagicImmune(nEnemyHeroes[1])
     and not Fu.IsDisabled(nEnemyHeroes[1])
@@ -231,11 +241,11 @@ function X.ConsiderShadowRealm()
 	local nRangeBonus = ShadowRealm:GetSpecialValueInt('attack_range_bonus')
     local nAttackRange = bot:GetAttackRange()
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nAttackRange + nRangeBonus, true, BOT_MODE_NONE)
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
-		if Fu.GetHP(bot) < 0.5
+		if nBotHP < 0.5
         and Fu.IsValidHero(botTarget)
         and Fu.CanCastOnMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
@@ -248,11 +258,11 @@ function X.ConsiderShadowRealm()
 		end
 	end
 
-	if (Fu.IsRetreating(bot) or (Fu.IsRetreating(bot) and Fu.GetHP(bot) < 0.6 and bot:WasRecentlyDamagedByAnyHero(2)))
+	if (bRetreating or (bRetreating and nBotHP < 0.6 and bot:WasRecentlyDamagedByAnyHero(2)))
     and not Fu.IsRealInvisible(bot)
     and nEnemyHeroes ~= nil and #nEnemyHeroes >= 1
 	then
-        if (Fu.DidEnemyCastAbility() or Fu.GetHP(bot) < 0.5 or Fu.IsStunProjectileIncoming(bot, 800))
+        if (Fu.DidEnemyCastAbility() or nBotHP < 0.5 or Fu.IsStunProjectileIncoming(bot, 800))
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -278,7 +288,7 @@ function X.ConsiderCurseCrown()
 
 	local nTowers = bot:GetNearbyTowers(900, true)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local npcMostDangerousEnemy = nil
 		local nMostDangerousDamage = 0
@@ -307,9 +317,9 @@ function X.ConsiderCurseCrown()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
-		local botTarget = Fu.GetProperTarget(bot)
+		botTarget = Fu.GetProperTarget(bot)
 
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -322,7 +332,7 @@ function X.ConsiderCurseCrown()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		for _, enemyHero in pairs(nEnemysHeroesInRange)
 		do
@@ -375,7 +385,7 @@ function X.ConsiderCurseCrown()
 			local nEnemysCreeps = bot:GetNearbyCreeps(1200, true)
 
 			if Fu.IsValidHero(nWeakestEnemyHeroInBonus)
-            and Fu.GetHP(bot) > 0.6
+            and nBotHP > 0.6
             and #nTowers == 0
             and ((#nEnemysCreeps + #nEnemysHeroesInBonus ) <= 5 or DotaTime() > 12 * 60)
             and not Fu.IsDisabled(nWeakestEnemyHeroInBonus)
@@ -410,10 +420,10 @@ function X.ConsiderBedlam()
     end
 
     local nCastRange = Fu.GetProperCastRange(false, bot, Bedlam:GetCastRange())
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         if #nEnemyHeroes >= 1
         then
@@ -421,7 +431,7 @@ function X.ConsiderBedlam()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         if Fu.IsInRange(bot, botTarget, nCastRange)
         and Fu.IsValidTarget(botTarget)
@@ -444,7 +454,7 @@ function X.ConsiderTerrorize()
 	local nRadius   = Terrorize:GetSpecialValueInt('destination_radius')
 	local nEnemysHeroesInBonus = Fu.GetNearbyHeroes(bot, nCastRange + 150, true, BOT_MODE_NONE)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         local nTeamFightLocation = Fu.GetTeamFightLocation(bot)
 		local nAllyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
@@ -526,7 +536,7 @@ function X.ConsiderTerrorize()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 

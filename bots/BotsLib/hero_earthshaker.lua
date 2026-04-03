@@ -134,7 +134,14 @@ local Blink
 
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
+local bInTeamFight
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 	if Fu.CanNotUseAbility(bot)
     or bot:NumQueuedActions() > 0
     then return end
@@ -298,7 +305,7 @@ function X.ConsiderFissure()
         end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -448,14 +455,12 @@ function X.ConsiderEnchantTotem()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -540,7 +545,7 @@ function X.ConsiderEnchantTotem()
 
             if Fu.IsValidBuilding(botTarget)
             and Fu.CanBeAttacked(botTarget)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, 0, false
             end
@@ -554,7 +559,7 @@ function X.ConsiderEnchantTotem()
 
             if Fu.IsValidBuilding(botTarget)
             and Fu.CanBeAttacked(botTarget)
-            and Fu.IsAttacking(bot)
+            and bAttacking
             then
                 return BOT_ACTION_DESIRE_HIGH, 0, false
             end
@@ -581,7 +586,7 @@ function X.ConsiderEnchantTotem()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, 0, false
         end
@@ -591,7 +596,7 @@ function X.ConsiderEnchantTotem()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, 0, false
         end
@@ -608,7 +613,7 @@ function X.ConsiderEchoSlam()
 
 	local nRadius = EchoSlam:GetSpecialValueInt('echo_slam_echo_range')
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nRadius / 2)
         if nInRangeEnemy ~= nil and #nInRangeEnemy >= 2
@@ -617,17 +622,14 @@ function X.ConsiderEchoSlam()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius / 2)
         -- and Fu.IsCore(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and not botTarget:HasModifier('modifier_item_aeon_disk_buff')
         and not botTarget:IsInvulnerable()
@@ -677,7 +679,7 @@ function X.ConsiderBlinkSlam()
         local nCastRange = 1199
         local nRadius = EchoSlam:GetSpecialValueInt('echo_slam_echo_range')
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, 0, 0)
             local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius / 2)
@@ -717,7 +719,7 @@ function X.ConsiderTotemSlam()
         local nETLeapDuration = EnchantTotem:GetSpecialValueFloat('scepter_leap_duration')
         local nRadius = EchoSlam:GetSpecialValueInt('echo_slam_echo_range')
 
-        if Fu.IsInTeamFight(bot, 1200)
+        if bInTeamFight
         then
             local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nETCastRange, nRadius, nETLeapDuration, 0)
             local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius / 2)

@@ -159,8 +159,15 @@ local BlackKingBar
 
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -295,7 +302,7 @@ function X.ConsiderMalefice()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -303,11 +310,8 @@ function X.ConsiderMalefice()
         and Fu.IsInRange(bot, botTarget, nCastRange + 150)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_skeleton_king_reincarnation_scepter_active')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1400, true, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1400, false, BOT_MODE_NONE)
@@ -378,7 +382,7 @@ function X.ConsiderMalefice()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not botTarget:HasModifier('modifier_roshan_spell_block')
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -389,7 +393,7 @@ function X.ConsiderMalefice()
 	then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -407,13 +411,12 @@ function X.ConsiderDemonicSummoning()
     local nCastRange = Fu.GetProperCastRange(false, bot, DemonicSummoning:GetCastRange())
     local nHPCost = 75 + (25 * (DemonicSummoning:GetLevel() - 1))
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     and Fu.GetHP(bot) > 0.5
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
 		then
@@ -469,7 +472,7 @@ function X.ConsiderDemonicSummoning()
 
 	if Fu.IsDefending(bot) or Fu.IsPushing(bot)
 	then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(1000, true)
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
@@ -494,7 +497,7 @@ function X.ConsiderDemonicSummoning()
     if Fu.IsFarming(bot)
     and Fu.GetHealthAfter(nHPCost) > 0.5
     and Fu.GetManaAfter(DemonicSummoning:GetManaCost()) > 0.33
-    and Fu.IsAttacking(bot)
+    and bAttacking
     then
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(1000, true)
         if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
@@ -525,7 +528,7 @@ function X.ConsiderDemonicSummoning()
 	then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
         end
@@ -536,7 +539,7 @@ function X.ConsiderDemonicSummoning()
 	then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
         end
@@ -559,7 +562,7 @@ function X.ConsiderMidnightPulse()
         nRadius = nRadius + MidnightPulse:GetSpecialValueInt('value')
     end
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius / 2, 0, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius * 0.8)
@@ -570,12 +573,12 @@ function X.ConsiderMidnightPulse()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1400, true, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1400, false, BOT_MODE_NONE)
@@ -614,7 +617,7 @@ function X.ConsiderMidnightPulse()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -624,7 +627,7 @@ function X.ConsiderMidnightPulse()
 	then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -644,7 +647,7 @@ function X.ConsiderBlackHole()
     local nDamage = BlackHole:GetSpecialValueInt('value')
     local nDuration = BlackHole:GetSpecialValueInt('duration')
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius * 0.8, 0, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -655,16 +658,14 @@ function X.ConsiderBlackHole()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 800)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and not botTarget:HasModifier('modifier_item_aeon_disk_buff')
 		then
@@ -731,7 +732,7 @@ function X.ConsiderBlinkHole()
     then
         local nRadius = BlackHole:GetSpecialValueInt('radius')
 
-        if Fu.IsInTeamFight(bot, 1200)
+        if bInTeamFight
         then
             local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), 1199, nRadius, 0, 0)
             local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -765,7 +766,7 @@ function X.ConsiderBlinkPulseHole()
     then
         local nRadius = BlackHole:GetSpecialValueInt('radius')
 
-        if Fu.IsInTeamFight(bot, 1200)
+        if bInTeamFight
         then
             local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), 1199, nRadius, 0, 0)
             local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)

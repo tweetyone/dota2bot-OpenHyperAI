@@ -131,8 +131,15 @@ local botTarget
 
 if bot.snowballHeroRetreat then bot.snowballHeroRetreat = false end
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -225,7 +232,7 @@ function X.ConsiderIceShards()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnMagicImmune(botTarget)
@@ -249,7 +256,7 @@ function X.ConsiderIceShards()
 		end
 	end
 
-    -- if Fu.IsRetreating(bot)
+    -- if bRetreating
     -- then
     --     local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
     --     local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -315,7 +322,7 @@ function X.ConsiderDrinkingBuddies()
                 if  Fu.IsRoshan(botTarget)
                 and Fu.CanBeAttacked(botTarget)
                 and Fu.IsInRange(bot, botTarget, 500)
-                and Fu.IsAttacking(bot)
+                and bAttacking
                 then
                     return BOT_ACTION_DESIRE_HIGH, allyHero
                 end
@@ -325,7 +332,7 @@ function X.ConsiderDrinkingBuddies()
             then
                 if  Fu.IsTormentor(botTarget)
                 and Fu.IsInRange(bot, botTarget, 500)
-                and Fu.IsAttacking(bot)
+                and bAttacking
                 then
                     return BOT_ACTION_DESIRE_HIGH, allyHero
                 end
@@ -345,13 +352,11 @@ function X.ConsiderDrinkingBuddies()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) and hTarget ~= nil then
+    if bGoingOnSomeone and hTarget ~= nil then
 		if  Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, 1000)
         and Fu.CanBeAttacked(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -368,7 +373,7 @@ function X.ConsiderDrinkingBuddies()
 
     local nEnemyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	and not Fu.IsRealInvisible(bot)
 	and not bot:HasModifier('modifier_fountain_aura_buff')
     and #nAllyHeroes > 1
@@ -409,7 +414,7 @@ function X.ConsiderSnowball()
     local nCastRange = Fu.GetProperCastRange(false, bot, Snowball:GetCastRange())
     local nDuration = Snowball:GetSpecialValueFloat('snowball_duration')
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local strongestTarget = nil
 		local dmg = 0
@@ -447,7 +452,7 @@ function X.ConsiderSnowball()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -514,7 +519,7 @@ function X.ConsiderSnowball()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -524,7 +529,7 @@ function X.ConsiderSnowball()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -561,13 +566,12 @@ function X.ConsiderTagTeam()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_legion_commander_duel')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
@@ -590,7 +594,7 @@ function X.ConsiderTagTeam()
 
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nInRangeAlly ~= nil and #nInRangeAlly >= 2
         and Fu.IsAttacking(nInRangeAlly[1])
         and Fu.IsAttacking(nInRangeAlly[2])
@@ -603,7 +607,7 @@ function X.ConsiderTagTeam()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -620,7 +624,7 @@ function X.ConsiderWalrusPunch()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, WalrusPunch:GetCastRange())
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		local strongestTarget = nil
 		local dmg = 0
@@ -662,7 +666,7 @@ function X.ConsiderWalrusPunch()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nInRangeAlly ~= nil and #nInRangeAlly >= 2
         and Fu.IsAttacking(nInRangeAlly[1])
         and Fu.IsAttacking(nInRangeAlly[2])
@@ -675,7 +679,7 @@ function X.ConsiderWalrusPunch()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end

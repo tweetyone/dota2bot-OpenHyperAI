@@ -158,8 +158,20 @@ local LiquidCourageDesire, LiquidCourageTarget
 
 local drunkenBrawlerState = 1
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     CinderBrewDesire, CinderBrewLocation = X.ConsiderCinderBrew()
     if CinderBrewDesire > 0
@@ -216,7 +228,7 @@ function X.ConsiderThunderClap()
 
 	local nRadius = ThunderClap:GetSpecialValueInt('radius')
     local nDamage = ThunderClap:GetSpecialValueInt('damage')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
     local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nRadius, true)
@@ -237,20 +249,18 @@ function X.ConsiderThunderClap()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius - 75)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             return BOT_ACTION_DESIRE_HIGH
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
 	then
         if Fu.IsValidHero(nEnemyHeroes[1])
@@ -275,8 +285,8 @@ function X.ConsiderThunderClap()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
-        and Fu.GetMP(bot) > 0.4
+        if bAttacking
+        and nBotMP > 0.4
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nRadius)
             if nNeutralCreeps ~= nil
@@ -309,7 +319,7 @@ function X.ConsiderThunderClap()
 			then
 				if Fu.IsValidHero(nEnemyHeroes[1])
                 and GetUnitToUnitDistance(nEnemyHeroes[1], creep) < 500
-                and Fu.GetMP(bot) > 0.35
+                and nBotMP > 0.35
 				then
 					return BOT_ACTION_DESIRE_HIGH
 				end
@@ -324,7 +334,7 @@ function X.ConsiderThunderClap()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.33
+        and nBotMP > 0.33
         and nEnemyHeroes ~= nil and #nEnemyHeroes >= 1
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -347,7 +357,7 @@ function X.ConsiderThunderClap()
         and not botTarget:IsDisarmed()
         and Fu.CanCastOnMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -357,7 +367,7 @@ function X.ConsiderThunderClap()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -375,12 +385,12 @@ function X.ConsiderCinderBrew()
     local nRadius = CinderBrew:GetSpecialValueInt('radius')
     local nCastRange = Fu.GetProperCastRange(false, bot, CinderBrew:GetCastRange())
     local nCastPoint = CinderBrew:GetCastPoint()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
     local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(1600, true)
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -391,13 +401,12 @@ function X.ConsiderCinderBrew()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
-        and Fu.IsInRange(bot, botTarget, nCastRange + nRadius)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
         and not botTarget:HasModifier('modifier_brewmaster_cinder_brew')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
@@ -413,7 +422,7 @@ function X.ConsiderCinderBrew()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
 	then
         for _, enemyHero in pairs(nEnemyHeroes)
@@ -436,7 +445,7 @@ function X.ConsiderCinderBrew()
         if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
         and Fu.CanBeAttacked(nEnemyLaneCreeps[1])
         and not Fu.IsRunning(nEnemyLaneCreeps[1])
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nEnemyLaneCreeps)
         end
@@ -450,8 +459,8 @@ function X.ConsiderCinderBrew()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
-        and Fu.GetMP(bot) > 0.45
+        if bAttacking
+        and nBotMP > 0.45
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(600)
             if nNeutralCreeps ~= nil
@@ -477,7 +486,7 @@ function X.ConsiderCinderBrew()
         and not botTarget:IsInvulnerable()
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -487,7 +496,7 @@ function X.ConsiderCinderBrew()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -502,18 +511,18 @@ function X.ConsiderDrunkenBrawler()
         return BOT_ACTION_DESIRE_NONE, -1
     end
 
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
     local nEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
 
     if Fu.GetHP(bot) < 0.33 and Fu.IsValidHero(nEnemyHeroes[1]) and bot:WasRecentlyDamagedByAnyHero(3.0) then
         return BOT_ACTION_DESIRE_HIGH, 1
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         return BOT_ACTION_DESIRE_HIGH, 3
     end
 
-    if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) then
+    if bRetreating and not Fu.IsRealInvisible(bot) then
         return BOT_ACTION_DESIRE_HIGH, 2
     end
 
@@ -578,14 +587,14 @@ function X.ConsiderPrimalCompanion()
     local _, PrimalSplit = Fu.HasAbility(bot, 'brewmaster_primal_split')
     local nAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
     local nEnemyHeroes = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1600)
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if PrimalSplit ~= nil and (PrimalSplit:IsFullyCastable() or PrimalSplit:GetCooldownTimeRemaining() < 5)
     then
         return BOT_ACTION_DESIRE_NONE
     end
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         if nEnemyHeroes ~= nil and #nEnemyHeroes >= 2
         then
@@ -593,7 +602,7 @@ function X.ConsiderPrimalCompanion()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and not botTarget:IsAttackImmune()
@@ -619,7 +628,7 @@ function X.ConsiderPrimalSplit()
 
     local nAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
     local nEnemyHeroes = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1600)
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if nAllyHeroes ~= nil and #nAllyHeroes == 0
     then
@@ -633,7 +642,7 @@ function X.ConsiderPrimalSplit()
         return BOT_ACTION_DESIRE_HIGH
     end
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         if nEnemyHeroes ~= nil and #nEnemyHeroes >= 2
         then
@@ -641,7 +650,7 @@ function X.ConsiderPrimalSplit()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and not botTarget:IsAttackImmune()
@@ -662,7 +671,7 @@ function X.ConsiderPrimalSplit()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
 	then
 		if nEnemyHeroes ~= nil and nAllyHeroes ~= nil

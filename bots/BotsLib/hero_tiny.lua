@@ -135,13 +135,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		if Fu.IsValidHero(hMinionUnit) and hMinionUnit:IsIllusion()
-		then
-			Minion.IllusionThink( hMinionUnit )
-		end
-	end
+	Minion.MinionThink(hMinionUnit)
 end
 
 local Avalanche     = bot:GetAbilityByName("tiny_avalanche")
@@ -161,8 +155,16 @@ local BlinkTossDesire, BlinkTossTarget
 local Blink
 local BlinkLocation
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
 
 	-- Not sure why not tossing to ally..?
 	BlinkTossDesire, BlinkTossTarget = X.ConsiderBlinkToss()
@@ -221,7 +223,7 @@ function X.ConsiderAvalanche()
 	local nRadius = Avalanche:GetSpecialValueInt('radius')
 	local nDamage = Avalanche:GetSpecialValueInt('value') * (1 + bot:GetSpellAmp())
 	local nManaCost = Avalanche:GetManaCost()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 	for _, enemyHero in pairs(nEnemyHeroes)
@@ -247,7 +249,7 @@ function X.ConsiderAvalanche()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -258,7 +260,6 @@ function X.ConsiderAvalanche()
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not Fu.IsDisabled(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
@@ -268,14 +269,14 @@ function X.ConsiderAvalanche()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.58 and bot:WasRecentlyDamagedByAnyHero(2)))
+			or (nBotHP < 0.58 and bot:WasRecentlyDamagedByAnyHero(2)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], nCastRange)
@@ -366,7 +367,7 @@ function X.ConsiderToss()
 	local nCastRange = Fu.GetProperCastRange(false, bot, Toss:GetCastRange())
 	local nDamage = Toss:GetSpecialValueInt('toss_damage') * (1 + bot:GetSpellAmp())
 	local nRadius = Toss:GetSpecialValueInt('grab_radius')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 	for _, enemyHero in pairs(nEnemyHeroes)
@@ -393,7 +394,7 @@ function X.ConsiderToss()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	and not CanDoBlinkToss()
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 200, false, BOT_MODE_NONE)
@@ -467,14 +468,14 @@ function X.ConsiderToss()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) and bot:WasRecentlyDamagedByAnyHero(2)))
+			or (nBotHP and bot:WasRecentlyDamagedByAnyHero(2)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 		and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
@@ -518,7 +519,7 @@ function X.ConsiderTreeGrab()
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,700, true, BOT_MODE_NONE)
 
-	if not Fu.IsRetreating(bot)
+	if not bRetreating
 	and bot:GetHealth() > 0.15
 	and bot:DistanceFromFountain() > 800
 	and nEnemyHeroes ~= nil and #nEnemyHeroes == 0
@@ -546,7 +547,7 @@ function X.ConsiderTreeThrow()
 	local nCastRange = TreeThrow:GetSpecialValueInt('range')
 	local nDamage = bot:GetAttackDamage()
 	local nAttackCount = bot:GetModifierStackCount(bot:GetModifierByName('modifier_tiny_tree_grab'))
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 	for _, enemyHero in pairs(nEnemyHeroes)
@@ -556,7 +557,7 @@ function X.ConsiderTreeThrow()
 		and not Fu.IsSuspiciousIllusion(enemyHero)
 		then
 			if (Fu.CanKillTarget(enemyHero, nDamage, DAMAGE_TYPE_PHYSICAL)
-				or Fu.IsRetreating(bot) and Fu.CanKillTarget(enemyHero, nDamage, DAMAGE_TYPE_PHYSICAL))
+				or bRetreating and Fu.CanKillTarget(enemyHero, nDamage, DAMAGE_TYPE_PHYSICAL))
 			and not enemyHero:HasModifier('modifier_abaddon_aphotic_shield')
 			and not enemyHero:HasModifier('modifier_abaddon_borrowed_time')
 			and not enemyHero:HasModifier('modifier_dazzle_shallow_grave')
@@ -568,7 +569,7 @@ function X.ConsiderTreeThrow()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -578,9 +579,7 @@ function X.ConsiderTreeThrow()
 		and not Fu.IsInRange(bot, botTarget, bot:GetAttackRange() + 50)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeAlly >= #nInRangeEnemy
@@ -590,7 +589,7 @@ function X.ConsiderTreeThrow()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -598,7 +597,7 @@ function X.ConsiderTreeThrow()
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.65 and bot:WasRecentlyDamagedByAnyHero(2)))
+			or (nBotHP < 0.65 and bot:WasRecentlyDamagedByAnyHero(2)))
 		and Fu.IsValidTarget(weakestTarget)
 		and not Fu.IsSuspiciousIllusion(weakestTarget)
 		and not weakestTarget:HasModifier('modifier_abaddon_aphotic_shield')
@@ -646,7 +645,7 @@ function X.ConsiderTreeVolley()
 	local nCastPoint = TreeVolley:GetCastPoint()
 	local nRadius = TreeVolley:GetSpecialValueInt('tree_grab_radius')
 	local nSplashRadius = TreeVolley:GetSpecialValueInt('splash_radius')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsInTeamFight(bot, 1200)
 	then
@@ -663,7 +662,7 @@ function X.ConsiderTreeVolley()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -672,9 +671,7 @@ function X.ConsiderTreeVolley()
 		and Fu.IsValidTarget(botTarget)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeAlly >= #nInRangeEnemy
@@ -697,9 +694,9 @@ function X.ConsiderBlinkToss()
     then
 		local nCastRange = Fu.GetProperCastRange(false, bot, Toss:GetCastRange())
 		local nRadius = Toss:GetSpecialValueInt('grab_radius')
-		local botTarget = Fu.GetProperTarget(bot)
+		botTarget = Fu.GetProperTarget(bot)
 
-		if Fu.IsGoingOnSomeone(bot)
+		if bGoingOnSomeone
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
 			local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)

@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -93,8 +92,17 @@ local botTarget
 if bot.tryShukuchiKill == nil then bot.tryShukuchiKill = false end
 if bot.ShukuchiKillTarget == nil then bot.ShukuchiKillTarget = nil end
 
+local bRetreating
+local bAttacking
+local nBotHP
+local nBotMP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	nBotMP = Fu.GetMP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
     if not bot:HasModifier("modifier_weaver_shukuchi")
@@ -169,7 +177,7 @@ function X.ConsiderTheSwarm()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -220,7 +228,7 @@ function X.ConsiderTheSwarm()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -230,7 +238,7 @@ function X.ConsiderTheSwarm()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -300,7 +308,7 @@ function X.ConsiderShukuchi()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -329,7 +337,7 @@ function X.ConsiderShukuchi()
         if (Fu.IsTormentor(botTarget) or Fu.IsRoshan(botTarget))
         and Fu.IsInRange(bot, botTarget, 500)
         then
-            if Fu.GetHP(bot) < 0.4
+            if nBotHP < 0.4
             then
                 return BOT_ACTION_DESIRE_HIGH
             end
@@ -337,7 +345,7 @@ function X.ConsiderShukuchi()
 	end
 
     if Fu.IsPushing(bot)
-    and Fu.GetMP(bot) > 0.3
+    and nBotMP > 0.3
     then
         local tableNearbyEnemyTowers = bot:GetNearbyTowers(800, true)
 
@@ -357,7 +365,7 @@ function X.ConsiderShukuchi()
     --     local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
     --     local eta = (GetUnitToLocationDistance(bot, GetLaneFrontLocation(GetTeam(), bot.laneToPush, 0)) / nSpeed)
 
-    --     if Fu.GetMP(bot) > 0.33
+    --     if nBotMP > 0.33
     --     and nInRangeAlly ~= nil and #nInRangeAlly == 0
     --     and nInRangeEnemy ~= nil and #nInRangeEnemy == 0
     --     and eta > nDuration + 1
@@ -373,7 +381,7 @@ function X.ConsiderShukuchi()
         
     --     local eta = (GetUnitToLocationDistance(bot, GetLaneFrontLocation(GetTeam(), bot.laneToDefend, 0)) / nSpeed)
 
-    --     if Fu.GetMP(bot) > 0.33
+    --     if nBotMP > 0.33
     --     and nInRangeAlly ~= nil and #nInRangeAlly == 0
     --     and nInRangeEnemy ~= nil and #nInRangeEnemy == 0
     --     and eta > nDuration
@@ -384,7 +392,7 @@ function X.ConsiderShukuchi()
 
     
     if Fu.IsFarming(bot)
-    and Fu.GetHP(bot) > 0.25 and Fu.GetMP(bot) > 0.25
+    and nBotHP > 0.25 and nBotMP > 0.25
     then
         local npcTarget = bot:GetAttackTarget()
 
@@ -400,16 +408,16 @@ function X.ConsiderShukuchi()
  --        local nCreeps = bot:GetNearbyCreeps(1000, true)
 
 	-- 	if nCreeps ~= nil and #nCreeps == 0
- --        and Fu.GetMP(bot) > 0.3
+ --        and nBotMP > 0.3
  --        and eta > nDuration
 	-- 	then
 	-- 		return BOT_ACTION_DESIRE_HIGH
 	-- 	end
 
- --        if Fu.IsAttacking(bot)
+ --        if bAttacking
  --        and Fu.IsValid(botTarget)
  --        and botTarget:IsCreep()
- --        and Fu.GetMP(bot) > 0.3
+ --        and nBotMP > 0.3
  --        and nCreeps ~= nil and #nCreeps >= 2
  --        then
  --            return BOT_ACTION_DESIRE_HIGH
@@ -436,7 +444,7 @@ function X.ConsiderShukuchi()
 	-- end
 
     if Fu.IsDoingRoshan(bot)
-    and Fu.GetMP(bot) > 0.4
+    and nBotMP > 0.4
     then
         local eta = (GetUnitToLocationDistance(bot, roshanLoc) / nSpeed)
         if eta > nDuration
@@ -446,7 +454,7 @@ function X.ConsiderShukuchi()
     end
 
     if Fu.IsDoingTormentor(bot)
-    and Fu.GetMP(bot) > 0.4
+    and nBotMP > 0.4
     then
         local eta = (GetUnitToLocationDistance(bot, tormentorLoc) / nSpeed)
         if eta > nDuration
@@ -464,7 +472,7 @@ function X.ConsiderTimeLapse()
         return BOT_ACTION_DESIRE_NONE, nil
     end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -479,7 +487,7 @@ function X.ConsiderTimeLapse()
                 if nInRangeAlly ~= nil and nTargetInRangeAlly ~= nil
                 and ((#nTargetInRangeAlly > #nInRangeAlly))
                 then
-                    if Fu.GetHP(bot) < 0.42
+                    if nBotHP < 0.42
                     and Shukuchi:IsTrained() and Shukuchi:GetCooldownTimeRemaining() < 2.5
                     and Fu.IsChasingTarget(enemyHero, bot)
                     then
@@ -487,7 +495,7 @@ function X.ConsiderTimeLapse()
                     end
                 end
 
-                if Fu.GetHP(bot) < 0.33
+                if nBotHP < 0.33
                 and bot:WasRecentlyDamagedByHero(enemyHero, 1)
                 then
                     return BOT_ACTION_DESIRE_HIGH, 'self'
@@ -507,7 +515,7 @@ function X.ConsiderTimeLapse()
             and Fu.IsRetreating(allyHero)
             and Fu.GetHP(allyHero) < 0.33
             and Fu.IsCore(allyHero)
-            and Fu.GetHP(bot) > 0.75
+            and nBotHP > 0.75
             and allyHero:WasRecentlyDamagedByAnyHero(2)
             and not Fu.IsSuspiciousIllusion(allyHero)
             and not allyHero:HasModifier('modifier_legion_commander_duel')

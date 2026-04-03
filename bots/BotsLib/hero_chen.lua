@@ -159,8 +159,11 @@ local nChenCreeps = {}
 
 local botTarget
 
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bAttacking = Fu.IsAttacking(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -239,8 +242,6 @@ function X.ConsiderPenitence()
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1200, false, BOT_MODE_NONE)
@@ -256,7 +257,7 @@ function X.ConsiderPenitence()
 
                 nInRangeAlly = Fu.GetAlliesNearLoc(bot:GetLocation(), 1600)
                 if Fu.IsInRange(bot, botTarget, nAttackRange)
-                and Fu.IsAttacking(bot)
+                and bAttacking
                 and Fu.GetHeroCountAttackingTarget(nInRangeAlly, botTarget) >= 2
                 then
                     return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -295,7 +296,7 @@ function X.ConsiderPenitence()
 
 		if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nInRangeAlly ~= nil and #nInRangeAlly >= 1
         and Fu.GetHeroCountAttackingTarget(nInRangeAlly, botTarget) >= 2
 		then
@@ -429,7 +430,7 @@ function X.ConsiderDivineFavor()
 	then
 		if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             local target = Fu.GetAttackableWeakestUnit(bot, nCastRange, true, false)
 
@@ -514,7 +515,7 @@ function X.ConsiderSummonConvert()
 	end
 
     if (Fu.IsFarming(bot) or Fu.IsPushing(bot) or Fu.IsDefending(bot) or Fu.IsLaning(bot))
-    and Fu.IsAttacking(bot)
+    and bAttacking
     then
         return BOT_ACTION_DESIRE_HIGH
     end
@@ -523,7 +524,7 @@ function X.ConsiderSummonConvert()
 	then
 		if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             return BOT_ACTION_DESIRE_HIGH
         end

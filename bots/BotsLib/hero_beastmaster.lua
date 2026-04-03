@@ -186,7 +186,14 @@ local nEnemyHeroes
 
 if bot.shouldBlink == nil then bot.shouldBlink = false end
 
+local bGoingOnSomeone
+local bAttacking
+local bInTeamFight
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 	if Fu.CanNotUseAbility(bot)
     then
         return
@@ -317,7 +324,7 @@ function X.ConsiderWildAxes()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
 
@@ -325,7 +332,6 @@ function X.ConsiderWildAxes()
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -398,7 +404,7 @@ function X.ConsiderWildAxes()
         local nEnemyLanecreeps = bot:GetNearbyLaneCreeps(800, true)
 		local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), 800, nRadius, 0, 0)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if nEnemyLanecreeps ~= nil and #nEnemyLanecreeps >= 3
             and nLocationAoE.count >= 3
@@ -453,7 +459,7 @@ function X.ConsiderWildAxes()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -463,7 +469,7 @@ function X.ConsiderWildAxes()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -480,7 +486,7 @@ function X.ConsiderCallOfTheWildBoar()
 
     local nAttackRange = bot:GetAttackRange()
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -497,7 +503,7 @@ function X.ConsiderCallOfTheWildBoar()
 
 	if (Fu.IsPushing(bot) or Fu.IsDefending(bot))
 	then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(700, true)
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
@@ -519,7 +525,7 @@ function X.ConsiderCallOfTheWildBoar()
         local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nAttackRange + 75)
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nAttackRange + 75, true)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if nNeutralCreeps ~= nil
                 and (#nNeutralCreeps >= 3
@@ -539,7 +545,7 @@ function X.ConsiderCallOfTheWildBoar()
 	then
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -549,7 +555,7 @@ function X.ConsiderCallOfTheWildBoar()
 	then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -564,7 +570,7 @@ function X.ConsiderCallOfTheWildHawk()
 		return BOT_ACTION_DESIRE_NONE
 	end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), 500, 500, 0, 0)
 
@@ -578,7 +584,7 @@ function X.ConsiderCallOfTheWildHawk()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 
@@ -588,7 +594,6 @@ function X.ConsiderCallOfTheWildHawk()
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
         and not Fu.IsTaunted(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -688,7 +693,7 @@ function X.ConsiderPrimalRoar()
     end
 
     -- Teamfight: pick the enemy that threatens us most instead of just strongest
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         local bestTarget = nil
         local highestThreat = 0
@@ -751,7 +756,7 @@ function X.ConsiderPrimalRoar()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     and not CanDoBlinkRoar()
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
@@ -807,7 +812,7 @@ function X.ConsiderBlinkRoar()
     then
         local nDuration = PrimalRoar:GetSpecialValueInt('duration')
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
             local strongestTarget = Fu.GetStrongestUnit(1199, bot, true, false, nDuration)

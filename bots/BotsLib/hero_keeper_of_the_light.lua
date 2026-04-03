@@ -159,8 +159,13 @@ local nAllyHeroes, nEnemyHeroes
 local botTarget
 local botHP
 
+local bGoingOnSomeone
+local bAttacking
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     -- Re-fetch ability handles each tick for safety
     Illuminate    = bot:GetAbilityByName('keeper_of_the_light_illuminate')
@@ -276,13 +281,11 @@ function X.ConsiderIlluminate()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if  Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nTravelDist)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -359,7 +362,7 @@ function X.ConsiderIlluminate()
 		if Fu.IsRoshan(botTarget)
 		and Fu.IsInRange(botTarget, bot, nCastRange)
 		and Fu.CanBeAttacked(botTarget)
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -368,7 +371,7 @@ function X.ConsiderIlluminate()
     if Fu.IsDoingTormentor(bot) then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(botTarget, bot, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -440,7 +443,7 @@ function X.ConsiderBlindingLight()
     end
 
     -- Offensive: push enemy TOWARD your team when going on someone
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if  Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -546,7 +549,7 @@ function X.ConsiderSolarBind()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, SolarBind:GetCastRange())
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if  Fu.IsValidTarget(botTarget)
         and Fu.CanBeAttacked(botTarget)
@@ -554,7 +557,6 @@ function X.ConsiderSolarBind()
         and Fu.CanCastOnTargetAdvanced(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
@@ -610,7 +612,7 @@ function X.ConsiderSolarBind()
         if  Fu.IsRoshan(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not botTarget:HasModifier('modifier_roshan_spell_block')
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -620,7 +622,7 @@ function X.ConsiderSolarBind()
     if Fu.IsDoingTormentor(bot) then
         if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -675,7 +677,7 @@ function X.ConsiderSpiritForm()
         return BOT_ACTION_DESIRE_NONE
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if  Fu.IsValidTarget(botTarget)
         and Fu.CanBeAttacked(botTarget)

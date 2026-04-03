@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -103,8 +102,18 @@ local defDuration = 2
 local offDuration = 4.25
 local ConcoctionThrowTime = 0
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
 
 	ChemicalRageDesire = X.ConsiderChemicalRage()
 	if ChemicalRageDesire > 0
@@ -153,7 +162,7 @@ function X.ConsiderAcidSpray()
 	local nCastRange = AcidSpray:GetCastRange()
 	local nCastPoint = AcidSpray:GetCastPoint()
 	local nRadius = AcidSpray:GetSpecialValueInt('radius')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsInTeamFight(bot, 1200)
 	then
@@ -168,7 +177,7 @@ function X.ConsiderAcidSpray()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,900, false, BOT_MODE_NONE)
 
@@ -178,7 +187,6 @@ function X.ConsiderAcidSpray()
 		and Fu.IsAttacking(botTarget)
 		and botTarget:IsFacingLocation(bot:GetLocation(), 45)
 		and not Fu.IsSuspiciousIllusion(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeAlly >= #nInRangeEnemy
@@ -193,7 +201,7 @@ function X.ConsiderAcidSpray()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
@@ -211,7 +219,7 @@ function X.ConsiderAcidSpray()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.45 and bot:WasRecentlyDamagedByAnyHero(2.5)))
+                or (nBotHP < 0.45 and bot:WasRecentlyDamagedByAnyHero(2.5)))
             then
                 return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
             end
@@ -239,7 +247,7 @@ function X.ConsiderAcidSpray()
 		local nNeutralCreeps = bot:GetNearbyNeutralCreeps(600)
 		local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(600, true)
 
-		if Fu.IsAttacking(bot)
+		if bAttacking
 		and Fu.GetMP(bot) > 0.33
 		then
 			if nNeutralCreeps ~= nil
@@ -262,7 +270,7 @@ function X.ConsiderAcidSpray()
 		local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(600, true)
 		local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nCastRange, nRadius, 0, 0)
 
-		if Fu.IsAttacking(bot)
+		if bAttacking
 		and Fu.GetMP(bot) > 0.65
 		then
 			if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
@@ -278,7 +286,7 @@ function X.ConsiderAcidSpray()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -288,7 +296,7 @@ function X.ConsiderAcidSpray()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -333,7 +341,7 @@ function X.ConsiderUnstableConcoction()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange - 175, true, BOT_MODE_NONE)
@@ -360,7 +368,7 @@ function X.ConsiderUnstableConcoction()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 175, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -381,7 +389,7 @@ function X.ConsiderUnstableConcoction()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.6 and bot:WasRecentlyDamagedByAnyHero(2.2)))
+                or (nBotHP < 0.6 and bot:WasRecentlyDamagedByAnyHero(2.2)))
             then
                 return BOT_ACTION_DESIRE_HIGH
             end
@@ -428,7 +436,7 @@ function X.ConsiderUnstableConcoctionThrow()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange - 175, true, BOT_MODE_NONE)
@@ -456,7 +464,7 @@ function X.ConsiderUnstableConcoctionThrow()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
@@ -475,7 +483,7 @@ function X.ConsiderUnstableConcoctionThrow()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.6 and bot:WasRecentlyDamagedByAnyHero(2.2)))
+                or (nBotHP < 0.6 and bot:WasRecentlyDamagedByAnyHero(2.2)))
             then
                 return BOT_ACTION_DESIRE_HIGH, nInRangeEnemy[1]
             end
@@ -497,7 +505,7 @@ function X.ConsiderChemicalRage()
 		return BOT_ACTION_DESIRE_NONE
 	end
 
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsInTeamFight(bot, 1200)
 	then
@@ -508,7 +516,7 @@ function X.ConsiderChemicalRage()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
 
@@ -529,7 +537,7 @@ function X.ConsiderChemicalRage()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -548,7 +556,7 @@ function X.ConsiderChemicalRage()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.35 and bot:WasRecentlyDamagedByAnyHero(1.5)))
+                or (nBotHP < 0.35 and bot:WasRecentlyDamagedByAnyHero(1.5)))
             then
                 return BOT_ACTION_DESIRE_HIGH
             end
@@ -557,10 +565,10 @@ function X.ConsiderChemicalRage()
 
 	if Fu.IsFarming(bot)
 	then
-		if Fu.IsAttacking(bot)
+		if bAttacking
 		and Fu.IsValid(botTarget)
 		and botTarget:IsCreep()
-		and Fu.GetHP(bot) < 0.3
+		and nBotHP < 0.3
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -570,7 +578,7 @@ function X.ConsiderChemicalRage()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		and (Fu.IsModeTurbo() and DotaTime() < 15 * 60 or DotaTime() < 30 * 60)
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -581,7 +589,7 @@ function X.ConsiderChemicalRage()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		and (Fu.IsModeTurbo() and DotaTime() < 16 * 60 or DotaTime() < 32 * 60)
         then
             return BOT_ACTION_DESIRE_HIGH

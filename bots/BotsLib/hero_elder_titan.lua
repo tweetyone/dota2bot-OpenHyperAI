@@ -194,8 +194,13 @@ function X.MinionThink(hMinionUnit)
     Minion.MinionThink(hMinionUnit)
 end
 
+local bGoingOnSomeone
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) or bot:IsCastingAbility() or bot:IsChanneling() then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
 	-- Re-fetch ability handles each tick
 	EchoStomp          = bot:GetAbilityByName('elder_titan_echo_stomp')
@@ -245,7 +250,7 @@ function ConsiderAstralSpirit()
 
 	local nCastRange = AstralSpirit:GetSpecialValueInt('AbilityCastRange')
 
-	if Fu.IsValidTarget(botTarget) and (Fu.IsInTeamFight(bot, 1600) or Fu.IsGoingOnSomeone(bot) or Fu.IsPushing(bot))
+	if Fu.IsValidTarget(botTarget) and (Fu.IsInTeamFight(bot, 1600) or bGoingOnSomeone or Fu.IsPushing(bot))
 	then
         if Fu.IsInRange(bot, botTarget, nCastRange) then
 			local locationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, 500, 0, 0)
@@ -297,7 +302,7 @@ function ConsiderEarthSplitter()
     local crack_width = 300
     local crack_time = 3.14
 
-	if Fu.IsInTeamFight(bot, 1600) or Fu.IsGoingOnSomeone(bot) or Fu.IsPushing(bot)
+	if Fu.IsInTeamFight(bot, 1600) or bGoingOnSomeone or Fu.IsPushing(bot)
 	then
 		-- Check for enemies caught in Chronosphere/Black Hole with enough remaining duration
 		for _, npcEnemy in pairs(nEnemyHeroes) do
@@ -401,7 +406,7 @@ function ConsiderEchoStomp(eveluator)
 		end
 	end
 
-	if Fu.IsInTeamFight(bot, 1200) or Fu.IsGoingOnSomeone(bot) or Fu.IsPushing(bot) or Fu.IsDefending(bot)
+	if bInTeamFight or bGoingOnSomeone or Fu.IsPushing(bot) or Fu.IsDefending(bot)
 	then
 		if Fu.IsValidHero(botTarget)
 		and Fu.IsChasingTarget(bot, botTarget)

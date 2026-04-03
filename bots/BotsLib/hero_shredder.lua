@@ -141,8 +141,16 @@ local Chakram1CastTime = 0
 -- local Chakram2ETA = 0
 -- local Chakram2CastTime = 0
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
 
 	ChakramReturnDesire = X.ConsiderChakramReturn()
 	if ChakramReturnDesire > 0
@@ -232,7 +240,7 @@ function X.ConsiderWhirlingDeath()
 	local nDamage = WhirlingDeath:GetSpecialValueInt('whirling_damage')
 	local nManaCost = WhirlingDeath:GetManaCost()
 	local nMana = bot:GetMana() / bot:GetMaxMana()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = bot:GetNearbyHeroes(nRadius, true, BOT_MODE_NONE)
 	for _, enemyHero in pairs(nEnemyHeroes)
@@ -252,7 +260,7 @@ function X.ConsiderWhirlingDeath()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(700, false, BOT_MODE_NONE)
 		local nInRangeEnemy = bot:GetNearbyHeroes(nRadius, true, BOT_MODE_NONE)
@@ -262,9 +270,7 @@ function X.ConsiderWhirlingDeath()
 		and Fu.IsInRange(bot, botTarget, nRadius)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeAlly >= #nInRangeEnemy
@@ -273,14 +279,14 @@ function X.ConsiderWhirlingDeath()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(700, false, BOT_MODE_NONE)
 		local nInRangeEnemy = bot:GetNearbyHeroes(nRadius, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) and bot:WasRecentlyDamagedByAnyHero(3)))
+			or (nBotHP and bot:WasRecentlyDamagedByAnyHero(3)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], nRadius)
@@ -379,7 +385,7 @@ function X.ConsiderTimberChain()
 	local nCastRange = Fu.GetProperCastRange(false, bot, TimberChain:GetCastRange())
 	local nDamage = TimberChain:GetSpecialValueInt('damage')
 	local nWhirlingDamage = WhirlingDeath:GetSpecialValueInt('whirling_damage')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsStuck(bot)
 	then
@@ -387,7 +393,7 @@ function X.ConsiderTimberChain()
 		return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, loc, nCastRange)
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(nCastRange, false, BOT_MODE_NONE)
 		local nInRangeEnemy = bot:GetNearbyHeroes(nCastRange, true, BOT_MODE_NONE)
@@ -418,7 +424,7 @@ function X.ConsiderTimberChain()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and bot:DistanceFromFountain() > 600
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(nCastRange, false, BOT_MODE_NONE)
@@ -426,7 +432,7 @@ function X.ConsiderTimberChain()
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) and bot:WasRecentlyDamagedByAnyHero(3)))
+			or (nBotHP and bot:WasRecentlyDamagedByAnyHero(3)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], 500)
 		and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
@@ -452,9 +458,9 @@ function X.ConsiderReactiveArmor()
 		return BOT_ACTION_DESIRE_NONE
 	end
 
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(800, false, BOT_MODE_NONE)
 		local nInRangeEnemy = bot:GetNearbyHeroes(600, true, BOT_MODE_NONE)
@@ -467,18 +473,18 @@ function X.ConsiderReactiveArmor()
 		and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and (#nInRangeAlly >= #nInRangeEnemy
-			or Fu.GetHP(bot) < 0.51)
+			or nBotHP < 0.51)
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeEnemy = bot:GetNearbyHeroes(600, true, BOT_MODE_NONE)
 
 		if nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
-		and Fu.GetHP(bot) < 0.51
+		and nBotHP < 0.51
 		and bot:WasRecentlyDamagedByAnyHero(1.5)
 		then
 			return BOT_ACTION_DESIRE_HIGH
@@ -502,9 +508,9 @@ function X.ConsiderChakram()
 	local nManaCost = Chakram:GetManaCost()
 	local nDamage = Chakram:GetSpecialValueInt('pass_damage') * (1 + bot:GetSpellAmp())
 	local nMana = bot:GetMana() / bot:GetMaxMana()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(nCastRange + 100, false, BOT_MODE_NONE)
 		local nInRangeEnemy = bot:GetNearbyHeroes(nCastRange, true, BOT_MODE_NONE)
@@ -514,9 +520,7 @@ function X.ConsiderChakram()
 		and Fu.IsInRange(bot, botTarget, nCastRange)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeAlly >= #nInRangeEnemy
@@ -531,14 +535,14 @@ function X.ConsiderChakram()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(nCastRange + 100, false, BOT_MODE_NONE)
 		local nInRangeEnemy = bot:GetNearbyHeroes(nCastRange, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) and bot:WasRecentlyDamagedByAnyHero(3)))
+			or (nBotHP and bot:WasRecentlyDamagedByAnyHero(3)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], 500)
@@ -613,7 +617,7 @@ function X.ConsiderTwistedChakram()
 	local nSpeed = TwistedChakram:GetSpecialValueFloat('speed')
 	local nMana = bot:GetMana() / bot:GetMaxMana()
 	local nManaAfter = Fu.GetManaAfter(TwistedChakram:GetManaCost())
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
 
@@ -634,15 +638,13 @@ function X.ConsiderTwistedChakram()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanBeAttacked(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_troll_warlord_battle_trance')
 		and not botTarget:HasModifier('modifier_ursa_enrage')
 		then
@@ -651,7 +653,7 @@ function X.ConsiderTwistedChakram()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and not Fu.IsRealInvisible(bot)
 	and bot:WasRecentlyDamagedByAnyHero(3.0)
 	and not Fu.CanCastAbility(TimberChain)
@@ -755,8 +757,8 @@ function X.ConsiderChakramReturn()
 		return BOT_ACTION_DESIRE_HIGH
 	end
 
-	if Fu.IsRetreating(bot)
-	or Fu.IsGoingOnSomeone(bot)
+	if bRetreating
+	or bGoingOnSomeone
 	then
 		local nUnits = 0
 		local nInRangeEnemy = bot:GetNearbyHeroes(nCastRange, true, BOT_MODE_NONE)
@@ -792,9 +794,9 @@ end
 -- 	local nManaCost = Chakram2:GetManaCost()
 -- 	local nDamage = Chakram2:GetSpecialValueInt('pass_damage') * (1 + bot:GetSpellAmp())
 -- 	local nMana = bot:GetMana() / bot:GetMaxMana()
--- 	local botTarget = Fu.GetProperTarget(bot)
+-- 	botTarget = Fu.GetProperTarget(bot)
 
--- 	if Fu.IsGoingOnSomeone(bot)
+-- 	if bGoingOnSomeone
 -- 	then
 -- 		local nInRangeAlly = bot:GetNearbyHeroes(nCastRange + 100, false, BOT_MODE_NONE)
 -- 		local nInRangeEnemy = bot:GetNearbyHeroes(nCastRange, true, BOT_MODE_NONE)
@@ -821,14 +823,14 @@ end
 -- 		end
 -- 	end
 
--- 	if Fu.IsRetreating(bot)
+-- 	if bRetreating
 -- 	then
 -- 		local nInRangeAlly = bot:GetNearbyHeroes(nCastRange + 100, false, BOT_MODE_NONE)
 -- 		local nInRangeEnemy = bot:GetNearbyHeroes(nCastRange, true, BOT_MODE_NONE)
 
 -- 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 -- 		and ((#nInRangeEnemy > #nInRangeAlly)
--- 			or (Fu.GetHP(bot) and bot:WasRecentlyDamagedByAnyHero(3)))
+-- 			or (nBotHP and bot:WasRecentlyDamagedByAnyHero(3)))
 -- 		and Fu.IsValidHero(nInRangeEnemy[1])
 -- 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 -- 		and Fu.IsInRange(bot, nInRangeEnemy[1], 500)
@@ -926,8 +928,8 @@ end
 -- 		return BOT_ACTION_DESIRE_MODERATE
 -- 	end
 
--- 	if Fu.IsRetreating(bot)
--- 	or Fu.IsGoingOnSomeone(bot)
+-- 	if bRetreating
+-- 	or bGoingOnSomeone
 -- 	then
 -- 		local nUnits = 0
 -- 		local nInRangeEnemy = bot:GetNearbyHeroes(nCastRange, true, BOT_MODE_NONE)
@@ -955,9 +957,9 @@ end
 -- 		return BOT_ACTION_DESIRE_NONE, 0
 -- 	end
 
--- 	local botTarget = Fu.GetProperTarget(bot)
+-- 	botTarget = Fu.GetProperTarget(bot)
 
--- 	if Fu.IsGoingOnSomeone(bot)
+-- 	if bGoingOnSomeone
 -- 	then
 -- 		local nInRangeAlly = bot:GetNearbyHeroes(800, false, BOT_MODE_NONE)
 -- 		local nInRangeEnemy = bot:GetNearbyHeroes(600, true, BOT_MODE_NONE)
@@ -984,9 +986,9 @@ function X.ConsiderFlamethrower()
 	end
 
 	local nFrontRange = Flamethrower:GetSpecialValueInt('length')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(800, false, BOT_MODE_NONE)
 		local nInRangeEnemy = bot:GetNearbyHeroes(nFrontRange, true, BOT_MODE_NONE)
@@ -997,9 +999,7 @@ function X.ConsiderFlamethrower()
 		and bot:IsFacingLocation(botTarget:GetLocation(), 30)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeAlly >= #nInRangeEnemy

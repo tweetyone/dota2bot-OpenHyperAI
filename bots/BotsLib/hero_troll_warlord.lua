@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -90,8 +89,19 @@ local BattleTranceDesire
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
+local nBotMP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	nBotMP = Fu.GetMP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -138,7 +148,7 @@ function X.ConsiderBerserkersRage(BerserkersRage)
     local nBonusMS = BerserkersRage:GetSpecialValueInt('bonus_move_speed')
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
@@ -153,7 +163,7 @@ function X.ConsiderBerserkersRage(BerserkersRage)
                     return BOT_ACTION_DESIRE_NONE
                 end
             else
-                if Fu.IsAttacking(bot)
+                if bAttacking
                 and Fu.IsInRange(bot, botTarget, 150)
                 and BerserkersRage:GetToggleState() == false
                 and not Fu.IsChasingTarget(bot, botTarget)
@@ -169,7 +179,7 @@ function X.ConsiderBerserkersRage(BerserkersRage)
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -304,15 +314,13 @@ function X.ConsiderWhirlingAxesRanged()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -328,7 +336,7 @@ function X.ConsiderWhirlingAxesRanged()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -337,7 +345,7 @@ function X.ConsiderWhirlingAxesRanged()
         and Fu.IsValidHero(nInRangeEnemy[1])
         and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
         and Fu.IsChasingTarget(nInRangeEnemy[1], bot)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
         and not Fu.IsDisabled(nInRangeEnemy[1])
         and not nInRangeEnemy[1]:HasModifier('modifier_enigma_black_hole_pull')
@@ -394,13 +402,13 @@ function X.ConsiderWhirlingAxesRanged()
     then
         local nLocationAoE = bot:FindAoELocation(true, false, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange)
             if nNeutralCreeps ~= nil
             and ((#nNeutralCreeps >= 3 and nLocationAoE.count >= 3)
                 or (#nNeutralCreeps >= 2 and nNeutralCreeps[1]:IsAncientCreep() and nLocationAoE.count >= 2))
-            and Fu.GetMP(bot) > 0.3
+            and nBotMP > 0.3
             then
                 return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nNeutralCreeps)
             end
@@ -408,7 +416,7 @@ function X.ConsiderWhirlingAxesRanged()
             local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nCastRange, true)
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
             and nLocationAoE.count >= 3
-            and Fu.GetMP(bot) > 0.3
+            and nBotMP > 0.3
             then
                 return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nEnemyLaneCreeps)
             end
@@ -431,7 +439,7 @@ function X.ConsiderWhirlingAxesRanged()
 			-- 	local nCreepInRangeHero = creep:GetNearbyHeroes(500, false, BOT_MODE_NONE)
 
 			-- 	if nCreepInRangeHero ~= nil and #nCreepInRangeHero >= 1
-            --     and Fu.GetMP(bot) > 0.3
+            --     and nBotMP > 0.3
             --     and Fu.CanBeAttacked(creep)
 			-- 	then
 			-- 		return BOT_ACTION_DESIRE_HIGH, creep:GetLocation()
@@ -447,7 +455,7 @@ function X.ConsiderWhirlingAxesRanged()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         and Fu.CanBeAttacked(creepList[1])
         then
@@ -458,8 +466,8 @@ function X.ConsiderWhirlingAxesRanged()
         and Fu.IsValidHero(nInRangeEnemy[1])
         and Fu.IsAttacking(nInRangeEnemy[1])
         and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
-        and Fu.GetMP(bot) > 0.5
-        and Fu.GetHP(bot) < Fu.GetHP(nInRangeEnemy[1])
+        and nBotMP > 0.5
+        and nBotHP < Fu.GetHP(nInRangeEnemy[1])
         and nInRangeEnemy[1]:GetAttackTarget() == bot
         then
             return BOT_ACTION_DESIRE_HIGH, nInRangeEnemy[1]:GetLocation()
@@ -471,7 +479,7 @@ function X.ConsiderWhirlingAxesRanged()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -481,7 +489,7 @@ function X.ConsiderWhirlingAxesRanged()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -516,16 +524,14 @@ function X.ConsiderWhirlingAxesMelee()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -540,7 +546,7 @@ function X.ConsiderWhirlingAxesMelee()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -593,20 +599,20 @@ function X.ConsiderWhirlingAxesMelee()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nRadius)
             if nNeutralCreeps ~= nil
             and ((#nNeutralCreeps >= 3)
                 or (#nNeutralCreeps >= 2 and nNeutralCreeps[1]:IsAncientCreep()))
-            and Fu.GetMP(bot) > 0.3
+            and nBotMP > 0.3
             then
                 return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nNeutralCreeps)
             end
 
             local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nRadius, true)
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
-            and Fu.GetMP(bot) > 0.3
+            and nBotMP > 0.3
             then
                 return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nEnemyLaneCreeps)
             end
@@ -631,7 +637,7 @@ function X.ConsiderWhirlingAxesMelee()
 		end
 
         if canKill >= 2
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         and Fu.CanBeAttacked(creepList[1])
         then
@@ -642,8 +648,8 @@ function X.ConsiderWhirlingAxesMelee()
         and Fu.IsValidHero(nInRangeEnemy[1])
         and Fu.IsAttacking(nInRangeEnemy[1])
         and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
-        and Fu.GetMP(bot) > 0.5
-        and Fu.GetHP(bot) < Fu.GetHP(nInRangeEnemy[1])
+        and nBotMP > 0.5
+        and nBotHP < Fu.GetHP(nInRangeEnemy[1])
         and nInRangeEnemy[1]:GetAttackTarget() == bot
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -655,7 +661,7 @@ function X.ConsiderWhirlingAxesMelee()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -665,7 +671,7 @@ function X.ConsiderWhirlingAxesMelee()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -686,7 +692,7 @@ function X.ConsiderBattleTrance()
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1200, false, BOT_MODE_NONE)
-        if Fu.GetHP(bot) < 0.4
+        if nBotHP < 0.4
         and #nInRangeEnemy >= #nInRangeAlly then
             return BOT_ACTION_DESIRE_MODERATE
         end
@@ -694,17 +700,15 @@ function X.ConsiderBattleTrance()
 
     local nDuration = BattleTrance:GetSpecialValueInt('trance_duration')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, 600)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and not botTarget:HasModifier('modifier_item_blade_mail_reflect')
 		then
@@ -723,9 +727,9 @@ function X.ConsiderBattleTrance()
 
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 600)
         if nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
-        and Fu.GetHP(bot) < 0.3
+        and nBotHP < 0.3
         and Fu.IsValidHero(nInRangeEnemy[1])
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsLocationInChrono(nInRangeEnemy[1]:GetLocation())
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -739,7 +743,7 @@ function X.ConsiderBattleTrance()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nInRangeAlly ~= nil and #nInRangeAlly >= 2
         and Fu.IsAttacking(nInRangeAlly[1])
         and Fu.IsAttacking(nInRangeAlly[2])
@@ -753,17 +757,17 @@ function X.ConsiderBattleTrance()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
-        and Fu.GetHP(bot) < 0.35
+        and bAttacking
+        and nBotHP < 0.35
         then
             return BOT_ACTION_DESIRE_HIGH
         end
     end
 
-    if Fu.IsRetreating(bot) then
+    if bRetreating then
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 500)
         if nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
-        and Fu.GetHP(bot) < 0.3
+        and nBotHP < 0.3
         and Fu.IsValidHero(nInRangeEnemy[1])
         and nInRangeEnemy[1]:IsFacingLocation(bot:GetLocation(), 35)
         then

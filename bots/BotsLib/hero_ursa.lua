@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -97,8 +96,14 @@ local EarthshockDesire
 local OverpowerDesire
 local EnrageDesire
 
+local botTarget
+local bGoingOnSomeone
+local nBotHP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	nBotHP = Fu.GetHP(bot)
 
 	EnrageDesire = X.ConsiderEnrage()
     if EnrageDesire > 0
@@ -132,7 +137,7 @@ function X.ConsiderEarthshock()
 	local nLeapDuration = Earthshock:GetSpecialValueInt('hop_duration')
 	local nDamage = Earthshock:GetAbilityDamage()
 	local nMana = bot:GetMana() / bot:GetMaxMana()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 	local nEnemyTowers = bot:GetNearbyTowers(nRadius * 2, true)
@@ -159,7 +164,7 @@ function X.ConsiderEarthshock()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
@@ -187,7 +192,7 @@ function X.ConsiderEarthshock()
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.55 and bot:WasRecentlyDamagedByAnyHero(2.5)))
+			or (nBotHP < 0.55 and bot:WasRecentlyDamagedByAnyHero(2.5)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], nRadius)
 		and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
@@ -253,9 +258,9 @@ function X.ConsiderOverpower()
 
 	local nAttackRange = bot:GetAttackRange()
 	local nMana = bot:GetMana() / bot:GetMaxMana()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nAttackRange * 3, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nAttackRange * 2, true, BOT_MODE_NONE)
@@ -265,7 +270,6 @@ function X.ConsiderOverpower()
 		and bot:IsFacingLocation(botTarget:GetLocation(), 30)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
@@ -310,7 +314,7 @@ function X.ConsiderOverpower()
     if Fu.IsDoingTormentor(bot) then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(botTarget, bot, 600)
-        and bAttacking
+        and Fu.IsAttacking(bot)
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -326,9 +330,9 @@ function X.ConsiderEnrage()
 	end
 
 	local nAttackRange = bot:GetAttackRange()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,600, true, BOT_MODE_NONE)
@@ -344,7 +348,7 @@ function X.ConsiderEnrage()
 		and #nInRangeAlly >= #nInRangeEnemy
 		then
 			if bot:WasRecentlyDamagedByAnyHero(1)
-			and Fu.GetHP(bot) < 0.75
+			and nBotHP < 0.75
 			then
 				return BOT_ACTION_DESIRE_HIGH
 			end
@@ -353,7 +357,7 @@ function X.ConsiderEnrage()
 
 	if Fu.IsRetreating(bot)
 	then
-		if Fu.GetHP(bot) < 0.3 and bot:WasRecentlyDamagedByAnyHero(1) then
+		if nBotHP < 0.3 and bot:WasRecentlyDamagedByAnyHero(1) then
 			return BOT_ACTION_DESIRE_HIGH
 		end
 
@@ -362,7 +366,7 @@ function X.ConsiderEnrage()
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.5 and bot:WasRecentlyDamagedByAnyHero(1.5)))
+			or (nBotHP < 0.5 and bot:WasRecentlyDamagedByAnyHero(1.5)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], nAttackRange + 100)
 		and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
@@ -374,7 +378,7 @@ function X.ConsiderEnrage()
 	end
 
 	if Fu.IsFarming(bot)
-	and Fu.GetHP(bot) < 0.25
+	and nBotHP < 0.25
 	then
 		if Fu.IsValid(botTarget)
 		and botTarget:IsCreep()
@@ -385,7 +389,7 @@ function X.ConsiderEnrage()
 	end
 
 	if Fu.IsDoingRoshan(bot)
-	and Fu.GetHP(bot) < 0.33
+	and nBotHP < 0.33
 	then
 		if Fu.IsRoshan(botTarget)
 		then

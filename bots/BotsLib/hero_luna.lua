@@ -94,8 +94,15 @@ local talent6BonusDamage = 0
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
 	botTarget = Fu.GetProperTarget(bot)
 	Fu.ConsiderTarget()
@@ -221,14 +228,12 @@ function X.ConsiderLucentBeam()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.CanCastOnTargetAdvanced(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange + 75)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
 			local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -241,7 +246,7 @@ function X.ConsiderLucentBeam()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and bot:GetActiveModeDesire() > 0.5
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -322,7 +327,7 @@ function X.ConsiderLucentBeam()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-		and Fu.IsAttacking(bot)
+		and bAttacking
         and not Fu.IsDisabled(botTarget)
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -333,7 +338,7 @@ function X.ConsiderLucentBeam()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -387,7 +392,7 @@ function X.ConsiderLunarOrbit()
 		return BOT_ACTION_DESIRE_HIGH
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.IsInRange(bot, botTarget, nRadius)
@@ -398,7 +403,7 @@ function X.ConsiderLunarOrbit()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -429,7 +434,7 @@ function X.ConsiderLunarOrbit()
 		if nCreeps ~= nil
 		and (#nCreeps >= 3 or (#nCreeps >= 2 and nCreeps[1]:IsAncientCreep()))
 		and Fu.CanBeAttacked(nCreeps[1])
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		and Fu.GetManaAfter(LunarOrbit:GetManaCost()) * bot:GetMana() > Eclipse:GetManaCost() * 2
 		then
 			return BOT_ACTION_DESIRE_HIGH
@@ -456,7 +461,7 @@ function X.ConsiderMoonGlaives()
 		return BOT_ACTION_DESIRE_HIGH
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.IsInRange(bot, botTarget, nRadius)
@@ -467,7 +472,7 @@ function X.ConsiderMoonGlaives()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -498,7 +503,7 @@ function X.ConsiderMoonGlaives()
 		if nCreeps ~= nil
 		and (#nCreeps >= 3 or (#nCreeps >= 2 and nCreeps[1]:IsAncientCreep()))
 		and Fu.CanBeAttacked(nCreeps[1])
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		and Fu.GetManaAfter(MoonGlaives:GetManaCost()) * bot:GetMana() > Eclipse:GetManaCost() * 2
 		then
 			return BOT_ACTION_DESIRE_HIGH
@@ -548,13 +553,11 @@ function X.ConsiderEclipse()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nRadius)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		and not (botTarget:GetHealth() <= bot:GetAttackDamage() * 4)
 		then

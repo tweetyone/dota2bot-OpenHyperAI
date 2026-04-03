@@ -91,8 +91,14 @@ local AstralImprisonmentDesire, AstralImprisonmentTarget
 local SanitysEclipseDesire, SanitysEclipseLocation
 local ObjurgationDesire
 
+local botTarget
+local bGoingOnSomeone
+local nBotHP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	nBotHP = Fu.GetHP(bot)
 
 	if ArcaneOrb:IsTrained()
 	and ArcaneOrb:GetAutoCastState( ) == false
@@ -140,9 +146,9 @@ function X.ConsiderArcaneOrb()
     local nMul = ArcaneOrb:GetSpecialValueInt('mana_pool_damage_pct') / 100
     local nDamage = bot:GetAttackDamage() + bot:GetMana() * nMul
     local nAttackRange = bot:GetAttackRange()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local weakestTarget = Fu.GetVulnerableWeakestUnit(bot, true, true, nAttackRange)
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
@@ -216,7 +222,7 @@ function X.ConsiderAstralImprisonment()
     local nCastRange = AstralImprisonment:GetCastRange()
 	local nDamage = AstralImprisonment:GetSpecialValueInt('damage')
     local nDuration = AstralImprisonment:GetSpecialValueInt('prison_duration')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -289,7 +295,7 @@ function X.ConsiderAstralImprisonment()
         end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -297,7 +303,6 @@ function X.ConsiderAstralImprisonment()
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
         and not Fu.IsTaunted(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_enigma_black_hole_pull')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
@@ -350,7 +355,7 @@ function X.ConsiderAstralImprisonment()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.72 and bot:WasRecentlyDamagedByAnyHero(1.9)))
+                or (nBotHP < 0.72 and bot:WasRecentlyDamagedByAnyHero(1.9)))
             then
                 return BOT_ACTION_DESIRE_HIGH, nInRangeEnemy[1]
             end
@@ -384,7 +389,7 @@ function X.ConsiderAstralImprisonment()
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
         then
-            if Fu.GetHP(bot) < 0.2
+            if nBotHP < 0.2
             then
                 return BOT_ACTION_DESIRE_HIGH, bot
             end
@@ -449,7 +454,7 @@ function X.ConsiderSanitysEclipse()
 	local nMultiplier = SanitysEclipse:GetSpecialValueFloat('damage_multiplier')
     local nBaseDamage = SanitysEclipse:GetSpecialValueFloat('base_damage')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
 
@@ -496,7 +501,7 @@ function X.ConsiderObjurgation()
 
     if Fu.IsInTeamFight(bot, 1200)
     then
-        if Fu.GetHP(bot) < 0.7
+        if nBotHP < 0.7
         and bot:WasRecentlyDamagedByAnyHero(2)
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -509,9 +514,9 @@ function X.ConsiderObjurgation()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
-        local botTarget = Fu.GetProperTarget(bot)
+        botTarget = Fu.GetProperTarget(bot)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot, 800, true, BOT_MODE_NONE)
 
         if Fu.IsValidTarget(botTarget)
@@ -524,7 +529,7 @@ function X.ConsiderObjurgation()
 
     if Fu.IsRetreating(bot)
     then
-        if Fu.GetHP(bot) < 0.5
+        if nBotHP < 0.5
         and bot:WasRecentlyDamagedByAnyHero(2)
         then
             return BOT_ACTION_DESIRE_HIGH

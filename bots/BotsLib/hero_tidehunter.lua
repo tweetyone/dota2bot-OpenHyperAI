@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -163,12 +162,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -214,13 +208,15 @@ local castEDesire, castETarget
 local castRDesire, castRTarget
 local DeadInTheWaterDesire, AnchorTarget
 
-local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local aetherRange = 0
 
 
+local nBotHP
 function X.SkillsComplement()
 
 	if Fu.CanNotUseAbility( bot ) or bot:IsInvisible() then return end
+
+	nBotHP = Fu.GetHP(bot)
 
 	nKeepMana = 400
 	aetherRange = 0
@@ -237,10 +233,8 @@ function X.SkillsComplement()
 	if aether ~= nil then aetherRange = 250 end
 
 	
-	castRDesire, sMotive = X.ConsiderR()
 	if castRDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -249,10 +243,8 @@ function X.SkillsComplement()
 	end
 	
 
-	castQDesire, castQTarget, sMotive = X.ConsiderQ()
 	if castQDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 		
@@ -267,10 +259,8 @@ function X.SkillsComplement()
 	end
 
 
-	castEDesire, sMotive = X.ConsiderE()
 	if castEDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		--Fu.SetQueuePtToINT( bot, true )
 
@@ -281,7 +271,6 @@ function X.SkillsComplement()
 	DeadInTheWaterDesire, AnchorTarget = X.ConsiderDeadInTheWater()
 	if DeadInTheWaterDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 		Fu.SetQueuePtToINT( bot, true )
 		bot:ActionQueue_UseAbilityOnEntity(DeadInTheWater, AnchorTarget)
 		return
@@ -303,7 +292,7 @@ function X.ConsiderW()
 	local nAllyHeroes = bot:GetNearbyHeroes(1200, false, BOT_MODE_NONE)
 	local nEnemyHeroes = bot:GetNearbyHeroes(800, true, BOT_MODE_NONE)
 
-	if Fu.IsRetreating( bot ) and not Fu.IsRealInvisible(bot) and (Fu.GetHP(bot) < 0.4 or #nEnemyHeroes > #nAllyHeroes + 2)
+	if Fu.IsRetreating( bot ) and not Fu.IsRealInvisible(bot) and (nBotHP < 0.4 or #nEnemyHeroes > #nAllyHeroes + 2)
 	then
 		for _, npcEnemy in pairs( nEnemyHeroes )
 		do
@@ -325,7 +314,7 @@ function X.ConsiderW()
 		if Fu.IsRoshan( botTarget )
 		and Fu.IsInRange( botTarget, bot, 600)
 		and Fu.IsAttacking(bot)
-		and Fu.GetHP(bot) < 0.25
+		and nBotHP < 0.25
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -336,7 +325,7 @@ function X.ConsiderW()
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange( botTarget, bot, 600 )
         and Fu.IsAttacking(bot)
-		and Fu.GetHP(bot) < 0.25
+		and nBotHP < 0.25
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end

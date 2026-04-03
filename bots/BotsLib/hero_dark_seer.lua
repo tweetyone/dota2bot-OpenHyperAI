@@ -139,8 +139,13 @@ local botTarget
 
 if bot.shouldBlink == nil then bot.shouldBlink = false end
 
+local bGoingOnSomeone
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -203,7 +208,7 @@ function X.ConsiderVacuum()
         if Fu.IsValidHero(enemyHero)
         and Fu.CanCastOnNonMagicImmune(enemyHero)
         and Fu.CanKillTarget(enemyHero, nDamage, DAMAGE_TYPE_MAGICAL)
-        and not Fu.IsInTeamFight(bot, 1200)
+        and not bInTeamFight
         and not Fu.IsSuspiciousIllusion(enemyHero)
         and not enemyHero:HasModifier('modifier_abaddon_borrowed_time')
         and not enemyHero:HasModifier('modifier_dazzle_shallow_grave')
@@ -215,7 +220,7 @@ function X.ConsiderVacuum()
         end
     end
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
     and not CanDoVacuumWall()
 	then
 		local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
@@ -227,7 +232,7 @@ function X.ConsiderVacuum()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -267,7 +272,7 @@ function X.ConsiderIonShell()
     local nRadius = IonShell:GetSpecialValueInt('radius')
     local nAbilityLevel = IonShell:GetLevel()
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		local target = nil
 		local maxTargetCount = 1
@@ -453,7 +458,7 @@ function X.ConsiderSurge()
     local RoshanLocation = Fu.GetCurrentRoshanLocation()
     local TormentorLocation = Fu.GetTormentorLocation(GetTeam())
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, 1200)
@@ -577,7 +582,7 @@ function X.ConsiderWallOfReplica()
 	local nCastPoint = WallOfReplica:GetCastPoint() + 0.73
 	local nRadius = Vacuum:GetSpecialValueInt('radius')
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)

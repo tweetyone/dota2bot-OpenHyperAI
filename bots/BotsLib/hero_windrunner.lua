@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -170,8 +169,17 @@ local FocusFireDesire, FocusFireTarget
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -239,7 +247,7 @@ function X.ConsiderShackleShot()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local target = nil
         local targetAttackDamage = 0
@@ -265,7 +273,7 @@ function X.ConsiderShackleShot()
         if target then
             local tAllyHeroes_attacking = Fu.GetSpecialModeAllies(bot, 900, BOT_MODE_ATTACK)
             if Fu.IsChasingTarget(bot, target) and #tAllyHeroes_attacking >= 2
-            or Fu.IsAttacking(bot) and bot:GetEstimatedDamageToTarget(true, target, nStunDuration, DAMAGE_TYPE_ALL) > target:GetHealth() then
+            or bAttacking and bot:GetEstimatedDamageToTarget(true, target, nStunDuration, DAMAGE_TYPE_ALL) > target:GetHealth() then
                 local target__ = X.GetShackleTarget(bot, target, nRadius, nAngle)
                 if target__ then
                     return BOT_ACTION_DESIRE_HIGH, target__
@@ -274,7 +282,7 @@ function X.ConsiderShackleShot()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
 	then
         for _, enemyHero in pairs(tEnemyHeroes)
@@ -311,7 +319,7 @@ function X.ConsiderShackleShot()
     do
         if Fu.IsValidHero(allyHero)
         and Fu.IsRetreating(allyHero)
-        and Fu.GetMP(bot) > 0.45
+        and nBotMP > 0.45
         and allyHero:WasRecentlyDamagedByAnyHero(3.0)
         and not Fu.IsRealInvisible(bot)
         and not allyHero:IsIllusion()
@@ -353,7 +361,7 @@ function X.ConsiderPowershot()
 	local nSpeed = Powershot:GetSpecialValueInt('arrow_speed')
     local nDamage = Powershot:GetSpecialValueInt('powershot_damage')
 	local nAttackRange = bot:GetAttackRange()
-    local botMP = Fu.GetMP(bot)
+    local botMP = nBotMP
 
     local tAllyHeroes = Fu.GetNearbyHeroes(bot,1600, false, BOT_MODE_NONE)
     local tEnemyHeroes = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
@@ -376,13 +384,12 @@ function X.ConsiderPowershot()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         if Fu.IsValidHero(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsInRange(bot, botTarget, nAttackRange)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         then
@@ -420,7 +427,7 @@ function X.ConsiderPowershot()
 
     if Fu.IsFarming(bot)
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local tCreeps = bot:GetNearbyCreeps(1600, true)
             if Fu.IsValid(tCreeps[1])
@@ -449,7 +456,7 @@ function X.ConsiderPowershot()
             and creep:GetHealth() > bot:GetAttackDamage()
 			and Fu.CanKillTarget(creep, nDamage, DAMAGE_TYPE_MAGICAL)
 			then
-				if Fu.GetMP(bot) > 0.3
+				if nBotMP > 0.3
                 and Fu.CanBeAttacked(creep)
                 and not Fu.IsRunning(creep)
 				then
@@ -478,7 +485,7 @@ function X.ConsiderPowershot()
 		end
 
         if #creepList >= 3
-        and Fu.GetMP(bot) > 0.25
+        and nBotMP > 0.25
         and Fu.CanBeAttacked(creepList[1])
         and not Fu.IsRunning(creepList[1])
         then
@@ -492,7 +499,7 @@ function X.ConsiderPowershot()
         and Fu.CanBeAttacked(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -502,7 +509,7 @@ function X.ConsiderPowershot()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -522,7 +529,7 @@ function X.ConsiderWindrun()
     local tAllyHeroes = Fu.GetNearbyHeroes(bot,1600, false, BOT_MODE_NONE)
     local tEnemyHeroes = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
@@ -540,7 +547,7 @@ function X.ConsiderWindrun()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
 	then
         if Fu.IsValidHero(tEnemyHeroes[1])
@@ -573,7 +580,7 @@ function X.ConsiderWindrun()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             if Fu.GetHP(bot) < 0.5
             then
@@ -586,7 +593,7 @@ function X.ConsiderWindrun()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             if Fu.GetHP(bot) < 0.5
             then
@@ -635,7 +642,7 @@ function X.ConsiderFocusFire()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         for _, enemyHero in pairs(tEnemyHeroes)
         do
@@ -662,7 +669,7 @@ function X.ConsiderFocusFire()
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
         and Fu.GetHP(botTarget) > 0.25
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not botTarget:HasModifier('modifier_roshan_spell_block')
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -674,7 +681,7 @@ function X.ConsiderFocusFire()
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
         and Fu.GetHP(botTarget) > 0.3
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -693,7 +700,7 @@ function X.ConsiderGaleForce()
     local nRadius = GaleForce:GetSpecialValueInt('radius')
     local nCastPoint = GaleForce:GetCastPoint()
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange + nRadius, nRadius, nCastPoint, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -706,7 +713,7 @@ function X.ConsiderGaleForce()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     then
         local tEnemyHeroes = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)

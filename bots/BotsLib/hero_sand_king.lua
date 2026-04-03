@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -108,12 +107,7 @@ X['bDeafaultAbility'] = true
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -160,13 +154,15 @@ local castWDesire
 local StingerDesire, StingerLocation
 local castRDesire
 
-local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local aetherRange = 0
 
 
+local bAttacking
 function X.SkillsComplement()
 
 	if Fu.CanNotUseAbility( bot ) then return end
+
+	bAttacking = Fu.IsAttacking(bot)
 
 	nKeepMana = 400
 	aetherRange = 0
@@ -180,10 +176,8 @@ function X.SkillsComplement()
 	local aether = Fu.IsItemAvailable( "item_aether_lens" )
 	if aether ~= nil then aetherRange = 250 end
 
-	castQDesire, castQTarget, sMotive = X.ConsiderQ()
 	if ( castQDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -191,10 +185,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	castWDesire, sMotive = X.ConsiderW()
 	if ( castWDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -202,10 +194,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	castRDesire, sMotive = X.ConsiderR()
 	if ( castRDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -492,8 +482,6 @@ function X.ConsiderStinger()
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -568,7 +556,7 @@ function X.ConsiderStinger()
     if Fu.IsFarming(bot)
 	and nManaAfter > abilityQ:GetManaCost() + abilityW:GetManaCost()
     then
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(700)
             if nNeutralCreeps ~= nil and #nNeutralCreeps >= 3
@@ -595,7 +583,7 @@ function X.ConsiderStinger()
 
         if nInRangeEnemy ~= nil and #nInRangeEnemy == 0
         and nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		and Fu.CanBeAttacked(nEnemyLaneCreeps[1])
 		and not Fu.IsRunning(nEnemyLaneCreeps[1])
         then
@@ -609,7 +597,7 @@ function X.ConsiderStinger()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 600)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -620,7 +608,7 @@ function X.ConsiderStinger()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 600)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end

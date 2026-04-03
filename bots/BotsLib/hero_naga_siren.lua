@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils')
@@ -132,7 +131,6 @@ local castRDesire, castRTarget
 local castSRDesire, castSRTarget
 local ReelInDesire
 
-local nKeepMana,nMP,nHP,nLV,hEnemyList,hAllyList,botTarget,sMotive;
 local aetherRange = 0
 
 function X.SkillsComplement()
@@ -155,10 +153,8 @@ function X.SkillsComplement()
 	if aether ~= nil then aetherRange = 250 end	
 	
 	
-	castQDesire, castQTarget, sMotive = X.ConsiderQ();
 	if ( castQDesire > 0 ) 
 	then
-		Fu.SetReportMotive(bDebugMode,sMotive);		
 	
 		bot:Action_ClearActions( false )
 	
@@ -166,10 +162,8 @@ function X.SkillsComplement()
 		return;
 	end
 	
-	castWDesire, castWTarget, sMotive = X.ConsiderW();
 	if ( castWDesire > 0 ) 
 	then
-		Fu.SetReportMotive(bDebugMode,sMotive);
 	
 		Fu.SetQueuePtToINT(bot, true)
 	
@@ -185,10 +179,8 @@ function X.SkillsComplement()
 		return;
 	end
 	
-	castRDesire, castRTarget, sMotive = X.ConsiderR();
 	if ( castRDesire > 0 ) 
 	then
-		Fu.SetReportMotive(bDebugMode,sMotive);
 	
 		Fu.SetQueuePtToINT(bot, true)
 	
@@ -197,10 +189,8 @@ function X.SkillsComplement()
 	
 	end
 	
-	castSRDesire, castSRTarget, sMotive = X.ConsiderSR();
 	if ( castSRDesire > 0 ) 
 	then
-		Fu.SetReportMotive(bDebugMode,sMotive)
 		
 		bot:Action_UseAbility( abilitySR )
 		return;

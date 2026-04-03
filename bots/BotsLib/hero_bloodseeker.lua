@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -144,12 +143,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 local abilityQ = bot:GetAbilityByName( sAbilityList[1] )
@@ -166,9 +160,12 @@ local botTarget
 
 local nKeepMana, nMP, nHP, nLV, hEnemyHeroList
 
+local bAttacking
 function X.SkillsComplement()
 
 	if Fu.CanNotUseAbility( bot ) or bot:IsInvisible() then return end
+
+	bAttacking = Fu.IsAttacking(bot)
 
 	nKeepMana = 300
 	nMP = bot:GetMana()/bot:GetMaxMana()
@@ -331,7 +328,7 @@ function X.ConsiderQ()
 	then
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -341,7 +338,7 @@ function X.ConsiderQ()
 	then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -442,7 +439,7 @@ function X.ConsiderW()
 	then
 		if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -452,7 +449,7 @@ function X.ConsiderW()
 	then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end

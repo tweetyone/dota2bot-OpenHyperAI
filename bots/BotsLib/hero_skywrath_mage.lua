@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -138,12 +137,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = true
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -185,7 +179,6 @@ local castEDesire, castETarget
 local castRDesire, castRLocation
 
 
-local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive, nInRangeEnemyHeroList
 
 local aetherRange = 0
 
@@ -207,10 +200,8 @@ function X.SkillsComplement()
 	if aether ~= nil then aetherRange = 250 end
 
 
-	castEDesire, castETarget, sMotive = X.ConsiderE()
 	if ( castEDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -218,10 +209,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	castRDesire, castRLocation, sMotive = X.ConsiderR()
 	if ( castRDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -230,10 +219,8 @@ function X.SkillsComplement()
 
 	end
 
-	castWDesire, sMotive = X.ConsiderW()
 	if ( castWDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -241,10 +228,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	castQDesire, castQTarget, sMotive = X.ConsiderQ()
 	if ( castQDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 

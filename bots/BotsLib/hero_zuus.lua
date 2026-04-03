@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -177,6 +176,7 @@ local talentDamage = 0
 local abilityASBonus = 0
 
 
+local botTarget
 function X.SkillsComplement()
 
 

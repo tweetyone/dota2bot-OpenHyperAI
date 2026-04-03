@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -127,12 +126,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = true
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -178,8 +172,12 @@ local castEDesire, castETarget
 local castASDesire, castASTarget
 local castRDesire, castRLocation
 
+local botTarget
+local bAttacking
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility( bot ) then return end
+
+	bAttacking = Fu.IsAttacking(bot)
 
 	castWDesire, castWLocation = X.ConsiderW()
 	if ( castWDesire > 0 )
@@ -282,10 +280,7 @@ function X.ConsiderQ()
 		if Fu.IsValidHero( botTarget )
 		and Fu.CanCastOnNonMagicImmune( botTarget )
 		and Fu.IsInRange( botTarget, bot, nCastRange )
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		then
 			return BOT_ACTION_DESIRE_HIGH, Fu.GetCorrectLoc(botTarget, nCastPoint)
 		end
@@ -350,7 +345,7 @@ function X.ConsiderQ()
 		if  Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -360,7 +355,7 @@ function X.ConsiderQ()
 	then
 		if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -571,7 +566,7 @@ function X.ConsiderE()
 		if  Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget
 		end
@@ -581,7 +576,7 @@ function X.ConsiderE()
 	then
 		if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget
 		end

@@ -191,7 +191,15 @@ local BlinkLassoDesire, BlinkLassoTarget
 
 if bot.shouldBlink == nil then bot.shouldBlink = false end
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
 	if Fu.CanNotUseAbility(bot)
     then
         return
@@ -259,9 +267,9 @@ function X.ConsiderStickyNapalm()
     local nCastPoint = StickyNapalm:GetCastPoint()
     local nRadius = StickyNapalm:GetSpecialValueInt('radius')
     local nMana = bot:GetMana() / bot:GetMaxMana()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 
@@ -269,7 +277,6 @@ function X.ConsiderStickyNapalm()
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		then
             local nTargetInRangeAlly = Fu.GetNearbyHeroes(botTarget, 800, false, BOT_MODE_NONE)
@@ -282,7 +289,7 @@ function X.ConsiderStickyNapalm()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -299,7 +306,7 @@ function X.ConsiderStickyNapalm()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.57 and bot:WasRecentlyDamagedByAnyHero(2.7)))
+                or (nBotHP < 0.57 and bot:WasRecentlyDamagedByAnyHero(2.7)))
             then
                 return BOT_ACTION_DESIRE_HIGH, nInRangeEnemy[1]:GetExtrapolatedLocation(nCastPoint)
             end
@@ -404,7 +411,7 @@ function X.ConsiderFlamebreak()
     local nRadius = Flamebreak:GetSpecialValueInt('explosion_radius')
     local nSpeed = Flamebreak:GetSpecialValueInt('speed')
     local nDamage = Flamebreak:GetSpecialValueInt('damage_impact')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -424,7 +431,7 @@ function X.ConsiderFlamebreak()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 
@@ -432,7 +439,6 @@ function X.ConsiderFlamebreak()
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_enigma_black_hole_pull')
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
@@ -449,7 +455,7 @@ function X.ConsiderFlamebreak()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -466,7 +472,7 @@ function X.ConsiderFlamebreak()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.57 and bot:WasRecentlyDamagedByAnyHero(2.7)))
+                or (nBotHP < 0.57 and bot:WasRecentlyDamagedByAnyHero(2.7)))
             then
                 if GetUnitToUnitDistance(bot, nInRangeEnemy[1]) < nRadius - 50
                 then
@@ -562,7 +568,7 @@ function X.ConsiderFirefly()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if Fu.IsStuck(bot)
     or bot:HasModifier('modifier_batrider_flaming_lasso_self')
@@ -571,7 +577,7 @@ function X.ConsiderFirefly()
         return BOT_ACTION_DESIRE_HIGH
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
 
@@ -579,7 +585,6 @@ function X.ConsiderFirefly()
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 800)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		then
             local nTargetInRangeAlly = Fu.GetNearbyHeroes(botTarget, 800, false, BOT_MODE_NONE)
@@ -592,7 +597,7 @@ function X.ConsiderFirefly()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -609,7 +614,7 @@ function X.ConsiderFirefly()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.57 and bot:WasRecentlyDamagedByAnyHero(2.1)))
+                or (nBotHP < 0.57 and bot:WasRecentlyDamagedByAnyHero(2.1)))
             then
                 return BOT_ACTION_DESIRE_HIGH
             end
@@ -627,7 +632,7 @@ function X.ConsiderFlamingLasso()
 
     local nCastRange = FlamingLasso:GetCastRange() + bot:GetAttackRange()
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     and not CanDoBlinkLasso()
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
@@ -666,7 +671,7 @@ function X.ConsiderBlinkLasso()
     then
         local nDuration = FlamingLasso:GetSpecialValueInt('duration')
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(bot,1199, false, BOT_MODE_NONE)
             local strongestTarget = Fu.GetStrongestUnit(1199, bot, true, false, nDuration)

@@ -134,8 +134,19 @@ local botTarget
 
 if bot.edictPushing == nil then bot.edictPushing = false end
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     botTarget = Fu.GetProperTarget(bot)
     if not bot:HasModifier('modifier_leshrac_diabolic_edict')
@@ -235,7 +246,7 @@ function X.ConsiderSplitEarth()
         end
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nDelay, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -246,14 +257,12 @@ function X.ConsiderSplitEarth()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
-        and Fu.IsInRange(bot, botTarget, nCastRange)
-        and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
         and not botTarget:HasModifier('modifier_faceless_void_chronosphere_freeze')
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
@@ -303,7 +312,7 @@ function X.ConsiderSplitEarth()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -331,7 +340,7 @@ function X.ConsiderSplitEarth()
     then
         local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if nNeutralCreeps ~= nil
             and ((#nNeutralCreeps >= 3)
@@ -395,7 +404,7 @@ function X.ConsiderSplitEarth()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsDisabled(botTarget)
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -406,7 +415,7 @@ function X.ConsiderSplitEarth()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -453,14 +462,12 @@ function X.ConsiderDiabolicEdict()
     local nRadius = DiabolicEdict:GetSpecialValueInt('radius')
     local nManaCost = DiabolicEdict:GetManaCost()
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius + 100)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         then
@@ -523,7 +530,7 @@ function X.ConsiderDiabolicEdict()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -558,7 +565,7 @@ function X.ConsiderLightningStorm()
         end
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nCastRange)
         local target = nil
@@ -593,7 +600,7 @@ function X.ConsiderLightningStorm()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -601,8 +608,6 @@ function X.ConsiderLightningStorm()
         and Fu.IsChasingTarget(bot, botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
         and not Fu.IsDisabled(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         then
@@ -617,7 +622,7 @@ function X.ConsiderLightningStorm()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -642,7 +647,7 @@ function X.ConsiderLightningStorm()
     end
 
     if Fu.IsFarming(bot)
-    and Fu.GetMP(bot) > 0.35
+    and nBotMP > 0.35
     then
         local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nCastRange)
         if nNeutralCreeps ~= nil
@@ -670,7 +675,7 @@ function X.ConsiderLightningStorm()
             -- and Fu.CanBeAttacked(creep)
 			-- and (Fu.IsKeyWordUnit('ranged', creep) or Fu.IsKeyWordUnit('siege', creep) or Fu.IsKeyWordUnit('flagbearer', creep))
 			-- and creep:GetHealth() <= nDamage
-            -- and Fu.GetMP(bot) > 0.3
+            -- and nBotMP > 0.3
 			-- then
 			-- 	nInRangeEnemy = creep:GetNearbyHeroes(800, false, BOT_MODE_NONE)
 
@@ -688,7 +693,7 @@ function X.ConsiderLightningStorm()
             end
 		end
 
-        if Fu.GetMP(bot) > 0.25
+        if nBotMP > 0.25
         and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
         and #creepList >= 2
         and Fu.CanBeAttacked(creepList[1])
@@ -713,7 +718,7 @@ function X.ConsiderLightningStorm()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -728,7 +733,7 @@ function X.ConsiderLightningStorm()
         do
             if Fu.IsValidHero(allyHero)
             and Fu.IsRetreating(allyHero)
-            and Fu.GetMP(bot) > 0.45
+            and nBotMP > 0.45
             and allyHero:WasRecentlyDamagedByAnyHero(1.5)
             and not Fu.IsSuspiciousIllusion(allyHero)
             then
@@ -758,7 +763,7 @@ function X.ConsiderPulseNova()
 
 	local nRadius = PulseNova:GetSpecialValueInt('radius')
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
 	then
 		local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nRadius + 150)
 
@@ -768,7 +773,7 @@ function X.ConsiderPulseNova()
             then
                 return BOT_ACTION_DESIRE_HIGH
             else
-                if Fu.GetMP(bot) < 0.25
+                if nBotMP < 0.25
                 and PulseNova:GetToggleState() == true
                 then
                     return BOT_ACTION_DESIRE_HIGH
@@ -779,7 +784,7 @@ function X.ConsiderPulseNova()
         end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -793,17 +798,14 @@ function X.ConsiderPulseNova()
             and #nInRangeAlly >= #nInRangeEnemy
             and (#nInRangeEnemy >= 1
                 or (#nInRangeEnemy == 0
-                    and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-                    and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
                     and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-                    and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
                     and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')))
             then
                 if PulseNova:GetToggleState() == false
                 then
                     return BOT_ACTION_DESIRE_HIGH
                 else
-                    if Fu.GetMP(bot) < 0.25
+                    if nBotMP < 0.25
                     and PulseNova:GetToggleState() == true
                     then
                         return BOT_ACTION_DESIRE_HIGH
@@ -823,12 +825,12 @@ function X.ConsiderPulseNova()
         then
             if #nEnemyLaneCreeps >= 1
             and PulseNova:GetToggleState() == false
-            and Fu.IsAttacking(bot)
-            and Fu.GetMP(bot) > 0.5
+            and bAttacking
+            and nBotMP > 0.5
             then
                 return BOT_ACTION_DESIRE_HIGH
             else
-                if (#nEnemyLaneCreeps == 0 or Fu.GetMP(bot) < 0.25)
+                if (#nEnemyLaneCreeps == 0 or nBotMP < 0.25)
                 and PulseNova:GetToggleState() == true
                 then
                     return BOT_ACTION_DESIRE_HIGH
@@ -848,12 +850,12 @@ function X.ConsiderPulseNova()
         then
             if #nNeutralCreeps >= 3
             and PulseNova:GetToggleState() == false
-            and Fu.IsAttacking(bot)
-            and Fu.GetMP(bot) > 0.5
+            and bAttacking
+            and nBotMP > 0.5
             then
                 return BOT_ACTION_DESIRE_HIGH
             else
-                if (#nNeutralCreeps == 0 or Fu.GetMP(bot) < 0.25)
+                if (#nNeutralCreeps == 0 or nBotMP < 0.25)
                 and PulseNova:GetToggleState() == true
                 then
                     return BOT_ACTION_DESIRE_HIGH
@@ -868,12 +870,12 @@ function X.ConsiderPulseNova()
         then
             if #nEnemyLaneCreeps >= 3
             and PulseNova:GetToggleState() == false
-            and Fu.IsAttacking(bot)
-            and Fu.GetMP(bot) > 0.5
+            and bAttacking
+            and nBotMP > 0.5
             then
                 return BOT_ACTION_DESIRE_HIGH
             else
-                if (#nEnemyLaneCreeps == 0 or Fu.GetMP(bot) < 0.25)
+                if (#nEnemyLaneCreeps == 0 or nBotMP < 0.25)
                 and PulseNova:GetToggleState() == true
                 then
                     return BOT_ACTION_DESIRE_HIGH
@@ -889,14 +891,14 @@ function X.ConsiderPulseNova()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             if PulseNova:GetToggleState() == false
-            and Fu.GetMP(bot) > 0.7
+            and nBotMP > 0.7
             then
                 return BOT_ACTION_DESIRE_HIGH
             else
-                if Fu.GetMP(bot) < 0.25
+                if nBotMP < 0.25
                 and PulseNova:GetToggleState() == true
                 then
                     return BOT_ACTION_DESIRE_HIGH
@@ -911,14 +913,14 @@ function X.ConsiderPulseNova()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             if PulseNova:GetToggleState() == false
-            and Fu.GetMP(bot) > 0.75
+            and nBotMP > 0.75
             then
                 return BOT_ACTION_DESIRE_HIGH
             else
-                if Fu.GetMP(bot) < 0.25
+                if nBotMP < 0.25
                 and PulseNova:GetToggleState() == true
                 then
                     return BOT_ACTION_DESIRE_HIGH
@@ -955,7 +957,7 @@ function X.ConsiderNihilism()
 		return BOT_ACTION_DESIRE_HIGH
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nRadius)
 

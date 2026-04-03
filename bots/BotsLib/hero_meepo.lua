@@ -172,8 +172,15 @@ local nAllyHeroes
 local nEnemyHeroes
 local bAttacking
 
+local bGoingOnSomeone
+local bRetreating
+local nBotMP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotMP = Fu.GetMP(bot)
 
     -- Re-fetch ability handles each tick for safety
     EarthBind      = bot:GetAbilityByName('meepo_earthbind')
@@ -268,7 +275,7 @@ function X.ConsiderEarthBind()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -293,7 +300,7 @@ function X.ConsiderEarthBind()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and nModeDesire > BOT_ACTION_DESIRE_HIGH
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
@@ -325,7 +332,7 @@ function X.ConsiderEarthBind()
         if Fu.IsRetreating(allyHero)
         and allyHero:WasRecentlyDamagedByAnyHero(2.1)
         and not allyHero:IsIllusion()
-        and Fu.GetMP(bot) > 0.48
+        and nBotMP > 0.48
         then
             if nAllyInRangeEnemy ~= nil and #nAllyInRangeEnemy >= 1
             and Fu.IsValidHero(nAllyInRangeEnemy[1])
@@ -367,7 +374,7 @@ function X.ConsiderPoof()
     -- If HP < 0.5, not stunned, and a clone is near fountain, poof to it
     ----------------------------------------------------------------
     if botHP < 0.5
-    and Fu.IsRetreating(bot)
+    and bRetreating
     then
         for _, meepo in pairs(Meepos)
         do
@@ -385,7 +392,7 @@ function X.ConsiderPoof()
     -- If a clone is near lane front and bot is far (>3200), poof there
     ----------------------------------------------------------------
     if (Fu.IsPushing(bot) or Fu.IsDefending(bot))
-    and not Fu.IsRetreating(bot)
+    and not bRetreating
     then
         local laneFrontLoc = GetLaneFrontLocation(GetTeam(), bot:GetAssignedLane(), 0)
 
@@ -406,7 +413,7 @@ function X.ConsiderPoof()
     -- If a clone is being chased, bot has good HP and allies >= enemies, poof to help
     ----------------------------------------------------------------
     if botHP > 0.5
-    and not Fu.IsRetreating(bot)
+    and not bRetreating
     then
         for _, meepo in pairs(Meepos)
         do
@@ -443,7 +450,7 @@ function X.ConsiderPoof()
 
             if Fu.IsValidTarget(mTarget)
             and Fu.IsInRange(meepo, mTarget, 800)
-            and not Fu.IsRetreating(bot)
+            and not bRetreating
             and not Fu.IsSuspiciousIllusion(mTarget)
             and nInRangeAlly ~= nil and nInRangeEnemy
             and #nInRangeAlly >= #nInRangeEnemy
@@ -492,7 +499,7 @@ function X.ConsiderPoof()
         end
 
         if botHP < 0.3
-        and Fu.IsRetreating(bot)
+        and bRetreating
         and meepo ~= bot
         and meepo:DistanceFromFountain() < 500
         then
@@ -500,7 +507,7 @@ function X.ConsiderPoof()
         end
     end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -540,14 +547,14 @@ function X.ConsiderPoof()
         then
             local nEnemyLanecreeps = bot:GetNearbyLaneCreeps(nRadius, true)
             if nEnemyLanecreeps ~= nil and #nEnemyLanecreeps >= 3
-            and Fu.GetMP(bot) > 0.33
+            and nBotMP > 0.33
             then
                 return BOT_ACTION_DESIRE_HIGH, bot
             end
 
             local nNeutralCreeps = bot:GetNearbyNeutralCreeps(nRadius)
             if nNeutralCreeps ~= nil and #nNeutralCreeps >= 2
-            and Fu.GetMP(bot) > 0.26
+            and nBotMP > 0.26
             then
                 return BOT_ACTION_DESIRE_HIGH, bot
             end
@@ -555,7 +562,7 @@ function X.ConsiderPoof()
     end
 
     if Fu.IsLaning(bot)
-    and Fu.GetMP(bot) > 0.29
+    and nBotMP > 0.29
 	then
 		local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nRadius, true)
         local canKillCreepsCount = 0
@@ -584,7 +591,7 @@ function X.ConsiderPoof()
             and not enemyHero:HasModifier('modifier_dazzle_shallow_grave')
             and not enemyHero:HasModifier('modifier_oracle_false_promise_timer')
             and not enemyHero:HasModifier('modifier_templar_assassin_refraction_absorb')
-            and Fu.GetMP(bot) > 0.76
+            and nBotMP > 0.76
             then
                 return BOT_ACTION_DESIRE_HIGH, bot
             end
@@ -618,7 +625,7 @@ function X.ConsiderPoof()
 	end
 
 	if botHP
-    and not Fu.IsRetreating(bot)
+    and not bRetreating
     then
 		for _, meepo in pairs(Meepos)
         do
@@ -637,7 +644,7 @@ function X.ConsiderPoof()
 	end
 
 	if botHP
-    and not Fu.IsRetreating(bot)
+    and not bRetreating
     then
 		for _, meepo in pairs(Meepos)
         do
@@ -706,7 +713,7 @@ function X.ConsiderMegaMeepo()
 
     local nRadius = 600
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local count = 0
 
@@ -742,7 +749,7 @@ function X.ConsiderMegaMeepoFling()
     local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
     local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         local weakestTarget = Fu.GetAttackableWeakestUnit(bot, nCastRange, true, true)
 

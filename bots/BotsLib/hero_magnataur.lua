@@ -158,8 +158,18 @@ local BlinkRPSkewerDesire
 
 if bot.shouldBlink == nil then bot.shouldBlink = false end
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
+local bInTeamFight
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     BlinkRPSkewerDesire = X.ConsiderBlinkRPSkewer()
     if BlinkRPSkewerDesire > 0
@@ -301,7 +311,7 @@ function X.ConsiderShockwave()
 	local nDamage = Shockwave:GetSpecialValueInt('shock_damage')
 	local nSpeed = Shockwave:GetSpecialValueInt('shock_speed')
     local nMana = bot:GetMana() / bot:GetMaxMana()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
     for _, enemyHero in pairs(nEnemyHeroes)
@@ -321,7 +331,7 @@ function X.ConsiderShockwave()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -456,7 +466,7 @@ function X.ConsiderEmpower()
 
     local nCastRange = Fu.GetProperCastRange(false, bot, Empower:GetCastRange())
 	local nAttackRange = bot:GetAttackRange()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     -- 7.41: Empower can no longer target self (Magnus always has 30% bonus passively)
     local buffAllyUnit = nil
@@ -478,7 +488,7 @@ function X.ConsiderEmpower()
 		end
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -486,7 +496,6 @@ function X.ConsiderEmpower()
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
         and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
         and nInRangeAlly ~= nil and nInRangeEnemy
@@ -557,7 +566,7 @@ function X.ConsiderSkewer()
 	local nCastPoint = Skewer:GetCastPoint()
 	local nSpeed = Skewer:GetSpecialValueInt('skewer_speed')
     local nRadius = Skewer:GetSpecialValueInt('skewer_radius')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsStuck(bot)
 	then
@@ -565,7 +574,7 @@ function X.ConsiderSkewer()
 		return BOT_ACTION_DESIRE_HIGH, Fu.Site.GetXUnitsTowardsLocation(bot, loc, nDist)
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
     and (not CanDoBlinkSkewer() or not CanDoBlinkRPSkewer() or not CanDoBlinkHornTossSkewer())
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
@@ -602,14 +611,14 @@ function X.ConsiderSkewer()
         end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,600, true, BOT_MODE_NONE)
 
         if nInRangeAlly ~= nil and nInRangeEnemy
         and ((#nInRangeEnemy > #nInRangeAlly)
-            or (Fu.GetHP(bot) < 0.68 and bot:WasRecentlyDamagedByAnyHero(1.9)))
+            or (nBotHP < 0.68 and bot:WasRecentlyDamagedByAnyHero(1.9)))
         and Fu.IsValidHero(nInRangeEnemy[1])
         and Fu.IsInRange(bot, nInRangeEnemy[1], 575)
         and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
@@ -634,7 +643,7 @@ function X.ConsiderReversePolarity()
     local nRadius = ReversePolarity:GetSpecialValueInt('pull_radius')
 	local nDamage = ReversePolarity:GetSpecialValueInt('polarity_damage')
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     and (not CanDoBlinkRP() or not CanDoBlinkRPSkewer())
 	then
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
@@ -652,14 +661,14 @@ function X.ConsiderReversePolarity()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
         if nInRangeAlly ~= nil and nInRangeEnemy
         and ((#nInRangeEnemy > #nInRangeAlly)
-            or (Fu.GetHP(bot) < 0.5 and bot:WasRecentlyDamagedByAnyHero(1.6)))
+            or (nBotHP < 0.5 and bot:WasRecentlyDamagedByAnyHero(1.6)))
         then
             for _, enemyHero in pairs(nInRangeEnemy)
             do
@@ -692,9 +701,9 @@ function X.ConsiderHornToss()
     end
 
     local nRadius = HornToss:GetSpecialValueInt('radius')
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     and not CanDoBlinkHornTossSkewer()
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
@@ -715,14 +724,14 @@ function X.ConsiderHornToss()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
         if nInRangeAlly ~= nil and nInRangeEnemy
         and ((#nInRangeEnemy > #nInRangeAlly)
-            or (Fu.GetHP(bot) < 0.61 and bot:WasRecentlyDamagedByAnyHero(2)))
+            or (nBotHP < 0.61 and bot:WasRecentlyDamagedByAnyHero(2)))
         then
             for _, enemyHero in pairs(nInRangeEnemy)
             do
@@ -748,7 +757,7 @@ function X.ConsiderBlinkRP()
         local nCastPoint = Skewer:GetCastPoint() + ReversePolarity:GetCastPoint()
         local nRadius = ReversePolarity:GetSpecialValueInt('pull_radius')
 
-        if Fu.IsInTeamFight(bot, 1200)
+        if bInTeamFight
         then
             local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, nCastPoint, 0)
 
@@ -790,9 +799,9 @@ end
 function X.ConsiderBlinkForSkewer()
     if CanDoBlinkSkewer()
     then
-        local botTarget = Fu.GetProperTarget(bot)
+        botTarget = Fu.GetProperTarget(bot)
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)
@@ -873,7 +882,7 @@ function X.ConsiderBlinkRPSkewer()
         local nCastPoint = Skewer:GetCastPoint() + ReversePolarity:GetCastPoint()
         local nRPRadius = ReversePolarity:GetSpecialValueInt('pull_radius')
 
-        if Fu.IsInTeamFight(bot, 1200)
+        if bInTeamFight
         then
             local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRPRadius, nCastPoint, 0)
 
@@ -916,9 +925,9 @@ end
 function X.ConsiderBlinkForHornTossSkewer()
     if CanDoBlinkHornTossSkewer()
     then
-        local botTarget = Fu.GetProperTarget(bot)
+        botTarget = Fu.GetProperTarget(bot)
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             local nInRangeAlly = Fu.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)

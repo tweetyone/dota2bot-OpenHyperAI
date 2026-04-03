@@ -166,8 +166,15 @@ end
 
 local nMorphTime = {0, math.huge}
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     nAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
     nEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
@@ -185,7 +192,7 @@ function X.SkillsComplement()
         if DotaTime() > nMorphTime[2] + nCooldownTime + (0.25 + 0.1) then
             local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
             if bot.IsMorphling == true then
-                if Fu.IsGoingOnSomeone(bot)
+                if bGoingOnSomeone
                 and Fu.IsValidHero(botTarget)
                 and Fu.IsInRange(bot, botTarget, 900)
                 then
@@ -194,7 +201,7 @@ function X.SkillsComplement()
                     return
                 end
 
-                if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and M.IsGoodToMorphBack(MorphedHeroName)
+                if bRetreating and not Fu.IsRealInvisible(bot) and M.IsGoodToMorphBack(MorphedHeroName)
                 and Waveform:GetCooldownTimeRemaining() > 3
                 then
                     if Fu.IsValidHero(nInRangeEnemy[1])
@@ -314,7 +321,7 @@ function X.ConsiderWaveform()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and not Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
@@ -359,7 +366,7 @@ function X.ConsiderWaveform()
 		end
 	end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) then
+	if bRetreating and not Fu.IsRealInvisible(bot) then
 		for _, enemyHero in pairs(nEnemyHeroes) do
 			if Fu.IsValidHero(enemyHero)
             and not Fu.IsSuspiciousIllusion(enemyHero)
@@ -478,7 +485,7 @@ function X.ConsiderAdaptiveStrikeAGI()
         end
 	end
 
-    if Fu.IsInTeamFight(bot, 1200) or Fu.IsGoingOnSomeone(bot) and bUsingMax then
+    if Fu.IsInTeamFight(bot, 1200) or bGoingOnSomeone and bUsingMax then
         local hTarget = nil
         local hTargetDamage = 0
         for _, enemyHero in pairs(nEnemyHeroes) do
@@ -510,22 +517,19 @@ function X.ConsiderAdaptiveStrikeAGI()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot) and bUsingMax then
+	if bGoingOnSomeone and bUsingMax then
 		if  Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.CanCastOnTargetAdvanced(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_ursa_enrage')
 		then
             return BOT_ACTION_DESIRE_HIGH, botTarget
 		end
 	end
 
-    if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and not bUsingMax then
+    if bRetreating and not Fu.IsRealInvisible(bot) and not bUsingMax then
 		for _, enemyHero in pairs(nEnemyHeroes) do
 			if  Fu.IsValidHero(enemyHero)
             and Fu.IsInRange(bot, enemyHero, nCastRange)
@@ -592,7 +596,7 @@ function X.ConsiderAdaptiveStrikeAGI()
 		and Fu.IsInRange(bot, botTarget, nCastRange)
 		and Fu.CanBeAttacked(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget
 		end
@@ -601,7 +605,7 @@ function X.ConsiderAdaptiveStrikeAGI()
     if Fu.IsDoingTormentor(bot) and bUsingMax then
 		if  Fu.IsTormentor(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
@@ -629,7 +633,7 @@ function X.ConsiderAdaptiveStrikeSTR()
         end
 	end
 
-    if  Fu.IsRetreating(bot)
+    if  bRetreating
     and not Fu.IsRealInvisible(bot)
     and bot:GetActiveModeDesire() > BOT_MODE_DESIRE_MODERATE
 	then
@@ -690,7 +694,7 @@ function X.ConsiderAtttributeShift()
         end
     end
 
-    if (Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(4.0)) then
+    if (bRetreating and not Fu.IsRealInvisible(bot) and bot:WasRecentlyDamagedByAnyHero(4.0)) then
         if bot:WasRecentlyDamagedByAnyHero(1.0) then
             if bToggleState__STR == false then
                 return BOT_ACTION_DESIRE_HIGH, 'str'
@@ -760,7 +764,7 @@ function X.ConsiderAtttributeShift()
             end
         end
     else
-        if Fu.IsGoingOnSomeone(bot) then
+        if bGoingOnSomeone then
             if Fu.IsValidHero(botTarget)
             and (Fu.CanBeAttacked(botTarget) or #nInRangeEnemy > 1)
             and Fu.IsInRange(bot, botTarget, botAttackRange + 300)
@@ -887,7 +891,7 @@ function X.ConsiderMorph()
     local nCastRange = Fu.GetProperCastRange(false, bot, Morph:GetCastRange())
     local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), nCastRange)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local target = nil
         local targetScore = 0
@@ -913,7 +917,7 @@ function X.ConsiderMorph()
         end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     and bot:GetActiveModeDesire() > BOT_MODE_DESIRE_HIGH
     and bot:WasRecentlyDamagedByAnyHero(3.0)

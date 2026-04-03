@@ -133,8 +133,17 @@ local FleshGolemDesire
 
 local botTarget
 
+local bAttacking
+local nBotHP
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -211,7 +220,7 @@ function X.ConsiderDecay()
         end
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange + nRadius, nRadius, 0, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius)
@@ -266,7 +275,7 @@ function X.ConsiderDecay()
 
         if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
         and nAbilityLevel >= 3
-        and Fu.GetMP(bot) > 0.6
+        and nBotMP > 0.6
         then
             return BOT_ACTION_DESIRE_HIGH, Fu.GetCenterOfUnits(nEnemyLaneCreeps)
         end
@@ -279,8 +288,8 @@ function X.ConsiderDecay()
 
         if nInRangeEnemy ~= nil and #nInRangeEnemy == 0
         and nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
-        and Fu.IsAttacking(bot)
-        and Fu.GetMP(bot) > 0.5
+        and bAttacking
+        and nBotMP > 0.5
         and nAbilityLevel >= 3
         and not Fu.IsThereNonSelfCoreNearby(1200)
         then
@@ -308,7 +317,7 @@ function X.ConsiderDecay()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nAbilityLevel >= 3
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -319,7 +328,7 @@ function X.ConsiderDecay()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nAbilityLevel >= 3
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -418,7 +427,7 @@ function X.ConsiderSoulRip()
                 if nInRangeAlly ~= nil and nTargetInRangeAlly ~= nil
                 and ((#nTargetInRangeAlly > #nInRangeAlly)
                     or bot:WasRecentlyDamagedByAnyHero(1.5)
-                    or Fu.GetHP(bot) < 0.5)
+                    or nBotHP < 0.5)
                 then
                     return BOT_ACTION_DESIRE_HIGH, bot
                 end
@@ -427,7 +436,7 @@ function X.ConsiderSoulRip()
 
         local nCreeps = bot:GetNearbyCreeps(nRadius, true)
         if nCreeps ~= nil and #nCreeps >= 4
-        and Fu.GetHP(bot) < 0.6
+        and nBotHP < 0.6
         then
             return BOT_ACTION_DESIRE_HIGH, bot
         end
@@ -438,8 +447,8 @@ function X.ConsiderSoulRip()
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nRadius, true)
 
         if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
-        and Fu.GetMP(bot) > 0.7
-        and Fu.GetHP(bot) < 0.6
+        and nBotMP > 0.7
+        and nBotHP < 0.6
         then
             return BOT_ACTION_DESIRE_HIGH, bot
         end
@@ -450,9 +459,9 @@ function X.ConsiderSoulRip()
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nRadius, true)
 
         if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
-        and Fu.IsAttacking(bot)
-        and Fu.GetMP(bot) > 0.5
-        and Fu.GetHP(bot) < 0.6
+        and bAttacking
+        and nBotMP > 0.5
+        and nBotHP < 0.6
         then
             return BOT_ACTION_DESIRE_HIGH, bot
         end
@@ -462,7 +471,7 @@ function X.ConsiderSoulRip()
 	then
         if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(botTarget))
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             local targetAlly = nil
             local hp = 1000
@@ -505,7 +514,7 @@ function X.ConsiderSoulRip()
 
             if currHP < hp
             and Fu.GetHP(allyHero) < 0.75
-            and Fu.GetMP(bot) > 0.35
+            and nBotMP > 0.35
             and nAllyInRangeCreeps ~= nil and #nAllyInRangeCreeps >= 4
             then
                 hp = currHP
@@ -531,7 +540,7 @@ function X.ConsiderTombstone()
     local nCastRange = Fu.GetProperCastRange(false, bot, Tombstone:GetCastRange())
     local nRadius = Tombstone:GetSpecialValueInt('radius')
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nLocationAoE = bot:FindAoELocation(true, true, bot:GetLocation(), nCastRange, nRadius, 0, 0)
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(nLocationAoE.targetloc, nRadius / 2)
@@ -560,7 +569,7 @@ function X.ConsiderFleshGolem()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsInTeamFight(bot, 1200)
+    if bInTeamFight
     then
         local nInRangeEnemy = Fu.GetEnemiesNearLoc(bot:GetLocation(), 1200)
 

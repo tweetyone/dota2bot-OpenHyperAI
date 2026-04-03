@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -98,12 +97,7 @@ X['bDeafaultAbility'] = true
 X['bDeafaultItem'] = true
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -931,7 +925,7 @@ function X.ConsiderCrystalClone()
 	end
 
 	local nRadius = 450
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsGoingOnSomeone(bot)
 	then
@@ -939,7 +933,7 @@ function X.ConsiderCrystalClone()
 		and Fu.IsInRange(bot, botTarget, nRadius)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and not Fu.IsSuspiciousIllusion(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
 			local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1200, false, BOT_MODE_NONE)

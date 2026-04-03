@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -129,7 +128,15 @@ local AstralStepDesire, AstralStepLocation
 
 local RemnantCastTime = -100
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
     if Fu.CanNotUseAbility(bot)
 	or bot:NumQueuedActions() > 0
 	then
@@ -186,7 +193,7 @@ function X.ConsiderAetherRemnant()
 	local nActivationDelay = AetherRemnant:GetSpecialValueFloat('activation_delay')
 	local nDamage = AetherRemnant:GetSpecialValueInt('impact_damage')
 	local nCastRange = AetherRemnant:GetCastRange()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 	for _, enemyHero in pairs(nEnemyHeroes)
@@ -208,7 +215,7 @@ function X.ConsiderAetherRemnant()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	-- and not CanQuadCombo()
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
@@ -230,14 +237,14 @@ function X.ConsiderAetherRemnant()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.5 and bot:WasRecentlyDamagedByAnyHero(2)))
+			or (nBotHP < 0.5 and bot:WasRecentlyDamagedByAnyHero(2)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], nRadius)
@@ -258,14 +265,14 @@ function X.ConsiderDissimilate()
 	end
 
 	local nRadius = Dissimilate:GetSpecialValueInt('first_ring_distance_offset')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsStunProjectileIncoming(bot, 600)
 	then
 		return BOT_ACTION_DESIRE_HIGH
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	-- and not CanQuadCombo()
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius * 1.5, false, BOT_MODE_NONE)
@@ -285,14 +292,14 @@ function X.ConsiderDissimilate()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius * 1.5, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.65 and bot:WasRecentlyDamagedByAnyHero(2)))
+			or (nBotHP < 0.65 and bot:WasRecentlyDamagedByAnyHero(2)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], bot:GetAttackRange() + 50)
 		and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
@@ -316,7 +323,7 @@ function X.ConsiderResonantPulse()
 	local nDamage = ResonantPulse:GetSpecialValueInt('damage')
 	local nManaCost = ResonantPulse:GetManaCost()
 	local nMana = bot:GetMana() / bot:GetMaxMana()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 	for _, enemyHero in pairs(nEnemyHeroes)
@@ -336,7 +343,7 @@ function X.ConsiderResonantPulse()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	-- and not CanQuadCombo()
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 150, false, BOT_MODE_NONE)
@@ -347,7 +354,6 @@ function X.ConsiderResonantPulse()
 		and Fu.IsInRange(bot, botTarget, nRadius)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
@@ -357,14 +363,14 @@ function X.ConsiderResonantPulse()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 150, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.65 and bot:WasRecentlyDamagedByAnyHero(1.5)))
+			or (nBotHP < 0.65 and bot:WasRecentlyDamagedByAnyHero(1.5)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], nRadius)
@@ -437,7 +443,7 @@ function X.ConsiderAstralStep()
 	local nCastRange = AstralStep:GetSpecialValueInt('max_travel_distance')
 	local nCastPoint = AstralStep:GetCastPoint()
 	local nDamage = AstralStep:GetSpecialValueInt('pop_damage')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if DotaTime() < RemnantCastTime + nCastPoint
 	then
@@ -468,7 +474,7 @@ function X.ConsiderAstralStep()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	-- and not CanQuadCombo()
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
@@ -487,14 +493,14 @@ function X.ConsiderAstralStep()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 150, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and ((#nInRangeEnemy > #nInRangeAlly)
-			or (Fu.GetHP(bot) < 0.65 and bot:WasRecentlyDamagedByAnyHero(2)))
+			or (nBotHP < 0.65 and bot:WasRecentlyDamagedByAnyHero(2)))
 		and Fu.IsValidHero(nInRangeEnemy[1])
 		and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
 		and Fu.IsInRange(bot, nInRangeEnemy[1], nCastRange - 75)
@@ -521,7 +527,7 @@ end
 -- 		AetherRemnantActivationTime = AetherRemnant:GetSpecialValueFloat('activation_delay')
 -- 		DissimilateDuration = Dissimilate:GetSpecialValueFloat('phase_duration')
 
--- 		if Fu.IsGoingOnSomeone(bot)
+-- 		if bGoingOnSomeone
 -- 		then
 -- 			local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
 -- 			local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)

@@ -139,8 +139,14 @@ local HowlDesire
 local WoflBiteDesire, WoflBiteTarget
 local ShapeShiftDesire
 
+local botTarget
+local bGoingOnSomeone
+local bAttacking
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     ShapeShiftDesire = X.ConsiderShapeShift()
     if ShapeShiftDesire > 0
@@ -181,9 +187,9 @@ function X.ConsiderSummonWolves()
         end
     end
 
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -202,7 +208,7 @@ function X.ConsiderSummonWolves()
 	then
 		local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(800, true)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 0
             then
@@ -223,7 +229,7 @@ function X.ConsiderSummonWolves()
         local nNeutralCreeps = bot:GetNearbyNeutralCreeps(600)
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(600, true)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if (nNeutralCreeps ~= nil and #nNeutralCreeps >= 2)
             or (nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3)
@@ -237,7 +243,7 @@ function X.ConsiderSummonWolves()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -247,7 +253,7 @@ function X.ConsiderSummonWolves()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -263,7 +269,7 @@ function X.ConsiderHowl()
     end
 
     local timeOfDay = Fu.CheckTimeOfDay()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     if timeOfDay == 'night'
     then
@@ -300,7 +306,7 @@ function X.ConsiderHowl()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -338,7 +344,7 @@ function X.ConsiderHowl()
 	then
 		local nEnemyLaneCreeps = bot:GetNearbyCreeps(600, true)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 4
             then
@@ -359,7 +365,7 @@ function X.ConsiderHowl()
         local nNeutralCreeps = bot:GetNearbyNeutralCreeps(300)
         local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(600, true)
 
-        if Fu.IsAttacking(bot)
+        if bAttacking
         then
             if (nNeutralCreeps ~= nil and #nNeutralCreeps >= 2)
             or (nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3)
@@ -373,7 +379,7 @@ function X.ConsiderHowl()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -383,7 +389,7 @@ function X.ConsiderHowl()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -403,8 +409,8 @@ function X.ConsiderShapeShift()
         return BOT_ACTION_DESIRE_HIGH
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
-        local botTarget = Fu.GetProperTarget(bot)
+    if bGoingOnSomeone then
+        botTarget = Fu.GetProperTarget(bot)
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
 

@@ -150,8 +150,15 @@ local WintersCurseDesire, WintersCurseTarget
 
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -201,7 +208,7 @@ function X.ConsiderArcticBurn()
 			return BOT_ACTION_DESIRE_HIGH
 		end
 
-		if Fu.IsGoingOnSomeone(bot)
+		if bGoingOnSomeone
 		then
 			if Fu.IsValidTarget(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -229,7 +236,7 @@ function X.ConsiderArcticBurn()
 			end
 		end
 
-        if Fu.IsRetreating(bot)
+        if bRetreating
         then
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
             for _, enemyHero in pairs(nInRangeEnemy)
@@ -258,7 +265,7 @@ function X.ConsiderArcticBurn()
 			return BOT_ACTION_DESIRE_HIGH
 		end
 
-		if Fu.IsGoingOnSomeone(bot)
+		if bGoingOnSomeone
 		then
 			if Fu.IsValidTarget(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -290,7 +297,7 @@ function X.ConsiderArcticBurn()
             end
         end
 
-        if Fu.IsRetreating(bot)
+        if bRetreating
         then
             local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
 
@@ -387,7 +394,7 @@ function X.ConsiderSplinterBlast()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -427,7 +434,7 @@ function X.ConsiderSplinterBlast()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -646,7 +653,7 @@ function X.ConsiderColdEmbrace()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidTarget(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetCurrentVisionRange())
@@ -691,14 +698,14 @@ function X.ConsiderColdEmbrace()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
         do
             if Fu.IsValidHero(enemyHero)
             and Fu.IsChasingTarget(enemyHero, bot)
-            and Fu.GetHP(bot) < 0.25
+            and nBotHP < 0.25
             and not Fu.IsSuspiciousIllusion(enemyHero)
             and not Fu.IsDisabled(enemyHero)
             and not not enemyHero:HasModifier('modifier_fountain_aura_buff')
@@ -734,7 +741,7 @@ function X.ConsiderColdEmbrace()
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
         then
-            if Fu.GetHP(bot) < 0.2
+            if nBotHP < 0.2
             then
                 return BOT_ACTION_DESIRE_HIGH, bot
             end
@@ -756,7 +763,7 @@ function X.ConsiderColdEmbrace()
         end
     end
 
-    if Fu.GetHP(bot) < 0.2
+    if nBotHP < 0.2
     then
         return BOT_ACTION_DESIRE_HIGH, bot
     end
@@ -800,7 +807,7 @@ function X.ConsiderWintersCurse()
         end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local target = nil
 		local dmg = 0
@@ -842,14 +849,14 @@ function X.ConsiderWintersCurse()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
         do
             if Fu.IsValidHero(enemyHero)
             and Fu.IsChasingTarget(enemyHero, bot)
-            and Fu.GetHP(bot) < 0.5
+            and nBotHP < 0.5
             and not Fu.IsSuspiciousIllusion(enemyHero)
             and not Fu.IsDisabled(enemyHero)
             and Fu.IsInRange(bot, enemyHero, nCastRange)

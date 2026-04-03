@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -155,12 +154,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 
@@ -189,6 +183,7 @@ local bAttacking = false
 local botTarget, botHP
 local nAllyHeroes, nEnemyHeroes
 
+local bGoingOnSomeone
 function X.SkillsComplement()
     if not bot:HasModifier('modifier_largo_amphibian_rhapsody_self') then
         songs.strumTime = 0
@@ -203,6 +198,8 @@ function X.SkillsComplement()
     end
 
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
 
 	bAttacking = Fu.IsAttacking(bot)
     botHP = Fu.GetHP(bot)
@@ -365,7 +362,7 @@ function X.ConsiderCatchLick()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
 		and Fu.CanBeAttacked(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -453,7 +450,7 @@ function X.ConsiderFrogstomp()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
 		if Fu.IsValidHero(botTarget)
 		and Fu.CanBeAttacked(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -608,7 +605,7 @@ function X.ConsiderAmphibianRhapsody()
     until songs.song1 ~= songs.song2
 
     if bCanPlayDouble and botMP > fManaThreshold1 then
-        if Fu.IsGoingOnSomeone(bot) or Fu.IsInTeamFight(bot, 1200) then
+        if bGoingOnSomeone or Fu.IsInTeamFight(bot, 1200) then
             for _, enemyHero in pairs(nEnemyHeroes) do
                 if  Fu.IsValidHero(enemyHero)
                 and Fu.CanBeAttacked(enemyHero)

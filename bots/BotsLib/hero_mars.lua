@@ -119,8 +119,17 @@ local ArenaOfBloodCastTime = 0
 local nAllyHeroes, nEnemyHeroes
 local botTarget
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotMP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
 
 	SpearOfMars = bot:GetAbilityByName('mars_spear')
 	GodsRebuke = bot:GetAbilityByName('mars_gods_rebuke')
@@ -210,7 +219,7 @@ function X.ConsiderSpearOfMars()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot) then
+	if bGoingOnSomeone then
 		if  Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -234,7 +243,7 @@ function X.ConsiderSpearOfMars()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and not Fu.IsRealInvisible(bot)
 	and bot:WasRecentlyDamagedByAnyHero(3.0)
 	then
@@ -278,7 +287,7 @@ function X.ConsiderSpearOfMars()
 			then
 				if Fu.IsValidHero(nEnemyHeroes[1])
                 and GetUnitToUnitDistance(nEnemyHeroes[1], creep) < 500
-				and Fu.GetMP(bot) > 0.75
+				and nBotMP > 0.75
 				then
 					return BOT_ACTION_DESIRE_HIGH, creep:GetLocation()
 				end
@@ -306,7 +315,7 @@ function X.ConsiderSpearOfMars()
 		and bot ~= allyHero
         and allyHero:WasRecentlyDamagedByAnyHero(3)
         and not allyHero:IsIllusion()
-		and Fu.GetMP(bot) > 0.5
+		and nBotMP > 0.5
         then
 			local nAllyInRangeEnemy = Fu.GetEnemiesNearLoc(allyHero:GetLocation(), 1600)
             if Fu.IsValidHero(nAllyInRangeEnemy[1])
@@ -333,7 +342,7 @@ function X.ConsiderSpearOfMars()
 		and Fu.CanBeAttacked(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -343,7 +352,7 @@ function X.ConsiderSpearOfMars()
     then
         if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -379,15 +388,13 @@ function X.ConsiderGodsRebuke()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if  Fu.IsValidTarget(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius - 75)
         and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
@@ -398,7 +405,7 @@ function X.ConsiderGodsRebuke()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and not Fu.IsRealInvisible(bot)
 	then
         for _, enemyHero in pairs(nEnemyHeroes) do
@@ -420,8 +427,8 @@ function X.ConsiderGodsRebuke()
 
 	if (Fu.IsPushing(bot) or Fu.IsDefending(bot))
 	and nAbilityLevel >= 3
-	and Fu.GetMP(bot) > 0.5
-	and Fu.IsAttacking(bot)
+	and nBotMP > 0.5
+	and bAttacking
 	then
 		if nEnemyCreeps ~= nil and #nEnemyCreeps >= 4
 		then
@@ -431,8 +438,8 @@ function X.ConsiderGodsRebuke()
 
 	if  Fu.IsFarming(bot)
 	and nAbilityLevel >= 3
-	and Fu.GetMP(bot) > 0.5
-	and Fu.IsAttacking(bot)
+	and nBotMP > 0.5
+	and bAttacking
 	then
 		if Fu.CanBeAttacked(nEnemyCreeps[1])
 		and (#nEnemyCreeps >= 3 or (#nEnemyCreeps >= 2 and nEnemyCreeps[1]:IsAncientCreep()))
@@ -442,7 +449,7 @@ function X.ConsiderGodsRebuke()
 	end
 
 	if  Fu.IsLaning(bot)
-	and Fu.GetMP(bot) > 0.33
+	and nBotMP > 0.33
 	then
 		local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(nRadius, true)
 		local aveCreepHealth = 0
@@ -480,7 +487,7 @@ function X.ConsiderGodsRebuke()
         if  Fu.IsRoshan(botTarget)
 		and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -490,7 +497,7 @@ function X.ConsiderGodsRebuke()
     then
         if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -507,7 +514,7 @@ function X.ConsiderBulwark()
 
 	local nRange = Bulwark:GetSpecialValueInt('soldier_offset')
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and not Fu.IsRealInvisible(bot)
 	then
 		local nInRangeAlly = bot:GetNearbyHeroes(800, false, BOT_MODE_NONE)
@@ -542,7 +549,7 @@ function X.ConsiderBulwark()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	and Fu.IsInRange(bot, botTarget, nRange)
 	then
 		if bot:HasScepter()
@@ -587,13 +594,13 @@ function X.ConsiderArenaOfBlood()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if  Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange + nRadius)
 		and Fu.IsCore(botTarget)
-		and (Fu.IsAttacking(bot) or Fu.IsChasingTarget(bot, botTarget))
+		and (bAttacking or Fu.IsChasingTarget(bot, botTarget))
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not Fu.IsLocationInChrono(botTarget:GetLocation())
 		and not Fu.IsLocationInBlackHole(botTarget:GetLocation())
@@ -612,7 +619,7 @@ function X.ConsiderArenaOfBlood()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeAlly = bot:GetNearbyHeroes(1200, false, BOT_MODE_NONE)
         local nInRangeEnemy = bot:GetNearbyHeroes(1200, true, BOT_MODE_NONE)
@@ -658,7 +665,7 @@ function X.ConsiderSpearToAlly()
 		local nCastPoint = SpearOfMars:GetCastPoint()
 		local nSpeed = SpearOfMars:GetSpecialValueInt('spear_speed')
 
-		if Fu.IsGoingOnSomeone(bot) then
+		if bGoingOnSomeone then
 			if  Fu.IsValidTarget(botTarget)
 			and Fu.CanCastOnNonMagicImmune(botTarget)
 			and Fu.IsInRange(bot, botTarget, 1199)

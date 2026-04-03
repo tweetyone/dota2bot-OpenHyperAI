@@ -195,8 +195,16 @@ local RotDesire
 local MeatShieldDesire
 local DismemberDesire, DismemberTarget
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
 
     -- [Improvement #8] Re-fetch ability handles each tick
     local MeatHook   = bot:GetAbilityByName('pudge_meat_hook')
@@ -205,7 +213,7 @@ function X.SkillsComplement()
     local Dismember  = bot:GetAbilityByName('pudge_dismember')
 
     -- [Improvement #9] Cache per-tick variables
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
     local botHP = Fu.GetHP(bot)
     local nRotRadius = Rot:GetSpecialValueInt('rot_radius')
     local nEnemyHeroesNearRot = Fu.GetNearbyHeroes(bot, nRotRadius + 50, true, BOT_MODE_NONE)
@@ -316,7 +324,7 @@ function X.ConsiderMeatHook(MeatHook, Rot, Dismember, botTarget, botHP, nEnemyHe
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local strongestTarget = Fu.GetStrongestUnit(nCastRange, bot, true, true, 5)
@@ -480,7 +488,7 @@ function X.ConsiderMeatHook(MeatHook, Rot, Dismember, botTarget, botHP, nEnemyHe
     then
         if  Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsUnitBetweenMeAndLocation(bot, botTarget, botTarget:GetLocation(), nRadius)
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -491,7 +499,7 @@ function X.ConsiderMeatHook(MeatHook, Rot, Dismember, botTarget, botHP, nEnemyHe
     then
         if  Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not Fu.IsUnitBetweenMeAndLocation(bot, botTarget, botTarget:GetLocation(), nRadius)
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -511,7 +519,7 @@ function X.ConsiderRot(Rot, botTarget, botHP, nRotRadius, nEnemyHeroesNearRot)
         return BOT_ACTION_DESIRE_HIGH
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         for _, enemyHero in pairs(nEnemyHeroesNearRot)
         do
@@ -532,7 +540,7 @@ function X.ConsiderRot(Rot, botTarget, botHP, nRotRadius, nEnemyHeroesNearRot)
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         for _, enemyHero in pairs(nEnemyHeroesNearRot)
         do
@@ -560,7 +568,7 @@ function X.ConsiderRot(Rot, botTarget, botHP, nRotRadius, nEnemyHeroesNearRot)
         then
             if #nEnemyLaneCreeps >= 1
             and Rot:GetToggleState() == false
-            and Fu.IsAttacking(bot)
+            and bAttacking
             and botHP > 0.2
             then
                 return BOT_ACTION_DESIRE_HIGH
@@ -583,7 +591,7 @@ function X.ConsiderRot(Rot, botTarget, botHP, nRotRadius, nEnemyHeroesNearRot)
         then
             if #nNeutralCreeps >= 1
             and Rot:GetToggleState() == false
-            and Fu.IsAttacking(bot)
+            and bAttacking
             and botHP > 0.35
             then
                 return BOT_ACTION_DESIRE_HIGH
@@ -603,7 +611,7 @@ function X.ConsiderRot(Rot, botTarget, botHP, nRotRadius, nEnemyHeroesNearRot)
         then
             if #nEnemyLaneCreeps >= 1
             and Rot:GetToggleState() == false
-            and Fu.IsAttacking(bot)
+            and bAttacking
             and botHP > 0.2
             then
                 return BOT_ACTION_DESIRE_HIGH
@@ -630,7 +638,7 @@ function X.ConsiderRot(Rot, botTarget, botHP, nRotRadius, nEnemyHeroesNearRot)
         then
             if #nEnemyLaneCreeps >= 1
             and Rot:GetToggleState() == false
-            and Fu.IsAttacking(bot)
+            and bAttacking
             and botHP > 0.5
             then
                 return BOT_ACTION_DESIRE_HIGH
@@ -651,7 +659,7 @@ function X.ConsiderRot(Rot, botTarget, botHP, nRotRadius, nEnemyHeroesNearRot)
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nRotRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and botHP > 0.4
         then
             if Rot:GetToggleState() == false
@@ -674,7 +682,7 @@ function X.ConsiderRot(Rot, botTarget, botHP, nRotRadius, nEnemyHeroesNearRot)
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nRotRadius)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             if Rot:GetToggleState() == false
             then
@@ -705,7 +713,7 @@ function X.ConsiderMeatShield(MeatShield)
         return BOT_ACTION_DESIRE_HIGH
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1000, false, BOT_MODE_NONE)
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -743,7 +751,7 @@ function X.ConsiderDismember(Dismember, botTarget, botHP, nEnemyHeroesNearRot)
     local nDuration = Dismember:GetSpecialValueFloat('AbilityChannelTime')
     local nDamage = Dismember:GetSpecialValueInt('dismember_damage') + (nAttributeStrength * nSTRMul)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local strongestTarget = Fu.GetStrongestUnit(nCastRange, bot, true, true, 5)
@@ -767,7 +775,7 @@ function X.ConsiderDismember(Dismember, botTarget, botHP, nEnemyHeroesNearRot)
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     then
         local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
         local weakestTarget = Fu.GetAttackableWeakestUnit(bot, nCastRange, true, true)
@@ -824,7 +832,7 @@ function X.ConsiderDismember(Dismember, botTarget, botHP, nEnemyHeroesNearRot)
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end

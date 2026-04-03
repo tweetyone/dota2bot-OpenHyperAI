@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -158,12 +157,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -210,15 +204,17 @@ local castDDesire, castDTarget
 local FireShieldDesire, FireShieldTarget
 
 
-local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local aetherRange = 0
 local talent8Damage = 0
 
 
+local bAttacking
 function X.SkillsComplement()
 
 
 	if Fu.CanNotUseAbility( bot ) or bot:IsInvisible() then return end
+
+	bAttacking = Fu.IsAttacking(bot)
 
 
 	nKeepMana = 300
@@ -238,10 +234,8 @@ function X.SkillsComplement()
 	if talent8:IsTrained() then talent8Damage = talent8Damage + talent8:GetSpecialValueInt( "value" ) end
 
 
-	castQDesire, castQTarget, sMotive = X.ConsiderQ()
 	if ( castQDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -249,10 +243,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	castWDesire, castWTarget, sMotive = X.ConsiderW()
 	if ( castWDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -260,10 +252,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	castEDesire, castETarget, sMotive = X.ConsiderE()
 	if ( castEDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -271,10 +261,8 @@ function X.SkillsComplement()
 		return
 	end
 
-	castDDesire, castDTarget, sMotive = X.ConsiderD()
 	if ( castDDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, false )
 
@@ -282,10 +270,8 @@ function X.SkillsComplement()
 		return
 	end
 	
-	FireShieldDesire, FireShieldTarget, sMotive = X.ConsiderFireShield()
 	if ( FireShieldDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -522,7 +508,7 @@ function X.ConsiderQ()
 	if Fu.IsDoingTormentor(bot) then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange( botTarget, bot, 800 )
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget, ''
 		end
@@ -883,7 +869,7 @@ function X.ConsiderE()
 	then
 		if Fu.IsRoshan( botTarget )
 			and Fu.IsInRange( botTarget, bot, 1000 )
-			and Fu.IsAttacking(bot)
+			and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, bestTarget, 'E打肉'..Fu.Chat.GetNormName( bestTarget )
 		end
@@ -892,7 +878,7 @@ function X.ConsiderE()
 	if Fu.IsDoingTormentor(bot) and bestTarget ~= nil then
 		if Fu.IsTormentor(botTarget)
         and Fu.IsInRange( botTarget, bot, 800 )
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, bestTarget, ''
 		end

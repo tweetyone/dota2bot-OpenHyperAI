@@ -144,8 +144,17 @@ local ComboDesire, ComboLocation
 
 local botTarget, nBlastOffDamage, nPMineDamage, nPMineTotalDmg, nComboDmg
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
 
@@ -293,7 +302,7 @@ function X.ConsiderStickyBomb()
         end
     end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -318,7 +327,7 @@ function X.ConsiderStickyBomb()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -422,7 +431,7 @@ function X.ConsiderStickyBomb()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -432,7 +441,7 @@ function X.ConsiderStickyBomb()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -467,7 +476,7 @@ function X.ConsiderReactiveTazer()
 
     local nRadius = ReactiveTazer:GetSpecialValueInt('stun_radius')
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     and not CanDoCombo1()
 	then
 		if Fu.IsValidTarget(botTarget)
@@ -487,7 +496,7 @@ function X.ConsiderReactiveTazer()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and bot:GetActiveModeDesire() > BOT_ACTION_DESIRE_HIGH
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
@@ -565,7 +574,7 @@ function X.ConsiderBlastOff()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
     and not CanDoCombo1()
 	then
 		if Fu.IsValidTarget(botTarget)
@@ -623,7 +632,7 @@ function X.ConsiderBlastOff()
 		end
 	end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -639,7 +648,7 @@ function X.ConsiderBlastOff()
                 and ((#nTargetInRangeAlly > #nInRangeAlly)
                     or bot:WasRecentlyDamagedByAnyHero(2))
                 then
-                    if Fu.GetHP(bot) < 0.5
+                    if nBotHP < 0.5
                     and Fu.CanCastOnNonMagicImmune(enemyHero)
                     and bot:GetHealth() < Fu.GetTotalEstimatedDamageToTarget(nInRangeEnemy, bot)
                     then
@@ -700,18 +709,15 @@ function X.ConsiderProximityMines()
     local nAffectRange = 400
     local nPManaCost = ProximityMines:GetManaCost()
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange + nAffectRange)
-        -- and Fu.IsAttacking(bot)
+        -- and bAttacking
         and not Fu.IsChasingTarget(bot, botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		then
             local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1200, true, BOT_MODE_NONE)
@@ -745,8 +751,8 @@ function X.ConsiderProximityMines()
         if Fu.IsValidHero(enemyHero)
         and Fu.CanCastOnNonMagicImmune(enemyHero)
         and Fu.GetManaAfter(nPManaCost) > 0.5
-        and not Fu.IsRetreating(bot)
-        and Fu.GetHP(bot) > Fu.GetHP(enemyHero)
+        and not bRetreating
+        and nBotHP > Fu.GetHP(enemyHero)
         and not Fu.IsSuspiciousIllusion(enemyHero)
         and not enemyHero:HasModifier('modifier_abaddon_borrowed_time')
         and not enemyHero:HasModifier('modifier_dazzle_shallow_grave')
@@ -768,7 +774,7 @@ function X.ConsiderProximityMines()
         end
     end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
         local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1000, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -822,7 +828,7 @@ function X.ConsiderProximityMines()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nAffectRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not TU.IsOtherMinesClose(botTarget:GetLocation())
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -833,7 +839,7 @@ function X.ConsiderProximityMines()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and not TU.IsOtherMinesClose(botTarget:GetLocation())
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -908,7 +914,7 @@ function IsSuitableToPlaceMine()
 		and bot:GetActiveModeDesire() > BOT_MODE_DESIRE_HIGH)
     or (nMode == BOT_MODE_RUNE and DotaTime() > 0)
     or nMode == BOT_MODE_DEFEND_ALLY
-    or Fu.IsGoingOnSomeone(bot) and bot:GetActiveModeDesire() > BOT_MODE_DESIRE_MODERATE
+    or bGoingOnSomeone and bot:GetActiveModeDesire() > BOT_MODE_DESIRE_MODERATE
     or Fu.IsPushing(bot) and bot:GetActiveModeDesire() > BOT_MODE_DESIRE_MODERATE
 	or Fu.IsDefending(bot)
     or Fu.IsDoingRoshan(bot)
@@ -987,7 +993,7 @@ function X.ConsiderCombo()
             end
         end
 
-        if Fu.IsGoingOnSomeone(bot)
+        if bGoingOnSomeone
         then
             if Fu.IsValidTarget(botTarget)
             and Fu.CanCastOnNonMagicImmune(botTarget)
@@ -1032,7 +1038,7 @@ function CanDoCombo1()
                         + BlastOff:GetManaCost()
 
         if bot:GetMana() >= nManaCost
-        and Fu.GetHP(bot) > 0.35
+        and nBotHP > 0.35
         then
             return true
         end

@@ -128,8 +128,16 @@ local SleightChainsDesire, SCLocation
 local remnantCastTime = -100
 local remnantCastGap  = 0.5
 
+local botTarget
+local bGoingOnSomeone
+local bRetreating
+local nBotHP
 function X.SkillsComplement()
     if Fu.CanNotUseAbility(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	nBotHP = Fu.GetHP(bot)
 
 	SleightChainsDesire, SCLocation = X.ConsiderSleightChains()
 	if SleightChainsDesire > 0
@@ -186,7 +194,7 @@ function X.ConsiderSearingChains()
 	local nRadius = SearingChains:GetSpecialValueInt('radius')
 	local nDamage = SearingChains:GetSpecialValueInt('damage_per_second')
 	local nEnemyHeroes = Fu.GetAroundEnemyHeroList(nRadius)
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	for _, enemyHero in pairs(nEnemyHeroes)
 	do
@@ -208,7 +216,7 @@ function X.ConsiderSearingChains()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius + 50, true, BOT_MODE_NONE)
@@ -248,14 +256,14 @@ function X.ConsiderSearingChains()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius + 50, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeEnemy > #nInRangeAlly
-		and (#nInRangeEnemy >= 2 or (Fu.GetHP(bot) < 0.6 or bot:WasRecentlyDamagedByAnyHero(2)))
+		and (#nInRangeEnemy >= 2 or (nBotHP < 0.6 or bot:WasRecentlyDamagedByAnyHero(2)))
 		then
 			if Fu.IsValidHero(nInRangeEnemy[1])
 			and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])
@@ -294,7 +302,7 @@ function X.ConsiderSleightOfFist()
 	local nManaCost = SleightOfFist:GetManaCost()
 	local nDamage = bot:GetAttackDamage() + SleightOfFist:GetSpecialValueInt('bonus_hero_damage')
 	local nAbilityLevel = SleightOfFist:GetLevel()
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 	for _, enemyHero in pairs(nEnemyHeroes)
@@ -333,7 +341,7 @@ function X.ConsiderSleightOfFist()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -352,14 +360,14 @@ function X.ConsiderSleightOfFist()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 250, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange + 100, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeEnemy > #nInRangeAlly
-		and (#nInRangeEnemy >= 2 or (Fu.GetHP(bot) < 0.6 or bot:WasRecentlyDamagedByAnyHero(2.5)))
+		and (#nInRangeEnemy >= 2 or (nBotHP < 0.6 or bot:WasRecentlyDamagedByAnyHero(2.5)))
 		then
 			if Fu.IsValidHero(nInRangeEnemy[1])
 			and Fu.CanCastOnMagicImmune(nInRangeEnemy[1])
@@ -429,7 +437,7 @@ function X.ConsiderFlameGuard()
 	end
 
 	local nRadius = FlameGuard:GetSpecialValueInt('radius')
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if Fu.IsInTeamFight(bot, 1200)
 	then
@@ -442,26 +450,25 @@ function X.ConsiderFlameGuard()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
-		and Fu.IsInRange(bot, botTarget, nRadius - 75)
 		and not Fu.IsSuspiciousIllusion(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
+
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,nRadius + 200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nRadius, true, BOT_MODE_NONE)
 
 		if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and #nInRangeEnemy > #nInRangeAlly
-		and #nInRangeEnemy >= 2 or (Fu.GetHP(bot) < 0.7 and bot:WasRecentlyDamagedByAnyHero(2))
+		and #nInRangeEnemy >= 2 or (nBotHP < 0.7 and bot:WasRecentlyDamagedByAnyHero(2))
 		then
 			return BOT_ACTION_DESIRE_MODERATE
 		end
@@ -501,9 +508,9 @@ function X.ConsiderActivateFireRemnant()
 		return BOT_ACTION_DESIRE_NONE, 0
 	end
 
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	and not CanDoSleightChains()
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
@@ -534,7 +541,7 @@ function X.ConsiderActivateFireRemnant()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -558,7 +565,7 @@ function X.ConsiderActivateFireRemnant()
 		if closestRemnantToAncient ~= nil
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and (#nInRangeEnemy >= #nInRangeAlly)
-		and (#nInRangeEnemy >= 2 or Fu.GetHP(bot) < 0.7)
+		and (#nInRangeEnemy >= 2 or nBotHP < 0.7)
 		then
 			return BOT_ACTION_DESIRE_HIGH, closestRemnantToAncient:GetLocation()
 		end
@@ -600,7 +607,7 @@ function X.ConsiderFireRemnant()
 	local nCastPoint = FireRemnant:GetCastPoint()
 	local nDamage = FireRemnant:GetSpecialValueInt('damage')
 	local nSpeed = bot:GetCurrentMovementSpeed() * (FireRemnant:GetSpecialValueInt('speed_multiplier') / 100)
-	local botTarget = Fu.GetProperTarget(bot)
+	botTarget = Fu.GetProperTarget(bot)
 
 	if nCastRange > 1600 then nCastRange = 1600 end
 
@@ -619,7 +626,7 @@ function X.ConsiderFireRemnant()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	and not CanDoSleightChains()
 	then
 		if Fu.IsValidTarget(botTarget)
@@ -642,7 +649,7 @@ function X.ConsiderFireRemnant()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		local nInRangeAlly = Fu.GetNearbyHeroes(bot,1200, false, BOT_MODE_NONE)
 		local nInRangeEnemy = Fu.GetNearbyHeroes(bot,1200, true, BOT_MODE_NONE)
@@ -650,11 +657,11 @@ function X.ConsiderFireRemnant()
 		if bot:WasRecentlyDamagedByAnyHero(2.5)
 		and nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 		and (#nInRangeEnemy >= #nInRangeAlly)
-		and (#nInRangeEnemy >= 2 or Fu.GetHP(bot) < 0.7)
+		and (#nInRangeEnemy >= 2 or nBotHP < 0.7)
 		and not Fu.IsSuspiciousIllusion(nInRangeEnemy[1])
 		then
 			local loc = Fu.GetEscapeLoc()
-			local dist = nCastRange * (1 - Fu.GetHP(bot))
+			local dist = nCastRange * (1 - nBotHP)
 
 			if dist < 600 then dist = 600 end
 
@@ -669,9 +676,9 @@ function X.ConsiderSleightChains()
 	if CanDoSleightChains()
 	then
 		local nCastRange = SleightOfFist:GetCastRange()
-		local botTarget = Fu.GetProperTarget(bot)
+		botTarget = Fu.GetProperTarget(bot)
 
-		if Fu.IsGoingOnSomeone(bot)
+		if bGoingOnSomeone
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 100, false, BOT_MODE_NONE)
 			local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
@@ -692,14 +699,14 @@ function X.ConsiderSleightChains()
 			end
 		end
 
-		if Fu.IsRetreating(bot)
+		if bRetreating
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(bot,nCastRange + 250, false, BOT_MODE_NONE)
 			local nInRangeEnemy = Fu.GetNearbyHeroes(bot,nCastRange + 100, true, BOT_MODE_NONE)
 
 			if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
 			and #nInRangeEnemy > #nInRangeAlly
-			and (#nInRangeEnemy >= 2 or (Fu.GetHP(bot) < 0.6 or bot:WasRecentlyDamagedByAnyHero(2)))
+			and (#nInRangeEnemy >= 2 or (nBotHP < 0.6 or bot:WasRecentlyDamagedByAnyHero(2)))
 			then
 				if Fu.IsValidHero(nInRangeEnemy[1])
 				and Fu.CanCastOnNonMagicImmune(nInRangeEnemy[1])

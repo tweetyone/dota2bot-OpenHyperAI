@@ -1,5 +1,4 @@
 local X = {}
-local bDebugMode = ( 1 == 10 )
 local bot = GetBot()
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
@@ -127,12 +126,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = true
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -179,7 +173,6 @@ local castWDesire, castWTarget
 local castEDesire, castETarget
 local castRDesire, castRTarget
 
-local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local aetherRange = 0
 local talent7Damage = 0
 
@@ -213,10 +206,8 @@ function X.SkillsComplement()
 	if talent7:IsTrained() then talent7Damage = talent7:GetSpecialValueInt( "value" ) end
 
 	
-	castQDesire, castQTarget, sMotive = X.ConsiderQ()
 	if castQDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -226,10 +217,8 @@ function X.SkillsComplement()
 
 	
 
-	castWDesire, castWTarget, sMotive = X.ConsiderW()
 	if castWDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -244,10 +233,8 @@ function X.SkillsComplement()
 	end
 
 
-	castRDesire, castRTarget, sMotive = X.ConsiderR()
 	if castRDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -258,10 +245,8 @@ function X.SkillsComplement()
 	end
 
 	
-	castEDesire, castETarget, sMotive = X.ConsiderE()
 	if castEDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 

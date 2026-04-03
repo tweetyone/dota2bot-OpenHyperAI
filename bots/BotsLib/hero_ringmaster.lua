@@ -155,8 +155,17 @@ local TameTheBeastsCastTime
 
 local botTarget, botLevel
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) or bot:IsCastingAbility() or bot:IsChanneling() then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
 
     botTarget = Fu.GetProperTarget(bot)
     botLevel = bot:GetLevel()
@@ -303,7 +312,7 @@ function X.ConsiderTameTheBeasts()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -326,7 +335,7 @@ function X.ConsiderTameTheBeasts()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     then
         for _, enemy in pairs(tEnemyHeroes)
@@ -336,7 +345,7 @@ function X.ConsiderTameTheBeasts()
             and Fu.CanCastOnNonMagicImmune(enemy)
             and not Fu.IsDisabled(enemy)
             and bot:WasRecentlyDamagedByHero(enemy, 3.0)
-            and (Fu.GetHP(bot) < 0.65 or Fu.IsChasingTarget(enemy, bot))
+            and (nBotHP < 0.65 or Fu.IsChasingTarget(enemy, bot))
             then
                 local nLocationAoE = bot:FindAoELocation(true, true, enemy:GetLocation(), nOuterRadius, nOuterRadius, 0, 0)
                 local targetLoc = (bot:GetLocation() + enemy:GetLocation()) / 2
@@ -424,7 +433,7 @@ function X.ConsiderTameTheBeasts()
 		if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             bot.whip_to_miniboss = true
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -436,7 +445,7 @@ function X.ConsiderTameTheBeasts()
 		if Fu.IsTormentor(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
 		then
             bot.whip_to_miniboss = true
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
@@ -537,7 +546,7 @@ function X.ConsiderTameTheBeastsCrack()
     if bot.whip_to_engage
     then
         if Fu.IsValidHero(tEnemyHeroes[1]) and botLevel < 15
-        or Fu.GetHP(bot) < 0.15
+        or nBotHP < 0.15
         then
             if Fu.IsInRange(bot, tEnemyHeroes[1], 350)
             then
@@ -550,7 +559,7 @@ function X.ConsiderTameTheBeastsCrack()
     then
         if not Fu.IsRealInvisible(bot)
         or Fu.IsValidHero(tEnemyHeroes[1]) and botLevel < 15
-        or Fu.GetHP(bot) < 0.15
+        or nBotHP < 0.15
         then
             if Fu.IsInRange(bot, tEnemyHeroes[1], nInnerRadius)
             then
@@ -564,7 +573,7 @@ function X.ConsiderTameTheBeastsCrack()
     or bot.whip_to_farm
     or bot.whip_to_miniboss
     then
-        if Fu.GetHP(bot) < 0.15
+        if nBotHP < 0.15
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -652,7 +661,7 @@ function X.ConsiderEscapeAct()
         end
     end
 
-    if Fu.GetHP(bot) < 0.25 and X.IsBeingAttacked(bot)
+    if nBotHP < 0.25 and X.IsBeingAttacked(bot)
     and not Fu.IsRealInvisible(bot)
     then
         return BOT_ACTION_DESIRE_HIGH, bot
@@ -703,7 +712,7 @@ function X.ConsiderImpalementArts()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -726,7 +735,7 @@ function X.ConsiderImpalementArts()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     then
         for _, enemy in pairs(tEnemyHeroes)
@@ -735,7 +744,7 @@ function X.ConsiderImpalementArts()
             and Fu.IsInRange(bot, enemy, 800)
             and Fu.CanCastOnNonMagicImmune(enemy)
             and bot:WasRecentlyDamagedByHero(enemy, 3.0)
-            and (Fu.GetHP(bot) < 0.5 or Fu.IsChasingTarget(enemy, bot))
+            and (nBotHP < 0.5 or Fu.IsChasingTarget(enemy, bot))
             and not enemy:HasModifier('modifier_ringmaster_impalement_bleed')
             then
                 local nLocationAoE = bot:FindAoELocation(true, true, enemy:GetLocation(), nRadius, nRadius, 0, 0)
@@ -846,7 +855,7 @@ function X.ConsiderSpotlight()
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and Fu.GetHP(botTarget) > 0.5
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
         end
@@ -901,7 +910,7 @@ function X.ConsiderFunhouseMirror()
         return BOT_ACTION_DESIRE_HIGH
 	end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, bot:GetAttackRange() + 300)
@@ -914,7 +923,7 @@ function X.ConsiderFunhouseMirror()
     then
         if (Fu.IsRoshan(botTarget) or Fu.IsTormentor(bot))
         and Fu.IsInRange(bot, botTarget, 900)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH
         end
@@ -994,7 +1003,7 @@ function X.ConsiderStrongmanTonic()
         end
     end
 
-    if Fu.GetHP(bot) < 0.5 and X.IsBeingAttacked(bot)
+    if nBotHP < 0.5 and X.IsBeingAttacked(bot)
     and not Fu.IsRealInvisible(bot)
     then
         return BOT_ACTION_DESIRE_HIGH, bot
@@ -1015,7 +1024,7 @@ function X.ConsiderWhoopeeCushion()
     local tAllyHeroes = bot:GetNearbyHeroes(1600, false, BOT_MODE_NONE)
     local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nLeapDistance + nFartRadius)
@@ -1029,7 +1038,7 @@ function X.ConsiderWhoopeeCushion()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     then
         if Fu.IsValidHero(tEnemyHeroes[1])
@@ -1086,7 +1095,7 @@ function X.ConsiderWeightedPie()
     local nCastRange = Fu.GetProperCastRange(false, bot, WeightedPie:GetCastRange())
     local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange / 3)
@@ -1098,7 +1107,7 @@ function X.ConsiderWeightedPie()
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     then
         for _, enemy in pairs(tEnemyHeroes)
@@ -1106,7 +1115,7 @@ function X.ConsiderWeightedPie()
             if Fu.IsValidHero(enemy)
             and Fu.IsInRange(bot, enemy, nCastRange)
             and Fu.CanCastOnNonMagicImmune(enemy)
-            and (Fu.GetHP(bot) < 0.5 or Fu.IsChasingTarget(enemy, bot))
+            and (nBotHP < 0.5 or Fu.IsChasingTarget(enemy, bot))
             and not enemy:HasModifier('modifier_ringmaster_weightedpie_blind')
             then
                 return BOT_ACTION_DESIRE_HIGH, enemy
@@ -1123,12 +1132,12 @@ function X.ConsiderUnicycle()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsGoingOnSomeone(bot)
+    if bGoingOnSomeone
     then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, 2200)
         and not Fu.IsInRange(bot, botTarget, 700)
-        and (Fu.GetHP(bot) > 0.7 or Fu.IsChasingTarget(bot, botTarget))
+        and (nBotHP > 0.7 or Fu.IsChasingTarget(bot, botTarget))
         and Fu.CanCastOnNonMagicImmune(botTarget)
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -1136,7 +1145,7 @@ function X.ConsiderUnicycle()
     end
 
     local tEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     then
         for _, enemy in pairs(tEnemyHeroes)
@@ -1144,7 +1153,7 @@ function X.ConsiderUnicycle()
             if Fu.IsValidHero(enemy)
             and Fu.IsInRange(bot, enemy, 600)
             and Fu.CanCastOnNonMagicImmune(enemy)
-            and (Fu.GetHP(bot) < 0.5 or Fu.IsChasingTarget(enemy, bot))
+            and (nBotHP < 0.5 or Fu.IsChasingTarget(enemy, bot))
             then
                 return BOT_ACTION_DESIRE_HIGH
             end

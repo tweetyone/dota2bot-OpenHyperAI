@@ -1,6 +1,5 @@
 local X = {}
 local bot = GetBot()
-local bDebugMode = ( 1 == 10 )
 
 local Fu = require( GetScriptDirectory()..'/FuncLib/func_utils' )
 local Minion = dofile( GetScriptDirectory()..'/FuncLib/hero/minion' )
@@ -130,12 +129,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		Minion.IllusionThink( hMinionUnit )
-	end
-
+	Minion.MinionThink(hMinionUnit)
 end
 
 --[[
@@ -170,7 +164,6 @@ local ShodoSaiParryCancel = bot:GetAbilityByName( 'kez_shodo_sai_parry_cancel' )
 local RavensVeil = bot:GetAbilityByName( 'kez_ravens_veil' )
 
 local nKeepMana = 220
-local nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive,
 castEchoSlashDesire, castGrapplingClawDesire, castGrapplingClawTarget, castRaptorDanceDesire
 
 local FalconRushDesire
@@ -184,7 +177,16 @@ local SwitchDisciplineDesire
 
 local nKezMode = 1
 
+local bGoingOnSomeone
+local bRetreating
+local bAttacking
+local nBotHP
 function X.SkillsComplement()
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bRetreating = Fu.IsRetreating(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
 	nLV = bot:GetLevel()
 	nMP = bot:GetMana() / bot:GetMaxMana()
 	nHP = bot:GetHealth() / bot:GetMaxHealth()
@@ -200,7 +202,7 @@ function X.SkillsComplement()
     end
 
     if Fu.IsInLaningPhase()
-    and not Fu.IsRetreating(bot)
+    and not bRetreating
     and Fu.IsValidHero(botTarget)
     and Fu.GetHP(botTarget) > 0.5
     and Fu.GetMP(bot) < 0.6 then
@@ -213,10 +215,8 @@ function X.SkillsComplement()
 
 	X.DoCombo()
 
-	castEchoSlashDesire, sMotive = X.ConsiderEchoSlash()
 	if castEchoSlashDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -225,10 +225,8 @@ function X.SkillsComplement()
 	end
 
 	local sType = nil
-	castGrapplingClawDesire, castGrapplingClawTarget, sType, sMotive = X.ConsiderGrapplingClaw()
 	if ( castGrapplingClawDesire > 0 )
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 		if sType == 'unit' then
@@ -248,10 +246,8 @@ function X.SkillsComplement()
         return
     end
 
-	castRaptorDanceDesire, sMotive = X.ConsiderRaptorDance()
 	if castRaptorDanceDesire > 0
 	then
-		Fu.SetReportMotive( bDebugMode, sMotive )
 
 		Fu.SetQueuePtToINT( bot, true )
 
@@ -328,24 +324,21 @@ function X.ConsiderEchoSlash()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nDistance)
         and bot:IsFacingLocation(botTarget:GetLocation(), 15)
         and not Fu.IsChasingTarget(bot, botTarget)
         and Fu.CanBeAttacked(botTarget)
         and not Fu.IsSuspiciousIllusion(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
         and not botTarget:HasModifier('modifier_troll_warlord_battle_trance')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         then
             return BOT_ACTION_DESIRE_HIGH
         end
     end
 
-    if Fu.IsRetreating(bot)
+    if bRetreating
     and not Fu.IsRealInvisible(bot)
     and bot:WasRecentlyDamagedByAnyHero(3.0)
     then
@@ -422,7 +415,7 @@ function X.ConsiderEchoSlash()
         and Fu.CanBeAttacked(botTarget)
         and bot:IsFacingLocation(botTarget:GetLocation(), 20)
         and Fu.IsInRange(bot, botTarget, nDistance)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nManaAfter > 0.25
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -434,7 +427,7 @@ function X.ConsiderEchoSlash()
         and Fu.CanBeAttacked(botTarget)
         and bot:IsFacingLocation(botTarget:GetLocation(), 20)
         and Fu.IsInRange(bot, botTarget, nDistance)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nManaAfter > 0.25
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -450,12 +443,12 @@ function X.ConsiderGrapplingClaw()
 	local nCastRange = GrapplingClaw:GetCastRange()
 
 	--撤退
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	and bot:DistanceFromFountain() > 600
 	then
 		if hAllyList ~= nil and hEnemyList ~= nil
 		and ((#hEnemyList > #hAllyList)
-			or (Fu.GetHP(bot) and bot:WasRecentlyDamagedByAnyHero(3)))
+			or (nBotHP and bot:WasRecentlyDamagedByAnyHero(3)))
 		and Fu.IsValidHero(hEnemyList[1])
 		and Fu.IsInRange(bot, hEnemyList[1], 500)
 		and not Fu.IsSuspiciousIllusion(hEnemyList[1])
@@ -471,7 +464,7 @@ function X.ConsiderGrapplingClaw()
 	if Fu.IsInLaningPhase() and nMP < 0.3 then return BOT_ACTION_DESIRE_NONE end
 
 	--打架
-	if Fu.IsGoingOnSomeone( bot )
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero( botTarget )
 		and Fu.IsInRange( botTarget, bot, nCastRange + 100 )
@@ -507,11 +500,11 @@ function X.ConsiderRaptorDance()
 		end
 	end
 
-	if Fu.IsRetreating(bot)
+	if bRetreating
 	then
 		if hAllyList ~= nil and hEnemyList
 		and #hEnemyList >= #hAllyList
-		and Fu.GetHP(bot) < 0.5 and Fu.GetHP(bot) > 0.15 and bot:WasRecentlyDamagedByAnyHero(3)
+		and nBotHP < 0.5 and nBotHP > 0.15 and bot:WasRecentlyDamagedByAnyHero(3)
 		and Fu.IsValidHero(hEnemyList[1])
 		and Fu.IsInRange(bot, hEnemyList[1], nRadius)
 		and not Fu.IsSuspiciousIllusion(hEnemyList[1])
@@ -527,16 +520,14 @@ function X.ConsiderRaptorDance()
 
 	if Fu.IsInLaningPhase() and nMP < 0.3 then return BOT_ACTION_DESIRE_NONE end
 
-	if Fu.IsGoingOnSomeone(bot)
-    and Fu.GetHP(bot) < 0.6
+	if bGoingOnSomeone
+    and nBotHP < 0.6
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.IsInRange(bot, botTarget, nRadius)
 		and not Fu.IsSuspiciousIllusion(botTarget)
 		and not botTarget:HasModifier('modifier_abaddon_aphotic_shield')
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
 		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
-		and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and hAllyList ~= nil and hEnemyList ~= nil
 		and #hAllyList >= #hEnemyList
@@ -546,7 +537,7 @@ function X.ConsiderRaptorDance()
 	end
 
 	if Fu.IsInTeamFight( bot, 1200 )
-    and Fu.GetHP(bot) < 0.6
+    and nBotHP < 0.6
 	then
 		local nAoeLoc = Fu.GetAoeEnemyHeroLocation( bot, 0, nRadius, 2)
 		if nAoeLoc ~= nil
@@ -588,14 +579,11 @@ function X.ConsiderKazuraiKatana()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and Fu.CanCastOnTargetAdvanced(botTarget)
-        and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-        and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_troll_warlord_battle_trance')
         and not botTarget:HasModifier('modifier_ursa_enrage')
         then
@@ -624,7 +612,7 @@ function X.ConsiderFalconRush()
     local nManaAfter = Fu.GetManaAfter(FalconRush:GetManaCost())
     local nDistance = bot:GetAttackRange()
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
         and Fu.CanBeAttacked(botTarget)
         and Fu.IsInRange(bot, botTarget, nRushRange)
@@ -671,7 +659,7 @@ function X.ConsiderFalconRush()
         and Fu.CanBeAttacked(botTarget)
         and bot:IsFacingLocation(botTarget:GetLocation(), 15)
         and Fu.IsInRange(bot, botTarget, nRushRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nManaAfter > 0.25
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -683,7 +671,7 @@ function X.ConsiderFalconRush()
         and Fu.CanBeAttacked(botTarget)
         and bot:IsFacingLocation(botTarget:GetLocation(), 15)
         and Fu.IsInRange(bot, botTarget, nRushRange)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         and nManaAfter > 0.25
         then
             return BOT_ACTION_DESIRE_HIGH
@@ -737,14 +725,13 @@ function X.ConsiderTalonToss()
         end
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.CanCastOnTargetAdvanced(botTarget)
         and Fu.IsInRange(bot, botTarget, nCastRange)
         and not Fu.IsDisabled(botTarget)
         and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
-        and not botTarget:HasModifier('modifier_oracle_false_promise_timer')
         and not botTarget:HasModifier('modifier_troll_warlord_battle_trance')
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
@@ -780,7 +767,7 @@ function X.ConsiderShodoSai()
         return BOT_ACTION_DESIRE_NONE, 0
     end
 
-	if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot)
+	if bRetreating and not Fu.IsRealInvisible(bot)
 	then
 		local nAllyHeroes = Fu.GetAlliesNearLoc(bot:GetLocation(), 900)
 		if #nAllyHeroes >= 1 then
@@ -811,7 +798,7 @@ function X.ConsiderShodoSaiCancel()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot)
+    if bRetreating and not Fu.IsRealInvisible(bot)
 	then
 		local nAllyHeroes = Fu.GetAlliesNearLoc(bot:GetLocation(), 900)
 		if #nAllyHeroes >= 1 then
@@ -863,7 +850,7 @@ function X.ConsiderSwitchDiscipline()
         return BOT_ACTION_DESIRE_NONE
     end
 
-    if Fu.IsGoingOnSomeone(bot) then
+    if bGoingOnSomeone then
         if Fu.IsValidHero(botTarget)
         and Fu.IsInRange(bot, botTarget, 600)
         and (Fu.GetHP(botTarget) < 0.6 or (bot:GetNetWorth() > 18000 and FalconRush:IsFullyCastable()))
@@ -873,7 +860,7 @@ function X.ConsiderSwitchDiscipline()
         end
     end
 
-    if Fu.IsRetreating(bot) and not Fu.IsRealInvisible(bot) then
+    if bRetreating and not Fu.IsRealInvisible(bot) then
         if bot.kez_mode == 'sai' then
 			return BOT_ACTION_DESIRE_HIGH
         end
@@ -917,7 +904,7 @@ function X.DoCombo()
                     local nEnemyHeroes = Fu.GetEnemiesNearLoc(bot:GetLocation(), nCastRange)
 
                     for _, enemy in pairs(nEnemyHeroes) do
-                        if Fu.IsGoingOnSomeone(bot) then
+                        if bGoingOnSomeone then
                             if Fu.IsValidHero(enemy)
                             and Fu.IsInRange(bot, enemy, nCastRange)
                             and Fu.CanBeAttacked(enemy)

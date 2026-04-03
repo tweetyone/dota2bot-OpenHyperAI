@@ -182,8 +182,17 @@ local npcDouble = nil
 
 local botTarget
 
+local bGoingOnSomeone
+local bAttacking
+local nBotMP
+local bInTeamFight
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility( bot ) or Fu.IsRealInvisible(bot) then return end
+
+	bGoingOnSomeone = Fu.IsGoingOnSomeone(bot)
+	bAttacking = Fu.IsAttacking(bot)
+	nBotMP = Fu.GetMP(bot)
+	bInTeamFight = Fu.IsInTeamFight(bot, 1200)
 
 	botTarget = Fu.GetProperTarget(bot)
 
@@ -249,7 +258,7 @@ function X.ConsiderFlux()
 		end
 	end
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local npcMostDangerousEnemy = nil
 		local nMostDangerousDamage = 0
@@ -280,15 +289,13 @@ function X.ConsiderFlux()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.CanCastOnTargetAdvanced(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange + 75)
 		and not Fu.IsSuspiciousIllusion(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1600, true, BOT_MODE_NONE)
 			local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1600, false, BOT_MODE_NONE)
@@ -328,7 +335,7 @@ function X.ConsiderFlux()
 		if Fu.IsRoshan(botTarget)
 		and Fu.CanCastOnMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget
 		end
@@ -338,7 +345,7 @@ function X.ConsiderFlux()
 	then
 		if Fu.IsTormentor(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget
 		end
@@ -357,7 +364,7 @@ function X.ConsiderMagneticField()
 	local nCastRange = Fu.GetProperCastRange(false, bot, MagneticField:GetCastRange())
 	local nRadius = MagneticField:GetSpecialValueInt('radius')
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local nLocationAoE = bot:FindAoELocation(false, true, bot:GetLocation(), nCastRange, nRadius, 0, 0)
 
@@ -375,7 +382,7 @@ function X.ConsiderMagneticField()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidTarget(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
@@ -412,7 +419,7 @@ function X.ConsiderMagneticField()
 		local nEnemyBarracks bot:GetNearbyBarracks(888, true)
 		local sEnemyTowers bot:GetNearbyFillers(888, true)
 
-		if Fu.IsAttacking(bot)
+		if bAttacking
 		then
 			if (nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3)
 			or (nEnemyTowers ~= nil and #nEnemyTowers >= 1)
@@ -430,7 +437,7 @@ function X.ConsiderMagneticField()
 	then
 		local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(888, true)
 
-		if Fu.IsAttacking(bot)
+		if bAttacking
 		then
 			if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 3
 			then
@@ -451,7 +458,7 @@ function X.ConsiderMagneticField()
 	then
 		if Fu.IsRoshan(botTarget)
 		and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
 		end
@@ -462,7 +469,7 @@ function X.ConsiderMagneticField()
 	then
 		if Fu.IsTormentor(botTarget)
 		and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
 		end
@@ -497,14 +504,12 @@ function X.ConsiderSparkWraith()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
 		and Fu.CanCastOnNonMagicImmune(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
 		and not Fu.IsSuspiciousIllusion(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
 		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		and not botTarget:HasModifier('modifier_templar_assassin_refraction_absorb')
 		and not botTarget:HasModifier('modifier_item_aeon_disk_buff')
@@ -570,12 +575,12 @@ function X.ConsiderSparkWraith()
 			local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(1400, true)
 			if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 2
 			then
-				if Fu.GetMP(bot) > 0.62
+				if nBotMP > 0.62
 				then
 					return BOT_ACTION_DESIRE_HIGH, nLocationAoE.targetloc
 				end
 			else
-				if Fu.GetMP(bot) > 0.75
+				if nBotMP > 0.75
 				then
 					return BOT_ACTION_DESIRE_HIGH, nLocationAoE.targetloc
 				end
@@ -597,12 +602,12 @@ function X.ConsiderSparkWraith()
 			local nEnemyLaneCreeps = bot:GetNearbyLaneCreeps(1400, true)
 			if nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 1
 			then
-				if Fu.GetMP(bot) > 0.42
+				if nBotMP > 0.42
 				then
 					return BOT_ACTION_DESIRE_HIGH, nLocationAoE.targetloc
 				end
 			else
-				if Fu.GetMP(bot) > 0.55
+				if nBotMP > 0.55
 				then
 					return BOT_ACTION_DESIRE_HIGH, nLocationAoE.targetloc
 				end
@@ -703,8 +708,8 @@ function X.ConsiderSparkWraith()
 
 	local nCastLocation = Fu.GetLocationTowardDistanceLocation(bot, Fu.GetEnemyFountain(), nCastRange)
 	if bot:HasModifier('modifier_arc_warden_tempest_double')
-	or (Fu.GetMP(bot) > 0.92 and bot:GetLevel() > 11 and not IsLocationVisible(nCastLocation))
-	or (Fu.GetMP(bot) > 0.38 and Fu.GetDistanceFromEnemyFountain(bot) < 4300)
+	or (nBotMP > 0.92 and bot:GetLevel() > 11 and not IsLocationVisible(nCastLocation))
+	or (nBotMP > 0.38 and Fu.GetDistanceFromEnemyFountain(bot) < 4300)
 	then
 		if IsLocationPassable(nCastLocation)
 		and not bot:HasModifier('modifier_silencer_curse_of_the_silent')
@@ -718,7 +723,7 @@ function X.ConsiderSparkWraith()
 		if Fu.IsRoshan(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
 		and Fu.GetHP(botTarget) > 0.2
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -729,7 +734,7 @@ function X.ConsiderSparkWraith()
 		if Fu.IsTormentor(botTarget)
 		and Fu.IsInRange(bot, botTarget, nCastRange)
 		and Fu.GetHP(botTarget) > 0.2
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation()
 		end
@@ -754,7 +759,7 @@ function X.ConsiderTempestDouble()
 		local nEnemyTowers = bot:GetNearbyTowers( 800, true )
 		local nCreeps = bot:GetNearbyCreeps( 800, true )
 
-		if Fu.IsAttacking(bot)
+		if bAttacking
 		then
 			if (nEnemyLaneCreeps ~= nil and #nEnemyLaneCreeps >= 2)
 			or (nEnemyTowers ~= nil and #nEnemyTowers >= 1)
@@ -765,7 +770,7 @@ function X.ConsiderTempestDouble()
 		end
 	end
 
-	if Fu.IsInTeamFight(bot, 1200)
+	if bInTeamFight
 	then
 		local target = nil
 		local hp = 0
@@ -797,13 +802,11 @@ function X.ConsiderTempestDouble()
 		end
 	end
 
-	if Fu.IsGoingOnSomeone(bot)
+	if bGoingOnSomeone
 	then
 		if Fu.IsValidHero(botTarget)
 		and Fu.IsInRange(bot, botTarget, 1600)
 		and not Fu.IsSuspiciousIllusion(botTarget)
-		and not botTarget:HasModifier('modifier_abaddon_borrowed_time')
-		and not botTarget:HasModifier('modifier_necrolyte_reapers_scythe')
 		then
 			local nInRangeAlly = Fu.GetNearbyHeroes(botTarget, 1600, true, BOT_MODE_NONE)
 			local nInRangeEnemy = Fu.GetNearbyHeroes(botTarget, 1600, false, BOT_MODE_NONE)
@@ -851,7 +854,7 @@ function X.ConsiderTempestDouble()
 		if Fu.IsRoshan(botTarget)
 		and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
 		and Fu.GetHP(botTarget) > 0.5
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
 		end
@@ -861,7 +864,7 @@ function X.ConsiderTempestDouble()
 	then
 		if Fu.IsTormentor(botTarget)
 		and Fu.IsInRange(bot, botTarget, bot:GetAttackRange())
-		and Fu.IsAttacking(bot)
+		and bAttacking
 		then
 			return BOT_ACTION_DESIRE_HIGH, bot:GetLocation()
 		end

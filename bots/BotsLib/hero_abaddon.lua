@@ -162,13 +162,7 @@ X['bDeafaultAbility'] = false
 X['bDeafaultItem'] = false
 
 function X.MinionThink(hMinionUnit)
-	if Minion.IsValidUnit( hMinionUnit )
-	then
-		if Fu.IsValidHero(hMinionUnit) and hMinionUnit:IsIllusion()
-		then
-			Minion.IllusionThink( hMinionUnit )
-		end
-	end
+	Minion.MinionThink(hMinionUnit)
 end
 
 local MistCoil          = bot:GetAbilityByName( 'abaddon_death_coil' )
@@ -179,8 +173,14 @@ local AphoticShield     = bot:GetAbilityByName( 'abaddon_aphotic_shield' )
 local MistCoilDesire, MistCoilTarget
 local AphoticShieldDesire, AphoticShieldTarget
 
+local botTarget
+local bAttacking
+local nBotHP
 function X.SkillsComplement()
 	if Fu.CanNotUseAbility(bot) then return end
+
+	bAttacking = Fu.IsAttacking(bot)
+	nBotHP = Fu.GetHP(bot)
 
     AphoticShieldDesire, AphoticShieldTarget = X.ConsiderAphoticShield()
     if AphoticShieldDesire > 0
@@ -207,7 +207,7 @@ function X.ConsiderMistCoil()
 	local nDamage = MistCoil:GetSpecialValueInt('target_damage')
 	local nSelfDamage = MistCoil:GetSpecialValueInt('self_damage')
     local nDamageType = DAMAGE_TYPE_MAGICAL
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
     local nEnemyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, true, BOT_MODE_NONE)
 
     if Fu.HasAghanimsShard(bot)
@@ -257,7 +257,7 @@ function X.ConsiderMistCoil()
 				and allyHero:IsFacingLocation(allyTarget:GetLocation(), 30)
 				and Fu.IsInRange(allyHero, allyTarget, 300)
                 and Fu.GetHP(allyHero) < 0.8
-                and Fu.GetHP(bot) > 0.2
+                and nBotHP > 0.2
 				then
 					return BOT_ACTION_DESIRE_HIGH, allyHero
 				end
@@ -277,7 +277,7 @@ function X.ConsiderMistCoil()
         if nInRangeAlly ~= nil and nInRangeEnemy ~= nil
         and ((#nInRangeAlly == 0 and #nInRangeEnemy >= 1)
             or (#nInRangeAlly >= 1
-                and Fu.GetHP(bot) < 0.25
+                and nBotHP < 0.25
                 and bot:WasRecentlyDamagedByAnyHero(1)
                 and not bot:HasModifier('modifier_abaddon_borrowed_time')))
         and Fu.IsValidHero(nInRangeEnemy[1])
@@ -293,7 +293,7 @@ function X.ConsiderMistCoil()
         if Fu.IsRoshan(botTarget)
         and Fu.CanCastOnNonMagicImmune(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -303,7 +303,7 @@ function X.ConsiderMistCoil()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             return BOT_ACTION_DESIRE_HIGH, botTarget
         end
@@ -333,7 +333,7 @@ function X.ConsiderAphoticShield()
 	end
 
 	local nCastRange  = AphoticShield:GetCastRange()
-    local botTarget = Fu.GetProperTarget(bot)
+    botTarget = Fu.GetProperTarget(bot)
 
     local nAllyHeroes = Fu.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
     for _, allyHero in pairs(nAllyHeroes)
@@ -483,7 +483,7 @@ function X.ConsiderAphoticShield()
 
             if nTargetInRangeAlly ~= nil
             and ((#nTargetInRangeAlly > #nInRangeAlly)
-                or (Fu.GetHP(bot) < 0.55 and bot:WasRecentlyDamagedByAnyHero(2)))
+                or (nBotHP < 0.55 and bot:WasRecentlyDamagedByAnyHero(2)))
             then
                 return BOT_ACTION_DESIRE_HIGH, bot
             end
@@ -494,7 +494,7 @@ function X.ConsiderAphoticShield()
     then
         if Fu.IsRoshan(botTarget)
         and Fu.IsInRange(bot, botTarget, 500)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             local weakestAlly = Fu.GetAttackableWeakestUnit(bot, nCastRange, true, false)
 
@@ -510,7 +510,7 @@ function X.ConsiderAphoticShield()
     then
         if Fu.IsTormentor(botTarget)
         and Fu.IsInRange(bot, botTarget, 400)
-        and Fu.IsAttacking(bot)
+        and bAttacking
         then
             local weakestAlly = Fu.GetAttackableWeakestUnit(bot, nCastRange, true, false)
 
